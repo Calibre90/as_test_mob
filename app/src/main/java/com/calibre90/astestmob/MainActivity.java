@@ -2,64 +2,78 @@ package com.calibre90.astestmob;
 
 import android.app.*;
 import android.os.*;
-import android.graphics.*;
+import android.content.*;
+import android.graphics.Color;
 import android.graphics.drawable.*;
 import android.view.*;
 import android.widget.*;
 import java.util.*;
 
 public class MainActivity extends Activity {
-  int red=Color.rgb(225,18,24), panel=Color.rgb(24,24,24), edge=Color.rgb(75,75,75);
-  LinearLayout root,tabs,rows; ArrayList<View> tabViews=new ArrayList<>();
-  GradientDrawable bg(int stroke, int fill, float radius){
-    GradientDrawable g=new GradientDrawable(); g.setColor(fill); g.setCornerRadius(radius); g.setStroke(2,stroke); return g;
+  LinearLayout root,tabs,table; final ArrayList<ImageView> tabViews=new ArrayList<>();
+  int activeTab=0; boolean leftChecked=false,rightChecked=false;
+  int img(String n){ return getResources().getIdentifier(n,"drawable",getPackageName()); }
+  ImageView image(String n, ImageView.ScaleType scale){
+    ImageView v=new ImageView(this); v.setScaleType(scale); int id=img(n); if(id!=0)v.setImageResource(id); return v;
   }
-  View box(int h, int stroke){
-    View v=new View(this); v.setBackground(bg(stroke,panel,12)); v.setLayoutParams(new LinearLayout.LayoutParams(0,h,1)); return v;
-  }
-  @Override public void onCreate(Bundle b){ super.onCreate(b); build(); }
+  LinearLayout.LayoutParams lp(int w,int h){ return new LinearLayout.LayoutParams(w,h); }
+  @Override public void onCreate(Bundle b){ super.onCreate(b); getWindow().setStatusBarColor(Color.BLACK); build(); }
+
   void build(){
-    ScrollView sc=new ScrollView(this); root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL);
-    root.setPadding(18,18,18,18); root.setBackgroundColor(Color.rgb(6,6,6)); sc.addView(root);
+    ScrollView scroll=new ScrollView(this); scroll.setFillViewport(true);
+    root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setPadding(18,12,18,18); root.setBackgroundColor(Color.rgb(5,5,5));
+    scroll.addView(root);
 
-    LinearLayout head=new LinearLayout(this); head.setGravity(Gravity.CENTER_VERTICAL);
-    TextView title=new TextView(this); title.setText("MAZDA 6 GH\nAS-BUILT STUDIO"); title.setTextColor(Color.WHITE);
-    title.setTextSize(22); title.setTypeface(null,1); head.addView(title,new LinearLayout.LayoutParams(0,120,1));
-    TextView gear=new TextView(this); gear.setText("⚙"); gear.setTextSize(38); gear.setGravity(17); gear.setTextColor(Color.LTGRAY);
-    gear.setBackground(bg(edge,panel,18)); head.addView(gear,new LinearLayout.LayoutParams(90,90)); gear.setOnClickListener(v->admin());
-    root.addView(head);
+    FrameLayout header=new FrameLayout(this);
+    ImageView h=image("header_mazda6gh_asbuilt_speedometer",ImageView.ScaleType.FIT_XY); header.addView(h,new FrameLayout.LayoutParams(-1,120));
+    View gear=new View(this); FrameLayout.LayoutParams gp=new FrameLayout.LayoutParams(90,100,Gravity.RIGHT|Gravity.TOP); header.addView(gear,gp); gear.setOnClickListener(v->showAdmin());
+    root.addView(header,new LinearLayout.LayoutParams(-1,120));
 
-    tabs=new LinearLayout(this); tabs.setPadding(0,8,0,8);
-    for(int i=0;i<4;i++){ final int n=i; View t=box(66,i==0?red:edge); LinearLayout.LayoutParams lp=(LinearLayout.LayoutParams)t.getLayoutParams(); lp.setMargins(4,0,4,0); tabs.addView(t,lp); tabViews.add(t); t.setOnClickListener(v->select(n));}
-    root.addView(tabs,new LinearLayout.LayoutParams(-1,82));
+    tabs=new LinearLayout(this); tabs.setOrientation(LinearLayout.HORIZONTAL);
+    for(int i=0;i<4;i++){ final int n=i; ImageView t=image(i==0?"tab_active_red":"tab_inactive_gray_1",ImageView.ScaleType.FIT_XY);
+      LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,62,1); p.setMargins(2,0,2,0); tabs.addView(t,p); tabViews.add(t); t.setOnClickListener(v->selectTab(n));}
+    root.addView(tabs,new LinearLayout.LayoutParams(-1,68));
 
-    LinearLayout info=new LinearLayout(this); info.setPadding(8,8,8,8); info.setBackground(bg(edge,Color.rgb(14,14,14),12));
-    for(int i=0;i<3;i++){ View p=box(78,edge); LinearLayout.LayoutParams lp=(LinearLayout.LayoutParams)p.getLayoutParams(); lp.setMargins(4,0,4,0); info.addView(p,lp);}
-    root.addView(info,new LinearLayout.LayoutParams(-1,100));
+    root.addView(image("module_info_panel_with_gauge",ImageView.ScaleType.FIT_XY),new LinearLayout.LayoutParams(-1,105));
 
-    LinearLayout checks=new LinearLayout(this); checks.setPadding(4,12,4,12);
-    for(int i=0;i<2;i++){ CheckBox c=new CheckBox(this); c.setButtonTintList(new android.content.res.ColorStateList(new int[][]{new int[]{android.R.attr.state_checked},new int[]{}},new int[]{red,Color.GRAY})); checks.addView(c,new LinearLayout.LayoutParams(0,70,1));}
-    root.addView(checks);
+    LinearLayout options=new LinearLayout(this);
+    FrameLayout left=option("option_row_left",false); FrameLayout right=option("option_row_right",true);
+    options.addView(left,new LinearLayout.LayoutParams(0,92,1)); options.addView(right,new LinearLayout.LayoutParams(0,92,1)); root.addView(options);
 
-    rows=new LinearLayout(this); rows.setOrientation(LinearLayout.VERTICAL);
-    for(int i=0;i<10;i++){ LinearLayout row=new LinearLayout(this); row.setPadding(6,5,6,5); for(int j=0;j<4;j++){ View cell=box(48,edge); LinearLayout.LayoutParams lp=(LinearLayout.LayoutParams)cell.getLayoutParams(); lp.setMargins(2,0,2,0); row.addView(cell,lp);} rows.addView(row); }
-    root.addView(rows);
+    table=new LinearLayout(this); table.setOrientation(LinearLayout.VERTICAL);
+    table.addView(image("table_header_red",ImageView.ScaleType.FIT_XY),new LinearLayout.LayoutParams(-1,42));
+    for(int i=0;i<9;i++) table.addView(image("table_row_gray",ImageView.ScaleType.FIT_XY),new LinearLayout.LayoutParams(-1,47));
+    root.addView(table);
 
-    LinearLayout actions=new LinearLayout(this); actions.setPadding(0,14,0,10);
-    View open=box(86,edge), save=box(86,red); LinearLayout.LayoutParams a=(LinearLayout.LayoutParams)open.getLayoutParams(); a.setMargins(4,0,4,0); actions.addView(open,a);
-    LinearLayout.LayoutParams s=(LinearLayout.LayoutParams)save.getLayoutParams(); s.setMargins(4,0,4,0); actions.addView(save,s);
-    open.setOnClickListener(v->Toast.makeText(this,"",Toast.LENGTH_SHORT).show()); save.setOnClickListener(v->Toast.makeText(this,"",Toast.LENGTH_SHORT).show());
-    root.addView(actions);
+    LinearLayout actions=new LinearLayout(this); actions.setPadding(0,10,0,8);
+    ImageView open=image("open_file_button",ImageView.ScaleType.FIT_XY), save=image("save_file_button",ImageView.ScaleType.FIT_XY);
+    LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(0,76,1); ap.setMargins(2,0,3,0); actions.addView(open,ap);
+    LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(0,76,1); sp.setMargins(3,0,2,0); actions.addView(save,sp);
+    open.setOnClickListener(v->pickFile()); save.setOnClickListener(v->createFile()); root.addView(actions);
 
-    View about=box(96,edge); root.addView(about,new LinearLayout.LayoutParams(-1,96)); about.setOnClickListener(v->about());
-    setContentView(sc);
+    ImageView about=image("creator_link_panel",ImageView.ScaleType.FIT_XY); root.addView(about,new LinearLayout.LayoutParams(-1,96)); about.setOnClickListener(v->showAbout());
+    setContentView(scroll);
   }
-  void select(int n){ for(int i=0;i<tabViews.size();i++) tabViews.get(i).setBackground(bg(i==n?red:edge,panel,12)); }
-  void admin(){ dialog(true); }
-  void about(){ dialog(false); }
-  void dialog(boolean admin){
-    Dialog d=new Dialog(this); LinearLayout p=new LinearLayout(this); p.setOrientation(LinearLayout.VERTICAL); p.setPadding(24,24,24,24); p.setBackground(bg(red,Color.rgb(12,12,12),20));
-    if(admin){ for(int i=0;i<2;i++){ EditText e=new EditText(this); e.setTextColor(Color.WHITE); e.setBackground(bg(edge,panel,10)); p.addView(e,new LinearLayout.LayoutParams(520,80)); }}
-    View b=box(82,red); p.addView(b,new LinearLayout.LayoutParams(520,82)); b.setOnClickListener(v->d.dismiss()); d.setContentView(p); d.show();
+
+  FrameLayout option(String background, boolean right){
+    FrameLayout f=new FrameLayout(this); f.addView(image(background,ImageView.ScaleType.FIT_XY),new FrameLayout.LayoutParams(-1,-1));
+    ImageView check=image("checkbox_empty",ImageView.ScaleType.FIT_CENTER); FrameLayout.LayoutParams cp=new FrameLayout.LayoutParams(58,58,Gravity.LEFT|Gravity.CENTER_VERTICAL); cp.leftMargin=8; f.addView(check,cp);
+    f.setOnClickListener(v->{ if(right) rightChecked=!rightChecked; else leftChecked=!leftChecked; check.setImageResource(img((right?rightChecked:leftChecked)?"checkbox_checked_red":"checkbox_empty")); }); return f;
+  }
+  void selectTab(int n){ activeTab=n; for(int i=0;i<4;i++) tabViews.get(i).setImageResource(img(i==n?"tab_active_red":"tab_inactive_gray_1")); }
+  void pickFile(){ Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT); i.setType("*/*"); i.addCategory(Intent.CATEGORY_OPENABLE); startActivityForResult(i,10); }
+  void createFile(){ Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT); i.setType("application/octet-stream"); i.putExtra(Intent.EXTRA_TITLE,"block.abt"); startActivityForResult(i,11); }
+
+  void showAdmin(){
+    Dialog d=new Dialog(this); FrameLayout f=new FrameLayout(this); ImageView bg=image("admin_modal_full",ImageView.ScaleType.FIT_XY); f.addView(bg,new FrameLayout.LayoutParams(760,448));
+    View close=new View(this); FrameLayout.LayoutParams cp=new FrameLayout.LayoutParams(100,90,Gravity.RIGHT|Gravity.TOP); f.addView(close,cp); close.setOnClickListener(v->d.dismiss());
+    View cancel=new View(this); FrameLayout.LayoutParams bp=new FrameLayout.LayoutParams(270,90,Gravity.LEFT|Gravity.BOTTOM); bp.leftMargin=65; bp.bottomMargin=12; f.addView(cancel,bp); cancel.setOnClickListener(v->d.dismiss());
+    d.setContentView(f); d.show();
+  }
+  void showAbout(){
+    Dialog d=new Dialog(this); FrameLayout f=new FrameLayout(this); ImageView bg=image("about_modal_full",ImageView.ScaleType.FIT_XY); f.addView(bg,new FrameLayout.LayoutParams(700,480));
+    View close=new View(this); FrameLayout.LayoutParams cp=new FrameLayout.LayoutParams(100,90,Gravity.RIGHT|Gravity.TOP); f.addView(close,cp); close.setOnClickListener(v->d.dismiss());
+    View ok=new View(this); FrameLayout.LayoutParams op=new FrameLayout.LayoutParams(520,100,Gravity.CENTER_HORIZONTAL|Gravity.BOTTOM); op.bottomMargin=12; f.addView(ok,op); ok.setOnClickListener(v->d.dismiss());
+    d.setContentView(f); d.show();
   }
 }

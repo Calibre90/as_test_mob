@@ -600,6 +600,26 @@ public class MainActivity extends Activity {
         final String[] labels={"ID функции","Модуль","Надпись / функция","Строка","Режим HEX/BITS","HEX индексы","Byte (BITS)","Биты","ВКЛ","ВЫКЛ"};
         final EditText[] values=new EditText[labels.length];
         final int[] chosen={-1};
+        android.widget.Spinner featureSelector=new android.widget.Spinner(this);
+        ArrayList<String> featureNames=new ArrayList<>();
+        featureNames.add("Выберите функцию…");
+        for(int n=0;n<features.size();n++)featureNames.add((n+1)+" · "+features.get(n).id);
+        android.widget.ArrayAdapter<String> featureAdapter=new android.widget.ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,featureNames);
+        featureSelector.setAdapter(featureAdapter);
+        featureSelector.setBackgroundColor(Color.WHITE);
+        panel.addView(featureSelector,new LinearLayout.LayoutParams(-1,dp(44)));
+        featureSelector.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
+          public void onNothingSelected(android.widget.AdapterView<?> parent){}
+          public void onItemSelected(android.widget.AdapterView<?> parent,View view,int position,long id){
+            chosen[0]=position-1;
+            if(chosen[0]<0||chosen[0]>=features.size()){heading.setText("Выберите запись");return;}
+            FeatureEngine.Feature f=features.get(chosen[0]);
+            heading.setText((chosen[0]+1)+" · "+f.id);
+            String[] info={f.id,f.module,f.id,f.address,f.mode,"HEX".equalsIgnoreCase(f.mode)?f.indices:"",
+              String.valueOf(f.byteIndex),"BITS".equalsIgnoreCase(f.mode)?f.indices:"",f.on,f.off};
+            for(int j=0;j<values.length;j++)values[j].setText(info[j]);
+          }
+        });
         android.widget.ScrollView featureScroll=new android.widget.ScrollView(this);
         LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);
         featureScroll.addView(content);panel.addView(featureScroll,new LinearLayout.LayoutParams(-1,0,1));
@@ -614,20 +634,6 @@ public class MainActivity extends Activity {
           values[j]=value;fields.addView(lineRow);
         }
         content.addView(fields);
-        TextView listLabel=new TextView(this);listLabel.setText("Выберите запись");listLabel.setTextColor(Color.WHITE);
-        listLabel.setGravity(Gravity.CENTER);listLabel.setTextSize(17);listLabel.setPadding(0,dp(8),0,dp(8));
-        content.addView(listLabel);
-        for(int n=0;n<features.size();n++){
-          FeatureEngine.Feature f=features.get(n);
-          Button entry=new Button(this);entry.setAllCaps(false);entry.setText((n+1)+" · "+f.id);entry.setTextSize(15);
-          content.addView(entry,new LinearLayout.LayoutParams(-1,dp(46)));
-          entry.setOnClickListener(v->{
-            chosen[0]=features.indexOf(f);heading.setText((chosen[0]+1)+" · "+f.id);
-            String[] info={f.id,f.module,f.id,f.address,f.mode,"HEX".equalsIgnoreCase(f.mode)?f.indices:"",
-              String.valueOf(f.byteIndex),"BITS".equalsIgnoreCase(f.mode)?f.indices:"",f.on,f.off};
-            for(int j=0;j<values.length;j++)values[j].setText(info[j]);
-          });
-        }
         LinearLayout actions=new LinearLayout(this);panel.addView(actions);
         final String[] actionNames={"Добавить","Изменить","Удалить"};
         for(int action=0;action<3;action++){

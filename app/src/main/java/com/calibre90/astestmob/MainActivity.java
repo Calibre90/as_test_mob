@@ -21,7 +21,7 @@ public class MainActivity extends Activity {
   }
 
   class StudioView extends View {
-    final float DW=400f,DH=919f, CLIP_L=12f, CLIP_R=390f;
+    final float DW=400f,DH=919f, CROP_L=21f, CROP_R=381f;
     final HashMap<String,Bitmap> bm=new HashMap<>();
     int active=0; boolean left=false,right=true;
     int safeLeft=0,safeTop=0,safeRight=0,safeBottom=0;
@@ -48,12 +48,12 @@ public class MainActivity extends Activity {
     @Override protected void onDraw(Canvas raw){
       super.onDraw(raw);
       float aw=getWidth()-safeLeft-safeRight, ah=getHeight()-safeTop-safeBottom;
-      float sx=aw/DW, sy=ah/DH;
+      float visibleW=CROP_R-CROP_L;
+      float sx=aw/visibleW, sy=ah/DH;
       raw.save();
       raw.clipRect(safeLeft,safeTop,safeLeft+aw,safeTop+ah);
-      raw.translate(safeLeft,safeTop); raw.scale(sx,sy);
-      raw.clipRect(CLIP_L,0,CLIP_R,DH);
-      draw(raw,"header_mazda6gh_asbuilt_speedometer",12,0,390,132);
+      raw.translate(safeLeft-CROP_L*sx,safeTop); raw.scale(sx,sy);
+      draw(raw,"header_mazda6gh_asbuilt_speedometer",10,0,397,132);
       float[] xs={21,112,202,291,381};
       for(int i=0;i<4;i++) draw(raw,i==active?"tab_active_red":"tab_inactive_gray_1",xs[i],135,xs[i+1]-2,174);
       draw(raw,"module_info_panel_with_gauge",21,178,382,234);
@@ -63,15 +63,16 @@ public class MainActivity extends Activity {
       draw(raw,"table_header_red",21,315,381,348);
       for(int i=0;i<9;i++) draw(raw,"table_row_gray",21,348+i*42,381,390+i*42);
       draw(raw,"open_file_button",21,729,199,790); draw(raw,"save_file_button",202,729,381,790);
-      draw(raw,"creator_link_panel",21,800,381,888);
+      draw(raw,"creator_link_panel",12,800,390,888);
       raw.restore();
     }
     boolean hit(float x,float y,float l,float t,float r,float b){return x>=l&&x<=r&&y>=t&&y<=b;}
     @Override public boolean onTouchEvent(android.view.MotionEvent e){
       if(e.getAction()!=MotionEvent.ACTION_UP)return true;
       float aw=getWidth()-safeLeft-safeRight, ah=getHeight()-safeTop-safeBottom;
-      float sx=aw/DW, sy=ah/DH;
-      float x=(e.getX()-safeLeft)/sx, y=(e.getY()-safeTop)/sy;
+      float visibleW=CROP_R-CROP_L;
+      float sx=aw/visibleW, sy=ah/DH;
+      float x=CROP_L+(e.getX()-safeLeft)/sx, y=(e.getY()-safeTop)/sy;
       if(y>=135&&y<=174){ if(x>=21&&x<112)active=0; else if(x<202)active=1; else if(x<291)active=2; else if(x<=381)active=3; invalidate(); return true;}
       if(hit(x,y,330,20,397,125)){ showAdmin(); return true;}
       if(hit(x,y,22,235,202,315)){left=!left;invalidate();return true;}

@@ -77,7 +77,9 @@ public class MainActivity extends Activity {
       txt(c,"ID: "+ids[active]+"  |  Ver: "+(loaded[active]?"ABT загружен":"Загрузите файл ABT"),25,252,12,Color.rgb(91,103,119),false);
       card(c,10,279,380,91,12,true);
       p.setColor(Color.rgb(207,213,221));p.setStrokeWidth(1);c.drawLine(203,284,203,365,p);c.drawLine(15,325,203,325,p);
-      String[] labels={"RVM / контроль слепых зон","Новая функция","Keyless ON/OFF"};
+      String[] labels={"","",""};
+      ArrayList<FeatureEngine.Feature> shown=moduleFeatures(active);
+      for(int i=0;i<3&&i<shown.size();i++)labels[i]=shown.get(i).id;
       for(int i=0;i<3;i++){
         float x=i==2?213:20,y=i==0?288:i==1?333:288;
         card(c,x,y,25,25,5,false);
@@ -89,14 +91,14 @@ public class MainActivity extends Activity {
         txt(c,labels[i],x+30,y+17,i==0?10.5f:11.5f,Color.BLACK,false);
       }
       card(c,10,376,380,337,13,true);
-      int count=Math.min(rows[active].size(),9);
+      int count=Math.min(Math.max(0,rows[active].size()-scrollOffset[active]),9);
       for(int i=0;i<count;i++){
-        float y=380+i*36.5f;card(c,15,y,370,35,8,false);
+        int rowIndex=i+scrollOffset[active];float y=380+i*36.5f;card(c,15,y,370,35,8,false);
         p.setColor(Color.rgb(202,209,219));p.setStrokeWidth(1);c.drawLine(165,y+4,165,y+31,p);
-        String index=i<abtRows[active].size()?abtRows[active].get(i).address:ids[active]+"-"+String.format(java.util.Locale.US,"01-%02d",i+1);
+        String index=rowIndex<abtRows[active].size()?abtRows[active].get(rowIndex).address:ids[active]+"-"+String.format(java.util.Locale.US,"01-%02d",rowIndex+1);
         txt(c,index,28,y+23,14,Color.BLACK,false);
-        String value=rows[active].get(i);
-        AbtCodec.Row row=i<abtRows[active].size()?abtRows[active].get(i):null;
+        String value=rows[active].get(rowIndex);
+        AbtCodec.Row row=rowIndex<abtRows[active].size()?abtRows[active].get(rowIndex):null;
         String before=row==null?"":original.get(key(row));
         Set<Integer> changed=FeatureEngine.changedPositions(before==null?"":before,value);
         p.setTypeface(Typeface.create("monospace",Typeface.NORMAL));p.setTextSize(13);p.setStyle(Paint.Style.FILL);
@@ -113,7 +115,9 @@ public class MainActivity extends Activity {
       txt(c,"›",355,821,34,Color.BLACK,true);
       actual.restore();
     }
-    @Override public boolean onTouchEvent(MotionEvent e){if(e.getAction()!=MotionEvent.ACTION_UP)return true;float x=e.getX()/sx,y=e.getY()/sy;
+    float startY;
+    @Override public boolean onTouchEvent(MotionEvent e){if(e.getAction()==MotionEvent.ACTION_DOWN){startY=e.getY()/sy;return true;}if(e.getAction()!=MotionEvent.ACTION_UP)return true;float x=e.getX()/sx,y=e.getY()/sy;
+      if(startY>=376&&startY<=713&&y>=376&&y<=713&&Math.abs(y-startY)>18){int delta=Math.round((startY-y)/36.5f);scrollOffset[active]=Math.max(0,Math.min(Math.max(0,rowCount(active)-9),scrollOffset[active]+delta));invalidate();return true;}
       if(y>=127&&y<=183){active=Math.min(3,Math.max(0,(int)((x-12)/95)));invalidate();return true;}
       if(x>=346&&y>=8&&y<=70){admin();return true;}
       if(y>=277&&y<=367){int i=x>200?2:y>324?1:0;toggleFeature(i);return true;}
@@ -125,6 +129,10 @@ public class MainActivity extends Activity {
   final FeatureEngine engine=new FeatureEngine();
   final ArrayList<AbtCodec.Row>[] abtRows=new ArrayList[]{new ArrayList<>(),new ArrayList<>(),new ArrayList<>(),new ArrayList<>()};
   final HashMap<String,String> original=new HashMap<>();
+  final int[] scrollOffset={0,0,0,0};
+  final int[] selectedFeature={0,0,0,0};
+  ArrayList<FeatureEngine.Feature> moduleFeatures(int module){ArrayList<FeatureEngine.Feature> result=new ArrayList<>();for(FeatureEngine.Feature f:features)if(f.module.equals(modules[module]))result.add(f);return result;}
+  int rowCount(int module){return abtRows[module].size();}
   final ArrayList<FeatureEngine.Feature> features=new ArrayList<>();
   String key(AbtCodec.Row r){return r.module+"|"+r.address;}
   AbtCodec.Row findRow(int module,String address){for(AbtCodec.Row r:abtRows[module])if(r.address.equals(address))return r;return null;}
@@ -134,8 +142,9 @@ public class MainActivity extends Activity {
     features.add(new FeatureEngine.Feature("keyless","IC","720-01-01","HEX","0,1","2B",0));
   }
   void toggleFeature(int index){
-    if(index>=features.size()||!features.get(index).module.equals(modules[active])){Toast.makeText(this,"Функция для этого блока ещё не настроена",Toast.LENGTH_SHORT).show();return;}
-    FeatureEngine.Feature f=features.get(index);AbtCodec.Row row=findRow(active,f.address);
+    ArrayList<FeatureEngine.Feature> available=moduleFeatures(active);
+    if(index>=available.size()){Toast.makeText(this,"Функция для этого блока ещё не настроена",Toast.LENGTH_SHORT).show();return;}
+    FeatureEngine.Feature f=available.get(index);AbtCodec.Row row=findRow(active,f.address);
     if(row==null){Toast.makeText(this,"Загрузите ABT со строкой "+f.address,Toast.LENGTH_LONG).show();return;}
     try{boolean next=!checks[active][index];engine.apply(row,f,next,features);checks[active][index]=next;refreshRows(active);view.invalidate();}
     catch(Exception ex){Toast.makeText(this,"Ошибка функции: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
@@ -146,9 +155,11 @@ public class MainActivity extends Activity {
     List<AbtCodec.Row> parsed=AbtCodec.parse(content,byPrefix);
     if(parsed.isEmpty())throw new IllegalArgumentException("Формат ABT не распознан");
     for(AbtCodec.Row row:parsed)if(!row.module.equals(modules[active]))throw new IllegalArgumentException("Файл другого блока: "+row.module);
-    abtRows[active].clear();abtRows[active].addAll(parsed);original.clear();engine.reset();
+    abtRows[active].clear();abtRows[active].addAll(parsed);scrollOffset[active]=0;engine.reset();
+    for(AbtCodec.Row old:parsed)original.remove(key(old));
     for(AbtCodec.Row row:parsed)original.put(key(row),AbtCodec.norm(row.value));
-    for(int i=0;i<3;i++)checks[active][i]=i<features.size()&&features.get(i).module.equals(modules[active])&&engine.state(features.get(i),findRowValue(features.get(i).address));
+    ArrayList<FeatureEngine.Feature> available=moduleFeatures(active);
+    for(int i=0;i<3;i++)checks[active][i]=i<available.size()&&engine.state(available.get(i),findRowValue(available.get(i).address));
     refreshRows(active);loaded[active]=true;view.invalidate();
   }
   String findRowValue(String address){AbtCodec.Row row=findRow(active,address);return row==null?"":row.value;}

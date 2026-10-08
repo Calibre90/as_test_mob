@@ -638,7 +638,7 @@ public class MainActivity extends Activity {
     }
   }
   final FeatureEngine[] engines={new FeatureEngine(),new FeatureEngine(),new FeatureEngine(),new FeatureEngine()};
-  void resetAllEngines(){for(FeatureEngine e:engines)e.reset();checkedFeatures.clear();for(int m=0;m<4;m++)if(!abtRows[m].isEmpty())syncFeatureChecks(m);}
+  void resetAllEngines(){for(FeatureEngine e:engines)e.reset();checkedFeatures.clear();customEngines.clear();customChecks.clear();for(int m=0;m<4;m++)if(!abtRows[m].isEmpty())syncFeatureChecks(m);}
   void resetCurrentEngine(){resetEngineForModule(active);}
   void resetEngineForModule(int module){engines[module].reset();for(FeatureEngine.Feature f:moduleFeatures(module))checkedFeatures.remove(featureKey(f));}
   final ArrayList<AbtCodec.Row>[] abtRows=new ArrayList[]{new ArrayList<>(),new ArrayList<>(),new ArrayList<>(),new ArrayList<>()};
@@ -1242,6 +1242,12 @@ public class MainActivity extends Activity {
               String mode=vls[4].toUpperCase(java.util.Locale.ROOT);
               if(id.isEmpty()||address.isEmpty()||!knownFeatureModule(module)||!(mode.equals("HEX")||mode.equals("BITS")))
                 throw new IllegalArgumentException("Укажите ID, модуль, строку и режим HEX/BITS");
+              org.json.JSONArray catalog=customModuleCatalog();
+              for(int ci=0;ci<catalog.length();ci++){
+                org.json.JSONObject custom=catalog.optJSONObject(ci);
+                if(custom!=null&&module.equalsIgnoreCase(custom.optString("id"))&&!address.startsWith(custom.optString("address")+"-"))
+                  throw new IllegalArgumentException("Адрес строки не принадлежит выбранному блоку");
+              }
               if(!address.matches("[0-9A-F]{3}-[0-9]{2}-[0-9]{2}"))
                 throw new IllegalArgumentException("Адрес строки должен иметь вид 720-01-01");
               try{AbtCodec.checksum(address,"0000");}

@@ -38,6 +38,14 @@ public final class StudioSettings {
       .putString("module_name_"+id,name).putString("module_version_"+id,version).commit())
       throw new IllegalStateException("Module settings not saved");
   }
+  public static String appearance(Context ctx,String key,String fallback){
+    return ctx.getSharedPreferences(PREF,0).getString("appearance_"+key,fallback);
+  }
+  public static void saveAppearance(Context ctx,Map<String,String> values){
+    android.content.SharedPreferences.Editor edit=ctx.getSharedPreferences(PREF,0).edit();
+    for(Map.Entry<String,String> entry:values.entrySet())edit.putString("appearance_"+entry.getKey(),entry.getValue());
+    if(!edit.commit())throw new IllegalStateException("Appearance settings not saved");
+  }
   public static void save(Context ctx,List<FeatureEngine.Feature> list){
     JSONArray a=new JSONArray();
     try{

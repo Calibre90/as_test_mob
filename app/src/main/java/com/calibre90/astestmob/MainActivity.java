@@ -126,6 +126,7 @@ public class MainActivity extends Activity {
     return false;
   }
   final HashMap<String,FeatureEngine> customEngines=new HashMap<>();
+  final HashMap<String,String> customRowBaseline=new HashMap<>();
   final HashMap<String,Boolean> customChecks=new HashMap<>();
   boolean customChecked(FeatureEngine.Feature feature){
     Boolean cached=customChecks.get(featureKey(feature));
@@ -184,6 +185,8 @@ public class MainActivity extends Activity {
           customEngines.put(id,engine);
         }
         boolean next=!customChecked(feature);
+        String baselineKey=id+"|"+feature.address;
+        if(!customRowBaseline.containsKey(baselineKey))customRowBaseline.put(baselineKey,row.value);
         if(next){
           for(FeatureEngine.Feature sibling:available){
             if(sibling==feature||!customChecked(sibling))continue;
@@ -347,6 +350,7 @@ public class MainActivity extends Activity {
   }
   void resetCustomFeatureState(String id){
     customEngines.remove(id);
+    for(String key:new java.util.ArrayList<>(customRowBaseline.keySet()))if(key.startsWith(id+"|"))customRowBaseline.remove(key);
     try{
       org.json.JSONArray rows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]"));
       int offset=customScroll.containsKey(id)?customScroll.get(id):0;
@@ -509,13 +513,11 @@ public class MainActivity extends Activity {
           txtFit(c,item.optString("address"),24,yy+19,12,Color.BLACK,138);
           String hex=item.optString("value");
           java.util.HashSet<Integer> marked=new java.util.HashSet<>();
-          for(FeatureEngine.Feature feature:features){
-            if(!id.equalsIgnoreCase(feature.module)||!item.optString("address").equalsIgnoreCase(feature.address)||!customChecked(feature))continue;
-            try{
-              if("BITS".equalsIgnoreCase(feature.mode)){
-                for(int bit:FeatureEngine.indices(feature.indices))marked.add(feature.byteIndex*2+(bit/4));
-              }else marked.addAll(FeatureEngine.indices(feature.indices));
-            }catch(Exception ignored){}
+          String baseline=customRowBaseline.get(id+"|"+item.optString("address"));
+          if(baseline!=null){
+            String oldHex=AbtCodec.norm(baseline),currentHex=AbtCodec.norm(hex);
+            for(int k=0;k<currentHex.length();k++)
+              if(k>=oldHex.length()||oldHex.charAt(k)!=currentHex.charAt(k))marked.add(k);
           }
           p.setTextSize(12);p.setStyle(Paint.Style.FILL);
           c.save();c.clipRect(168,yy+1,374,yy+27);

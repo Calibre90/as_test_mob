@@ -212,7 +212,7 @@ public class MainActivity extends Activity {
           new AlertDialog.Builder(this).setTitle("Подтвердите изменение "+row.address)
             .setMessage("Было: "+row.value+"\nСтанет: "+updated+"\n\nКонтрольная сумма будет пересчитана.")
             .setNegativeButton("Отмена",null)
-            .setPositiveButton("Применить",(confirm,button)->{
+            .setPositiveButton("Применить",(confirm,choice)->{
               if(active!=editingModule||!abtRows[editingModule].contains(row)||!row.value.equals(startingValue)){
                 Toast.makeText(this,"Данные изменились. Откройте строку повторно.",Toast.LENGTH_LONG).show();return;
               }

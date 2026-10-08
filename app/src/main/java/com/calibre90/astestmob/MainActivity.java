@@ -28,7 +28,7 @@ public class MainActivity extends Activity {
     Paint p=new Paint(3); HashMap<String,Bitmap> bitmaps=new HashMap<>();
     float sx=1,sy=1,offX=0,offY=0;
     StudioView(){super(MainActivity.this);setBackgroundColor(Color.BLACK);
-      String[] keys={"header_logo","active_red","inactive_1","module_info","features_panel","row_01","checkbox_empty","checkbox_checked","open_abt","save_abt","creator_link","settings","gauge_round","feature_left","feature_right","admin_dialog","about_dialog"};
+      String[] keys={"header_logo","header_mazda_no_lock","admin_lock_button","active_red","inactive_1","module_info","features_panel","row_01","checkbox_empty","checkbox_checked","open_abt","save_abt","creator_link","settings","gauge_round","feature_left","feature_right","admin_dialog","about_dialog"};
       for(String key:keys){int id=getResources().getIdentifier(key,"drawable",getPackageName());if(id!=0)bitmaps.put(key,BitmapFactory.decodeResource(getResources(),id));}
     }
     void img(Canvas c,String key,float x,float y,float w,float h){Bitmap b=bitmaps.get(key);if(b!=null){p.setColor(Color.WHITE);p.setAlpha(255);c.drawBitmap(b,null,new RectF(x,y,x+w,y+h),p);}}
@@ -47,17 +47,9 @@ public class MainActivity extends Activity {
       Canvas c=actual; c.drawColor(Color.BLACK);
       // No full-screen screenshot as a background: only isolated component assets.
       // Black backing matches the reference shell; do not paint a white background behind the header.
-      img(c,"header_logo",8,8,384,113);
-      // Hide the large icon baked into the header and draw a small, clean lock.
-      // The lock is deliberately much smaller than the previous 51x57 badge.
-      rect(c,Color.rgb(249,249,250),326,43,51,57,7);
-      rect(c,Color.rgb(253,253,254),336,53,32,37,7);
-      p.setColor(Color.rgb(180,187,196));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.0f);
-      c.drawRoundRect(336,53,368,90,7,7,p);
-      p.setColor(Color.rgb(35,39,47));p.setStrokeWidth(2.4f);
-      c.drawRoundRect(346,60,358,76,6,6,p);p.setStyle(Paint.Style.FILL);
-      rect(c,Color.rgb(35,39,47),343,71,18,14,3);
-      rect(c,Color.WHITE,351,75,2,6,1);
+      // Separate production PNGs: clean header and independently positioned admin lock.
+      img(c,"header_mazda_no_lock",8,8,384,113);
+      img(c,"admin_lock_button",341,46,30,31);
       // System status icons are intentionally not painted into the application.
       String[] tabs={"IC","BCM","RKE","ABS"};
       for(int i=0;i<4;i++){float x=12+i*95;img(c,i==active?"active_red":"inactive_1",x,143,92,48);txt(c,tabs[i],x+30,174,16,i==active?Color.WHITE:Color.BLACK,true);}

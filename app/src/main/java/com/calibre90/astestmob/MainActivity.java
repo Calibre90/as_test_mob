@@ -326,7 +326,7 @@ public class MainActivity extends Activity {
   int pendingModule=-1;
   void open(){pendingModule=active;Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("*/*");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,10);}
   void save(){
-    if(abtRows[active].isEmpty()){Toast.makeText(this,"Сначала откройте ABT блока "+modules[active],Toast.LENGTH_LONG).show();return;}
+    if(abtRows[active].isEmpty()){Toast.makeText(this,"В блоке "+modules[active]+" пока нет строк. Добавьте их через админку или откройте ABT.",Toast.LENGTH_LONG).show();return;}
     int suspect=0;
     for(AbtCodec.Row row:abtRows[active])if(!AbtCodec.checksumValid(row.address,row.value))suspect++;
     if(suspect>0){

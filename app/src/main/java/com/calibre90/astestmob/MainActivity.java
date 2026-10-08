@@ -190,7 +190,10 @@ public class MainActivity extends Activity {
     List<AbtCodec.Row> parsed=AbtCodec.parseChecked(content,byPrefix);
     if(parsed.isEmpty())throw new IllegalArgumentException("Формат ABT не распознан");
     ArrayList<AbtCodec.Row> selected=new ArrayList<>();
-    for(AbtCodec.Row row:parsed)if(row.module.equals(modules[active]))selected.add(row);
+    for(AbtCodec.Row row:parsed){
+      if(!row.module.equals(modules[active]))throw new IllegalArgumentException("Файл содержит блок "+row.module+", а открыта вкладка "+modules[active]+". Импорт отменён.");
+      selected.add(row);
+    }
     if(selected.isEmpty())throw new IllegalArgumentException("В файле нет строк блока "+modules[active]);
     HashSet<String> addresses=new HashSet<>();
     for(AbtCodec.Row row:selected){

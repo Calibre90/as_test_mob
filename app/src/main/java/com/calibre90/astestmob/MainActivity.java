@@ -1005,6 +1005,7 @@ public class MainActivity extends Activity {
         Button removeCustom=new Button(this);removeCustom.setAllCaps(false);removeCustom.setText("− Удалить блок");
         panel.addView(removeCustom,new LinearLayout.LayoutParams(-1,dp(44)));
         final android.content.SharedPreferences customPrefs=getSharedPreferences("studio_custom_modules",MODE_PRIVATE);
+        TextView customCatalogInfo=new TextView(this);customCatalogInfo.setTextColor(Color.LTGRAY);customCatalogInfo.setTextSize(12);panel.addView(customCatalogInfo);
         final Runnable[] updateCatalog={null};
         updateCatalog[0]=()->{
           org.json.JSONArray catalog;
@@ -1016,7 +1017,7 @@ public class MainActivity extends Activity {
             org.json.JSONObject item=catalog.optJSONObject(i);
             if(item!=null)description.append("\\n").append(item.optString("id")).append(" · ").append(item.optString("name")).append(" · ").append(item.optString("address"));
           }
-          warning.setText("Заводские блоки IC, BCM, RKE, ABS защищены от удаления.\\n"+description.toString());
+          customCatalogInfo.setText("Заводские блоки IC, BCM, RKE, ABS защищены от удаления.\\n"+description.toString());
         };
         updateCatalog[0].run();
         addCustom.setOnClickListener(v->{

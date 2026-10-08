@@ -217,7 +217,7 @@ public class MainActivity extends Activity {
     if(suspect>0){
       final int count=suspect;
       new AlertDialog.Builder(this).setTitle("Внимание: контрольные суммы")
-        .setMessage("У "+count+" строк блока "+modules[active]+" контрольные суммы не совпадают. При экспорте суммы будут пересчитаны. Продолжить сохранение?")
+        .setMessage("У "+count+" строк блока "+modules[active]+" контрольные суммы не совпадают. Исходные HEX и контрольные суммы будут сохранены без автоматического исправления. Продолжить сохранение?")
         .setNegativeButton("Отмена",null)
         .setPositiveButton("Продолжить",(d,w)->launchSavePicker()).show();
       return;

@@ -125,6 +125,38 @@ public class MainActivity extends Activity {
     }
     return false;
   }
+  final HashMap<String,FeatureEngine> customEngines=new HashMap<>();
+  final HashMap<String,Boolean> customChecks=new HashMap<>();
+  boolean customChecked(FeatureEngine.Feature feature){
+    Boolean state=customChecks.get(featureKey(feature));return state!=null&&state;
+  }
+  void toggleCustomFeature(int index){
+    org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
+    if(module==null)return;
+    String id=module.optString("id");
+    ArrayList<FeatureEngine.Feature> available=new ArrayList<>();
+    for(FeatureEngine.Feature f:features)if(id.equalsIgnoreCase(f.module))available.add(f);
+    if(index<0||index>=available.size())return;
+    FeatureEngine.Feature feature=available.get(index);
+    android.content.SharedPreferences prefs=getSharedPreferences("studio_custom_rows",MODE_PRIVATE);
+    try{
+      org.json.JSONArray entries=new org.json.JSONArray(prefs.getString(id,"[]"));
+      for(int i=0;i<entries.length();i++){
+        org.json.JSONObject item=entries.optJSONObject(i);
+        if(item==null||!feature.address.equalsIgnoreCase(item.optString("address")))continue;
+        AbtCodec.Row row=new AbtCodec.Row(id,feature.address,item.optString("value"),Integer.parseInt(feature.address.split("-")[1]));
+        FeatureEngine engine=customEngines.get(id);
+        if(engine==null){engine=new FeatureEngine();customEngines.put(id,engine);}
+        boolean next=!customChecked(feature);
+        engine.apply(row,feature,next,features);
+        item.put("value",row.value);
+        prefs.edit().putString(id,entries.toString()).apply();
+        customChecks.put(featureKey(feature),next);
+        view.invalidate();return;
+      }
+      Toast.makeText(this,"Строка "+feature.address+" не найдена в блоке "+id,Toast.LENGTH_LONG).show();
+    }catch(Exception ex){Toast.makeText(this,"Ошибка HEX/BITS: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+  }
   void showCustomRows(org.json.JSONObject module){
     final String id=module.optString("id"), address=module.optString("address");
     android.content.SharedPreferences prefs=getSharedPreferences("studio_custom_rows",MODE_PRIVATE);
@@ -276,7 +308,7 @@ public class MainActivity extends Activity {
         for(FeatureEngine.Feature feature:features){
           if(!id.equalsIgnoreCase(feature.module))continue;
           if(featureCount>=3)break;
-          txtFit(c,"□ "+feature.label,24,featureY,12,Color.BLACK,350);
+          txtFit(c,(customChecked(feature)?"☑ ":"□ ")+feature.label,24,featureY,12,Color.BLACK,350);
           featureY+=25;featureCount++;
         }
         if(featureCount==0)txt(c,"Функции не настроены",24,302,12,Color.DKGRAY,false);
@@ -383,7 +415,7 @@ public class MainActivity extends Activity {
         return true;
       }
       if(x>=346&&y>=8&&y<=70){admin();return true;}
-      if(active>=4){if(y>=717&&y<=777){if(x<200){org.json.JSONObject item=customModuleCatalog().optJSONObject(active-4);if(item!=null)showCustomRows(item);}else showAdminTabs();}return true;}
+      if(active>=4){if(y>=282&&y<=365){int slot=(int)((y-283)/25);toggleCustomFeature(slot);return true;}if(y>=717&&y<=777){if(x<200){org.json.JSONObject item=customModuleCatalog().optJSONObject(active-4);if(item!=null)showCustomRows(item);}else showAdminTabs();}return true;}
       if(y>=279&&y<=370){int slots=featureSlots();if(x>=345&&moduleFeatures(active).size()>slots){featurePage[active]=(featurePage[active]+slots>=moduleFeatures(active).size())?0:featurePage[active]+slots;invalidate();return true;}int i=(int)((y-284)/27);if(i>=0&&i<slots&&featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}
       // HEX rows on the main screen are read-only; edit via features or admin panel.
       if(y>=380&&y<=713&&Math.abs(y-startY)<=18)return true;

@@ -658,7 +658,7 @@ public class MainActivity extends Activity {
           String[] options=new String[features.size()];
           for(int n=0;n<features.size();n++)options[n]=(n+1)+" · "+features.get(n).label;
           new AlertDialog.Builder(this).setTitle("Выберите функцию")
-            .setSingleChoiceItems(options,chosen[0],(dialog,position)->{
+            .setSingleChoiceItems(options,chosen[0],(choiceDialog,position)->{
               chosen[0]=position;
               FeatureEngine.Feature f=features.get(position);
               heading.setText((position+1)+" · "+f.label);
@@ -666,7 +666,7 @@ public class MainActivity extends Activity {
                 "HEX".equalsIgnoreCase(f.mode)?f.indices:"",
                 String.valueOf(f.byteIndex),"BITS".equalsIgnoreCase(f.mode)?f.indices:"",f.on,f.off};
               for(int j=0;j<values.length;j++)values[j].setText(info[j]);
-              refreshFeatureChoices.run();dialog.dismiss();
+              refreshFeatureChoices.run();choiceDialog.dismiss();
             }).setNegativeButton("Закрыть",null).show();
         });
         android.widget.ScrollView featureScroll=new android.widget.ScrollView(this);

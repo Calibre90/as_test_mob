@@ -24,6 +24,17 @@ public final class CodecSelfTest {
     check(rows.get(0).value.equals(before),"feature OFF restores");
     List<AbtCodec.Row> bcm=AbtCodec.parse("726G1G10000",modules);
     check(bcm.size()==1&&bcm.get(0).module.equals("BCM"),"BCM module detection");
+    FeatureEngine seeded=new FeatureEngine();
+    AbtCodec.Row alreadyOn=new AbtCodec.Row("IC","720-01-01",AbtCodec.recalc("720-01-01","2B4071268000"));
+    FeatureEngine.Feature toggle=new FeatureEngine.Feature("keyless","IC","720-01-01","HEX","0,1","2B","1F",0);
+    seeded.seed(toggle,true);
+    seeded.apply(alreadyOn,toggle,false,Arrays.asList(toggle));
+    check(AbtCodec.norm(alreadyOn.value).startsWith("1F"),"initially ON -> explicit OFF");
+    FeatureEngine invalid=new FeatureEngine();
+    FeatureEngine.Feature bad=new FeatureEngine.Feature("bad","IC","720-01-01","HEX","99","A",0);
+    String untouched=alreadyOn.value;boolean thrown=false;
+    try{invalid.apply(alreadyOn,bad,true,Arrays.asList(bad));}catch(IllegalArgumentException ex){thrown=true;}
+    check(thrown&&alreadyOn.value.equals(untouched),"failed apply leaves row intact");
     System.out.println("PASS: ABT parse, roundtrip, checksum, index, HEX toggle, restore");
   }
 }

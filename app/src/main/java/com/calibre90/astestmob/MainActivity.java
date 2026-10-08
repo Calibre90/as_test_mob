@@ -198,8 +198,9 @@ public class MainActivity extends Activity {
       if(hex.length()<4||hex.length()%2!=0)throw new IllegalArgumentException("Неверная длина строки "+row.address);
     }
     for(AbtCodec.Row old:abtRows[active])original.remove(key(old));
-    abtRows[active].clear();abtRows[active].addAll(selected);scrollOffset[active]=0;resetAllEngines();
+    abtRows[active].clear();abtRows[active].addAll(selected);scrollOffset[active]=0;
     for(AbtCodec.Row row:selected)original.put(key(row),AbtCodec.norm(row.value));
+    resetCurrentEngine();
     featurePage[active]=0;syncFeatureChecks(active);
     refreshRows(active);loaded[active]=true;view.invalidate();
   }

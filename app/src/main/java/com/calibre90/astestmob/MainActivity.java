@@ -312,6 +312,11 @@ public class MainActivity extends Activity {
   }
   void resetCustomFeatureState(String id){
     customEngines.remove(id);
+    try{
+      org.json.JSONArray rows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]"));
+      int offset=customScroll.containsKey(id)?customScroll.get(id):0;
+      customScroll.put(id,Math.max(0,Math.min(offset,Math.max(0,rows.length()-10))));
+    }catch(Exception ignored){customScroll.put(id,0);}
     java.util.ArrayList<String> keys=new java.util.ArrayList<>(customChecks.keySet());
     for(String key:keys)if(key.startsWith(id+"|"))customChecks.remove(key);
   }

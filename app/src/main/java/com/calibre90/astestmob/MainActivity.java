@@ -173,7 +173,8 @@ public class MainActivity extends Activity {
       if(y>=127&&y<=183){if(x<12||x>=392)return true;int selected=(int)((x-12)/95);if(selected>=0&&selected<modules.length){active=selected;invalidate();}return true;}
       if(x>=346&&y>=8&&y<=70){admin();return true;}
       if(y>=277&&y<=367){int slots=featureSlots();if(y>=343&&x>=286&&moduleFeatures(active).size()>slots){featurePage[active]=(featurePage[active]+slots>=moduleFeatures(active).size())?0:featurePage[active]+slots;invalidate();return true;}for(int i=0;i<slots;i++){float fx=featureX(i),fy=featureY(i);float width=featureColumns()==3?(i==2?175:180):(360f/featureColumns());if(x>=fx&&x<fx+width&&y>=fy-2&&y<fy+25){if(featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}}return true;}
-      if(y>=380&&y<=713&&Math.abs(y-startY)<=18){int n=scrollOffset[active]+(int)((y-380)/36.5f);if(n>=0&&n<abtRows[active].size())inspectHexRow(n);return true;}
+      // HEX rows on the main screen are read-only; edit via features or admin panel.
+      if(y>=380&&y<=713&&Math.abs(y-startY)<=18)return true;
       if(y>=717&&y<=777){if(x<200)open();else save();return true;}
       if(y>=779){about();return true;}
       return true;

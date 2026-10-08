@@ -155,8 +155,12 @@ public class MainActivity extends Activity {
       org.json.JSONArray entries=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(feature.module,"[]"));
       for(int i=0;i<entries.length();i++){
         org.json.JSONObject item=entries.optJSONObject(i);
-        if(item!=null&&feature.address.equalsIgnoreCase(item.optString("address")))
-          return new FeatureEngine().state(feature,item.optString("value"));
+        if(item!=null&&feature.address.equalsIgnoreCase(item.optString("address"))){
+          String stored=item.optString("value");
+          boolean enabled=new FeatureEngine().state(feature,stored);
+          customChecks.put(featureKey(feature),enabled);
+          return enabled;
+        }
       }
     }catch(Exception ignored){}
     return false;

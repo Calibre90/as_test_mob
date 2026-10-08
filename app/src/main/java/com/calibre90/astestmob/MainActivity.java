@@ -643,6 +643,13 @@ public class MainActivity extends Activity {
           fieldRows[8].setVisibility(bits?View.GONE:View.VISIBLE);
           fieldRows[9].setVisibility(bits?View.GONE:View.VISIBLE);
         };
+        values[4].setFocusable(false);
+        values[4].setClickable(true);
+        values[4].setHint("Нажмите: HEX или BITS");
+        values[4].setOnClickListener(v->new AlertDialog.Builder(this)
+          .setTitle("Режим функции")
+          .setItems(new String[]{"HEX — изменение символов","BITS — изменение битов"},(d,which)->values[4].setText(which==0?"HEX":"BITS"))
+          .show());
         values[4].addTextChangedListener(new android.text.TextWatcher(){
           public void beforeTextChanged(CharSequence s,int start,int count,int after){}
           public void onTextChanged(CharSequence s,int start,int before,int count){updateModeFields.run();}

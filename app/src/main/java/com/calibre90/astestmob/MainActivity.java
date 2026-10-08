@@ -239,7 +239,10 @@ public class MainActivity extends Activity {
         view.invalidate();return;
       }
       Toast.makeText(this,"Строка "+feature.address+" не найдена в блоке "+id,Toast.LENGTH_LONG).show();
-    }catch(Exception ex){Toast.makeText(this,"Ошибка HEX/BITS: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+    }catch(Exception ex){
+      String reason=ex.getMessage()==null?ex.getClass().getSimpleName():ex.getMessage();
+      Toast.makeText(this,"Ошибка "+id+" · "+feature.label+" · "+feature.address+": "+reason,Toast.LENGTH_LONG).show();
+    }
   }
   final HashMap<String,Integer> customScroll=new HashMap<>();
   final HashMap<String,Integer> customFeaturePage=new HashMap<>();

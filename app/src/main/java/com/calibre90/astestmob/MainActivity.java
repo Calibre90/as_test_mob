@@ -792,34 +792,20 @@ public class MainActivity extends Activity {
           }catch(Exception ex){Toast.makeText(this,"Ошибка оформления: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
         });
       }
-      Button edit=new Button(this);edit.setAllCaps(false);
-      String[] captions={"Открыть редактор функций и битов","Открыть редактор строк As-Built","Редактировать блок IC / BCM / ABS / RKE","Настроить оформление"};
-      edit.setText(captions[selected[0]]);
-      edit.setVisibility(View.GONE);
-      panel.addView(edit,new LinearLayout.LayoutParams(-1,dp(48)));
-      edit.setOnClickListener(v->{
-        dialog.dismiss();
-        switch(selected[0]){
-          case 0:showFeatureAdmin();break;
-          case 1:showRowsAdmin();break;
-          case 2:showModuleAdmin();break;
-          default:showAdminTabs();break;
-        }
-      });
       for(int i=0;i<buttons.length;i++)buttons[i].setAlpha(i==selected[0]?1f:.72f);
     };
     redrawRef[0]=redraw;
     for(int i=0;i<names.length;i++){
       final int tab=i;Button b=new Button(this);b.setAllCaps(false);b.setText(names[i]);
-      b.setTextSize(12);tabs.addView(b,new LinearLayout.LayoutParams(dp(150),dp(55)));
+      b.setTextSize(12);tabs.addView(b,new LinearLayout.LayoutParams(dp(142),dp(49)));
       buttons[i]=b;b.setOnClickListener(v->{selected[0]=tab;redrawRef[0].run();});
     }
     LinearLayout footer=new LinearLayout(this);
     Button save=new Button(this);save.setText("Сохранить изменения");save.setAllCaps(false);
-    footer.addView(save,new LinearLayout.LayoutParams(0,dp(58),1));
+    footer.addView(save,new LinearLayout.LayoutParams(0,dp(52),1));
     save.setOnClickListener(v->{StudioSettings.save(this,features);Toast.makeText(this,"Настройки сохранены",Toast.LENGTH_SHORT).show();});
     Button close=new Button(this);close.setText("Закрыть");close.setAllCaps(false);
-    footer.addView(close,new LinearLayout.LayoutParams(0,dp(58),1));close.setOnClickListener(v->dialog.dismiss());
+    footer.addView(close,new LinearLayout.LayoutParams(0,dp(52),1));close.setOnClickListener(v->dialog.dismiss());
     root.addView(footer);
     dialog.setContentView(root);
     android.view.Window window=dialog.getWindow();

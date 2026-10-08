@@ -72,9 +72,10 @@ public class MainActivity extends Activity {
         centered(c,tabs[i],x,131,89,44,16,i==active?Color.WHITE:Color.BLACK);
       }
       card(c,10,190,380,82,13,true);
-      txt(c,modules[active]+": "+names[active],25,222,18,Color.BLACK,true);
+      txt(c,modules[active]+": "+StudioSettings.moduleName(MainActivity.this,modules[active],names[active]),25,222,18,Color.BLACK,true);
       p.setColor(Color.rgb(224,57,64));p.setStrokeWidth(1);c.drawLine(25,232,316,232,p);
-      txt(c,"ID: "+ids[active]+"  |  Ver: "+(loaded[active]?"ABT загружен":"Загрузите файл ABT"),25,252,12,Color.rgb(91,103,119),false);
+      String configuredVersion=StudioSettings.moduleVersion(MainActivity.this,modules[active]);
+      txt(c,"ID: "+ids[active]+"  |  Ver: "+(!configuredVersion.isEmpty()?configuredVersion:(loaded[active]?"ABT загружен":"Загрузите файл ABT")),25,252,12,Color.rgb(91,103,119),false);
       card(c,10,279,380,91,12,true);
       p.setColor(Color.rgb(207,213,221));p.setStrokeWidth(1);c.drawLine(203,284,203,365,p);c.drawLine(15,325,203,325,p);
       String[] labels={"","",""};
@@ -293,6 +294,23 @@ public class MainActivity extends Activity {
       window.setDimAmount(.65f);window.setLayout(width,height);
     }
   }
+  void showModuleAdmin(){
+    final String module=modules[active];
+    LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(18),dp(12),dp(18),0);
+    TextView fixed=new TextView(this);fixed.setText("Блок: "+module+"  |  адрес: "+ids[active]+" (не изменяется)");root.addView(fixed);
+    EditText name=new EditText(this);name.setSingleLine(true);name.setHint("Название блока");
+    name.setText(StudioSettings.moduleName(this,module,names[active]));root.addView(name);
+    EditText version=new EditText(this);version.setSingleLine(true);version.setHint("Версия / обозначение");
+    version.setText(StudioSettings.moduleVersion(this,module));root.addView(version);
+    new AlertDialog.Builder(this).setTitle("Админка · блок "+module).setView(root)
+      .setNegativeButton("Отмена",null)
+      .setPositiveButton("Сохранить",(d,w)->{
+        String newName=name.getText().toString().trim();
+        if(newName.isEmpty()){Toast.makeText(this,"Название не может быть пустым",Toast.LENGTH_LONG).show();return;}
+        StudioSettings.saveModule(this,module,newName,version.getText().toString().trim());
+        view.invalidate();Toast.makeText(this,"Настройки блока сохранены",Toast.LENGTH_SHORT).show();
+      }).show();
+  }
   void showRowsAdmin(){
     final ArrayList<AbtCodec.Row> list=abtRows[active];
     if(!loaded[active]){Toast.makeText(this,"Сначала откройте ABT текущего блока",Toast.LENGTH_LONG).show();return;}
@@ -393,6 +411,7 @@ public class MainActivity extends Activity {
     });
     root.addView(actions);
     Button rowsAdmin=new Button(this);rowsAdmin.setText("Редактор строк ABT");root.addView(rowsAdmin);rowsAdmin.setOnClickListener(v->showRowsAdmin());
+    Button moduleAdmin=new Button(this);moduleAdmin.setText("Настройки блока");root.addView(moduleAdmin);moduleAdmin.setOnClickListener(v->showModuleAdmin());
     new AlertDialog.Builder(this).setTitle("Админка · функции и биты").setView(scroll).setPositiveButton("Закрыть",null).show();
   }
   void admin(){modal(true);}

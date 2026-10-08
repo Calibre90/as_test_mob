@@ -203,7 +203,7 @@ public class MainActivity extends Activity {
         item.put("address",row.address);item.put("value",row.value);entries.put(item);
       }
       prefs.edit().putString(id,entries.toString()).apply();
-      customEngines.remove(id);customChecks.clear();view.invalidate();
+      resetCustomFeatureState(id);view.invalidate();
       Toast.makeText(this,"Импортировано строк: "+rows.size(),Toast.LENGTH_LONG).show();
     }else{
       org.json.JSONArray entries=new org.json.JSONArray(prefs.getString(id,"[]"));
@@ -252,6 +252,11 @@ public class MainActivity extends Activity {
     layout.addView(exportAbt);exportAbt.setOnClickListener(v->customAbtPicker(true,id));
     new AlertDialog.Builder(this).setTitle(id+" · "+module.optString("name")).setView(layout).setPositiveButton("Закрыть",null).show();
   }
+  void resetCustomFeatureState(String id){
+    customEngines.remove(id);
+    java.util.ArrayList<String> keys=new java.util.ArrayList<>(customChecks.keySet());
+    for(String key:keys)if(key.startsWith(id+"|"))customChecks.remove(key);
+  }
   void editCustomRow(String id,String prefix,org.json.JSONArray entries,int index,android.content.SharedPreferences prefs,Runnable refresh){
     org.json.JSONObject current=index>=0?entries.optJSONObject(index):null;
     LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(18),dp(8),dp(18),dp(8));
@@ -265,6 +270,7 @@ public class MainActivity extends Activity {
       org.json.JSONArray updated=new org.json.JSONArray();
       for(int i=0;i<entries.length();i++)if(i!=index)updated.put(entries.optJSONObject(i));
       prefs.edit().putString(id,updated.toString()).apply();
+      resetCustomFeatureState(id);
       if(view!=null)view.invalidate();
       while(entries.length()>0)entries.remove(0);
       for(int i=0;i<updated.length();i++)entries.put(updated.optJSONObject(i));
@@ -280,7 +286,7 @@ public class MainActivity extends Activity {
         for(int i=0;i<entries.length();i++)if(i!=index&&addr.equals(entries.optJSONObject(i).optString("address")))throw new IllegalArgumentException("Строка уже существует");
         org.json.JSONObject row=new org.json.JSONObject();row.put("address",addr);row.put("value",AbtCodec.recalc(addr,hex));
         if(index<0)entries.put(row);else entries.put(index,row);
-        prefs.edit().putString(id,entries.toString()).apply();refresh.run();if(view!=null)view.invalidate();dialog.dismiss();
+        prefs.edit().putString(id,entries.toString()).apply();resetCustomFeatureState(id);refresh.run();if(view!=null)view.invalidate();dialog.dismiss();
       }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
     }));dialog.show();
   }

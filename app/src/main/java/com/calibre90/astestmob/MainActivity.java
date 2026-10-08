@@ -795,14 +795,15 @@ public class MainActivity extends Activity {
       Button edit=new Button(this);edit.setAllCaps(false);
       String[] captions={"Открыть редактор функций и битов","Открыть редактор строк As-Built","Редактировать блок IC / BCM / ABS / RKE","Настроить оформление"};
       edit.setText(captions[selected[0]]);
-      panel.addView(edit,new LinearLayout.LayoutParams(-1,selected[0]==0?dp(52):dp(70)));
+      edit.setVisibility(selected[0]==3?View.GONE:View.VISIBLE);
+      panel.addView(edit,new LinearLayout.LayoutParams(-1,dp(48)));
       edit.setOnClickListener(v->{
         dialog.dismiss();
         switch(selected[0]){
           case 0:showFeatureAdmin();break;
           case 1:showRowsAdmin();break;
           case 2:showModuleAdmin();break;
-          default:showAppearanceAdmin();break;
+          default:showAdminTabs();break;
         }
       });
       for(int i=0;i<buttons.length;i++)buttons[i].setAlpha(i==selected[0]?1f:.72f);

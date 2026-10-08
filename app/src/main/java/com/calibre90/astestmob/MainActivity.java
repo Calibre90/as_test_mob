@@ -22,7 +22,7 @@ public class MainActivity extends Activity {
   int active=0;
   @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(Color.BLACK);getWindow().setNavigationBarColor(Color.BLACK);getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
     for(int i=0;i<4;i++)rows[i]=new ArrayList<>();
-    features.addAll(StudioSettings.load(this));seedBuiltInRows();
+    features.addAll(StudioSettings.load(this));seedBuiltInRows();restoreAdminRows();
     setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));view=new StudioView();setContentView(view);
   }
   /** Built-in sample configuration: available before importing any vehicle ABT. */
@@ -33,6 +33,36 @@ public class MainActivity extends Activity {
       abtRows[0].add(row);original.put(key(row),AbtCodec.norm(row.value));
     }
     refreshRows(0);syncFeatureChecks(0);
+  }
+  void saveAdminRows(int module){
+    org.json.JSONArray array=new org.json.JSONArray();
+    for(AbtCodec.Row row:abtRows[module]){
+      org.json.JSONObject item=new org.json.JSONObject();
+      try{item.put("address",row.address);item.put("value",row.value);array.put(item);}
+      catch(org.json.JSONException ex){throw new IllegalStateException(ex);}
+    }
+    getSharedPreferences("studio_admin_rows",MODE_PRIVATE).edit().putString(modules[module],array.toString()).apply();
+  }
+  void restoreAdminRows(){
+    android.content.SharedPreferences prefs=getSharedPreferences("studio_admin_rows",MODE_PRIVATE);
+    for(int m=0;m<modules.length;m++){
+      String saved=prefs.getString(modules[m],null);
+      if(saved==null)continue;
+      try{
+        org.json.JSONArray array=new org.json.JSONArray(saved);
+        ArrayList<AbtCodec.Row> restored=new ArrayList<>();
+        for(int i=0;i<array.length();i++){
+          org.json.JSONObject item=array.getJSONObject(i);
+          String address=item.getString("address"),value=item.getString("value");
+          if(!address.matches(ids[m]+"-[0-9]{2}-[0-9]{2}")||!AbtCodec.norm(value).matches("[0-9A-F]{4,}"))throw new IllegalArgumentException("Invalid saved row");
+          restored.add(new AbtCodec.Row(modules[m],address,value,Integer.parseInt(address.split("-")[1])));
+        }
+        for(AbtCodec.Row old:abtRows[m])original.remove(key(old));
+        abtRows[m].clear();abtRows[m].addAll(restored);
+        for(AbtCodec.Row row:restored)original.put(key(row),AbtCodec.norm(row.value));
+        refreshRows(m);syncFeatureChecks(m);
+      }catch(Exception ex){android.util.Log.e("ASBuilt","Cannot restore admin rows for "+modules[m],ex);}
+    }
   }
   int appearanceColor(String key,int fallback){
     String value=StudioSettings.appearance(this,key,"").trim();
@@ -787,11 +817,7 @@ public class MainActivity extends Activity {
         android.widget.ScrollView listScroll=new android.widget.ScrollView(this);
         LinearLayout entries=new LinearLayout(this);entries.setOrientation(LinearLayout.VERTICAL);
         listScroll.addView(entries);panel.addView(listScroll,new LinearLayout.LayoutParams(-1,0,1));
-        if(!loaded[rowsModule]){
-          TextView notice=new TextView(this);notice.setText("Откройте ABT блока "+modules[rowsModule]+" для редактирования строк");
-          notice.setTextColor(Color.WHITE);entries.addView(notice);
-        }else{
-          for(int n=0;n<rows.size();n++){
+        {\n          for(int n=0;n<rows.size();n++){
             final int index=n;AbtCodec.Row row=rows.get(n);
             Button entry=new Button(this);entry.setAllCaps(false);entry.setText((n+1)+" · "+row.address);
             entries.addView(entry,new LinearLayout.LayoutParams(-1,dp(48)));
@@ -805,15 +831,12 @@ public class MainActivity extends Activity {
           final int kind=action;Button button=new Button(this);button.setText(labelsActions[action]);button.setAllCaps(false);
           button.setTextSize(12);button.setMinWidth(0);button.setPadding(dp(3),0,dp(3),0);actions.addView(button,new LinearLayout.LayoutParams(0,dp(48),1));
           button.setOnClickListener(v->{
-            if(!loaded[rowsModule]||active!=rowsModule){
-              Toast.makeText(this,"Откройте ABT нужного блока",Toast.LENGTH_LONG).show();return;
-            }
             if(kind==2){
               if(chosen[0]<0||chosen[0]>=rows.size()){Toast.makeText(this,"Выберите строку",Toast.LENGTH_SHORT).show();return;}
               final int index=chosen[0];
               new AlertDialog.Builder(this).setTitle("Удалить строку "+rows.get(index).address+"?")
                 .setNegativeButton("Отмена",null).setPositiveButton("Удалить",(d,w)->{
-                  rows.remove(index);resetCurrentEngine();syncFeatureChecks(rowsModule);refreshRows(rowsModule);view.invalidate();redrawRef[0].run();
+                  rows.remove(index);saveAdminRows(rowsModule);resetCurrentEngine();syncFeatureChecks(rowsModule);refreshRows(rowsModule);view.invalidate();redrawRef[0].run();
                 }).show();return;
             }
             try{

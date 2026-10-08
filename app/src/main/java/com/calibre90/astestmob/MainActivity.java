@@ -22,7 +22,7 @@ public class MainActivity extends Activity {
   int active=0;
   @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(Color.BLACK);getWindow().setNavigationBarColor(Color.BLACK);getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
     for(int i=0;i<4;i++)rows[i]=new ArrayList<>();
-    features.addAll(StudioSettings.load(this));view=new StudioView();setContentView(view);
+    features.addAll(StudioSettings.load(this));setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));view=new StudioView();setContentView(view);
   }
   class StudioView extends View {
     Paint p=new Paint(3); HashMap<String,Bitmap> bitmaps=new HashMap<>();
@@ -370,7 +370,7 @@ public class MainActivity extends Activity {
       place(root,divider,.09f,.375f,.82f,.004f,width,height);
       TextView description=caption("Редактор As-Built для Mazda 6 GH",15,Color.BLACK,false);
       place(root,description,.09f,.42f,.84f,.12f,width,height);
-      TextView author=caption("Разработчик: Dim304",15,Color.BLACK,true);
+      TextView author=caption(StudioSettings.appearance(this,"author_text","Разработчик: Dim304"),15,Color.BLACK,true);
       place(root,author,.09f,.555f,.84f,.12f,width,height);
       TextView ok=caption("Закрыть",16,Color.WHITE,true);ok.setGravity(Gravity.CENTER);
       ok.setBackground(panel(Color.rgb(245,69,69),Color.rgb(170,0,10),9,Color.rgb(255,103,109)));
@@ -787,6 +787,7 @@ public class MainActivity extends Activity {
             int columns=Integer.parseInt(changes.get("feature_columns").trim());
             if(columns<1||columns>4)throw new IllegalArgumentException("Колонки функций: от 1 до 4");
             StudioSettings.saveAppearance(this,changes);
+            setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));
             view.invalidate();
             Toast.makeText(this,"Оформление сохранено",Toast.LENGTH_SHORT).show();
           }catch(Exception ex){Toast.makeText(this,"Ошибка оформления: "+ex.getMessage(),Toast.LENGTH_LONG).show();}

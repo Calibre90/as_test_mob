@@ -664,9 +664,19 @@ public class MainActivity extends Activity {
                 throw new IllegalArgumentException("Укажите ID, модуль, строку и режим HEX/BITS");
               String indices=mode.equals("BITS")?vls[7]:vls[5];
               int byteIndex=mode.equals("BITS")?Integer.parseInt(vls[6]):0;
-              if(byteIndex<0||FeatureEngine.indices(indices).isEmpty())throw new IllegalArgumentException("Проверьте индексы и номер байта");
-              if(mode.equals("HEX")&&FeatureEngine.indices(indices).size()!=AbtCodec.norm(vls[8]).length())
-                throw new IllegalArgumentException("Количество HEX индексов должно совпадать с длиной ВКЛ");
+              java.util.List<Integer> positions=FeatureEngine.indices(indices);
+              if(byteIndex<0||positions.isEmpty()||new java.util.HashSet<>(positions).size()!=positions.size())
+                throw new IllegalArgumentException("Проверьте индексы: повторы недопустимы");
+              if(mode.equals("BITS")){
+                for(int bit:positions)if(bit<0||bit>7)throw new IllegalArgumentException("Биты должны быть от 0 до 7");
+              }else{
+                for(int position:positions)if(position<0)throw new IllegalArgumentException("HEX индекс не может быть отрицательным");
+                String on=AbtCodec.norm(vls[8]),off=AbtCodec.norm(vls[9]);
+                if(!on.matches("[0-9A-F]+")||positions.size()!=on.length())
+                  throw new IllegalArgumentException("Количество HEX индексов должно совпадать с длиной ВКЛ");
+                if(!off.isEmpty()&&(!off.matches("[0-9A-F]+")||positions.size()!=off.length()))
+                  throw new IllegalArgumentException("Количество HEX индексов должно совпадать с длиной ВЫКЛ");
+              }
               for(int j=0;j<features.size();j++)if((kind==0||j!=chosen[0])&&features.get(j).id.equals(id)&&features.get(j).module.equals(module)&&features.get(j).address.equals(address))
                 throw new IllegalArgumentException("Функция с таким ID и адресом уже есть");
               FeatureEngine.Feature updated=new FeatureEngine.Feature(id,module,address,mode,indices,vls[8],vls[9],byteIndex);

@@ -677,6 +677,18 @@ public class MainActivity extends Activity {
                 if(!off.isEmpty()&&(!off.matches("[0-9A-F]+")||positions.size()!=off.length()))
                   throw new IllegalArgumentException("Количество HEX индексов должно совпадать с длиной ВЫКЛ");
               }
+              int moduleIndex=java.util.Arrays.asList(modules).indexOf(module);
+              if(moduleIndex>=0&&loaded[moduleIndex]){
+                AbtCodec.Row matching=null;
+                for(AbtCodec.Row candidate:abtRows[moduleIndex])if(candidate.address.equalsIgnoreCase(address)){matching=candidate;break;}
+                if(matching==null)throw new IllegalArgumentException("Строка "+address+" отсутствует в загруженном ABT блока "+module);
+                int hexLength=AbtCodec.norm(matching.value).length();
+                if(mode.equals("BITS")){
+                  if(byteIndex*2+2>hexLength)throw new IllegalArgumentException("Byte (BITS) выходит за пределы строки "+address);
+                }else{
+                  for(int position:positions)if(position>=hexLength)throw new IllegalArgumentException("HEX индекс "+position+" выходит за пределы строки "+address);
+                }
+              }
               for(int j=0;j<features.size();j++)if((kind==0||j!=chosen[0])&&features.get(j).id.equals(id)&&features.get(j).module.equals(module)&&features.get(j).address.equals(address))
                 throw new IllegalArgumentException("Функция с таким ID и адресом уже есть");
               FeatureEngine.Feature updated=new FeatureEngine.Feature(id,module,address,mode,indices,vls[8],vls[9],byteIndex);

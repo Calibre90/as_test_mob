@@ -154,7 +154,7 @@ public class MainActivity extends Activity {
   final int[] scrollOffset={0,0,0,0};
   final int[] featurePage={0,0,0,0};
   final HashMap<String,Boolean> checkedFeatures=new HashMap<>();
-  String featureKey(FeatureEngine.Feature f){return f.module+"|"+f.id;}
+  String featureKey(FeatureEngine.Feature f){return f.module+"|"+f.address+"|"+f.id;}
   boolean isChecked(FeatureEngine.Feature f){Boolean b=checkedFeatures.get(featureKey(f));return b!=null&&b;}
   void syncFeatureChecks(int module){for(FeatureEngine.Feature f:moduleFeatures(module)){boolean on=engines[module].state(f,findRowValueFor(module,f.address));checkedFeatures.put(featureKey(f),on);engines[module].seed(f,on);}}
   String findRowValueFor(int module,String address){AbtCodec.Row r=findRow(module,address);return r==null?"":r.value;}

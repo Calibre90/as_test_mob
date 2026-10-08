@@ -358,7 +358,7 @@ public class MainActivity extends Activity {
     root.setClipToOutline(true);
     View header=new View(this);header.setBackground(panel(Color.WHITE,Color.rgb(235,239,244),10,Color.rgb(215,222,230)));
     place(root,header,.025f,.025f,.95f,.16f,width,height);
-    TextView title=caption(isAdmin?"Админка":"О программе",20,Color.BLACK,true);
+    TextView title=caption(isAdmin?StudioSettings.appearance(this,"admin_text","Админка"):"О программе",20,Color.BLACK,true);
     place(root,title,.16f,.045f,.60f,.11f,width,height);
     if(isAdmin){
       TextView lock=caption("🔒",25,Color.rgb(190,15,22),true);
@@ -800,7 +800,7 @@ public class MainActivity extends Activity {
           input.setBackgroundColor(Color.WHITE);input.setTextColor(Color.BLACK);
           appearanceFields.addView(input,new LinearLayout.LayoutParams(-1,dp(46)));appearanceInputs[k]=input;
         }
-        TextView note=new TextView(this);note.setText("Цвета: #RRGGBB, пустое поле — стандартный цвет. Текст статуса показывается в окне «О программе». Количество колонок пока сохраняется, но не меняет сетку функций.");
+        TextView note=new TextView(this);note.setText("Цвета: #RRGGBB, пустое поле — стандартный цвет. Количество колонок функций: 1–4. Название, кнопки, админка, автор и статус применяются после сохранения.");
         note.setTextColor(Color.LTGRAY);appearanceFields.addView(note);
         Button saveAppearance=new Button(this);saveAppearance.setText("Сохранить оформление");saveAppearance.setAllCaps(false);
         panel.addView(saveAppearance,new LinearLayout.LayoutParams(-1,dp(55)));

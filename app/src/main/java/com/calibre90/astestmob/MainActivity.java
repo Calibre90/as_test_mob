@@ -191,10 +191,15 @@ public class MainActivity extends Activity {
     ArrayList<AbtCodec.Row> selected=new ArrayList<>();
     for(AbtCodec.Row row:parsed)if(row.module.equals(modules[active]))selected.add(row);
     if(selected.isEmpty())throw new IllegalArgumentException("В файле нет строк блока "+modules[active]);
+    HashSet<String> addresses=new HashSet<>();
+    for(AbtCodec.Row row:selected){
+      if(!addresses.add(row.address))throw new IllegalArgumentException("Повтор адреса "+row.address+" в ABT");
+      String hex=AbtCodec.norm(row.value);
+      if(hex.length()<4||hex.length()%2!=0)throw new IllegalArgumentException("Неверная длина строки "+row.address);
+    }
     for(AbtCodec.Row old:abtRows[active])original.remove(key(old));
     abtRows[active].clear();abtRows[active].addAll(selected);scrollOffset[active]=0;resetAllEngines();
     for(AbtCodec.Row row:selected)original.put(key(row),AbtCodec.norm(row.value));
-    ArrayList<FeatureEngine.Feature> available=moduleFeatures(active);
     featurePage[active]=0;syncFeatureChecks(active);
     refreshRows(active);loaded[active]=true;view.invalidate();
   }
@@ -211,13 +216,20 @@ public class MainActivity extends Activity {
     try{
       if(req==10){
         ByteArrayOutputStream buf=new ByteArrayOutputStream();byte[] chunk=new byte[4096];int n;
-        try(InputStream in=getContentResolver().openInputStream(uri)){while((n=in.read(chunk))!=-1)buf.write(chunk,0,n);}
+        try(InputStream in=getContentResolver().openInputStream(uri)){
+          if(in==null)throw new IOException("Файл недоступен");
+          while((n=in.read(chunk))!=-1){if(buf.size()+n>4*1024*1024)throw new IOException("ABT слишком большой");buf.write(chunk,0,n);}
+        }
         loadRows(new String(buf.toByteArray(),"UTF-8"));
         Toast.makeText(this,"Загружено строк: "+abtRows[active].size(),Toast.LENGTH_SHORT).show();
       }else if(req==11){
         if(abtRows[active].isEmpty())throw new IllegalArgumentException("Сначала откройте ABT");
         String text=AbtCodec.write(abtRows[active],modules[active]);
-        try(OutputStream out=getContentResolver().openOutputStream(uri)){out.write(text.getBytes("US-ASCII"));}
+        if(text.isEmpty())throw new IOException("Нет строк для сохранения");
+        try(OutputStream out=getContentResolver().openOutputStream(uri)){
+          if(out==null)throw new IOException("Невозможно открыть файл для записи");
+          out.write(text.getBytes("US-ASCII"));out.flush();
+        }
         Toast.makeText(this,"ABT блока "+modules[active]+" сохранён",Toast.LENGTH_SHORT).show();
       }
     }catch(Exception ex){Toast.makeText(this,"Ошибка ABT: "+ex.getMessage(),Toast.LENGTH_LONG).show();}

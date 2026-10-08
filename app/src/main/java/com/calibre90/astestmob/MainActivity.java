@@ -719,7 +719,12 @@ public class MainActivity extends Activity {
       body.removeAllViews();
       LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);
       panel.setPadding(dp(3),dp(5),dp(3),dp(5));
-      body.addView(panel,new FrameLayout.LayoutParams(-1,-1));
+      if(selected[0]==2){
+        ScrollView moduleScroll=new ScrollView(this);
+        moduleScroll.setFillViewport(false);
+        moduleScroll.addView(panel,new ScrollView.LayoutParams(-1,-2));
+        body.addView(moduleScroll,new FrameLayout.LayoutParams(-1,-1));
+      }else body.addView(panel,new FrameLayout.LayoutParams(-1,-1));
       TextView heading=new TextView(this);heading.setText("Выберите запись");
       heading.setTextSize(20);heading.setTextColor(Color.WHITE);heading.setGravity(Gravity.CENTER);
       heading.setBackgroundColor(Color.rgb(84,84,84));heading.setPadding(0,dp(15),0,dp(15));

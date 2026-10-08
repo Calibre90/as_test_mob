@@ -148,6 +148,20 @@ public final class CodecSelfTest {
     catch(IllegalArgumentException ex){mixedRejected=ex.getMessage().contains("BCM");}
     check(mixedRejected,"mixed IC BCM file rejected");
     check(AbtCodec.requireModule(AbtCodec.parseChecked("726G1G1000EF255E766\r\n",modules),"BCM").size()==1,"BCM file accepted in BCM tab");
+    FeatureEngine icEngine=new FeatureEngine();
+    FeatureEngine bcmEngine=new FeatureEngine();
+    FeatureEngine.Feature icCheckbox=new FeatureEngine.Feature("shared-name","IC","720-01-01","HEX","0,1","2B","1F",0);
+    FeatureEngine.Feature bcmCheckbox=new FeatureEngine.Feature("shared-name","BCM","726-01-01","HEX","0,1","80","00",0);
+    AbtCodec.Row icCheckboxRow=new AbtCodec.Row("IC","720-01-01","2B407126809F","720");
+    AbtCodec.Row bcmCheckboxRow=new AbtCodec.Row("BCM","726-01-01","000EF255E766","726");
+    check(icEngine.state(icCheckbox,icCheckboxRow.value),"imported IC active checkbox detected");
+    check(!bcmEngine.state(bcmCheckbox,bcmCheckboxRow.value),"BCM checkbox remains off");
+    icEngine.seed(icCheckbox,true);
+    bcmEngine.seed(bcmCheckbox,false);
+    icEngine.apply(icCheckboxRow,icCheckbox,false,Arrays.asList(icCheckbox,bcmCheckbox));
+    check(!icEngine.state(icCheckbox,icCheckboxRow.value),"IC checkbox can be turned off");
+    check(AbtCodec.norm(bcmCheckboxRow.value).equals("000EF255E766"),"IC toggle cannot alter BCM row");
+    check(!bcmEngine.state(bcmCheckbox,bcmCheckboxRow.value),"BCM checkbox unchanged after IC toggle");
     System.out.println("PASS: ABT parse, roundtrip, checksum, index, HEX toggle, restore");
   }
 }

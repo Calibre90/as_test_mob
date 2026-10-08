@@ -646,6 +646,7 @@ public class MainActivity extends Activity {
   int adminRowsModule=0;
   void showAdminTabs(){
     final Dialog dialog=new Dialog(this);
+    final Runnable[] commitCurrent={null};
     LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);
     root.setPadding(dp(8),dp(8),dp(8),dp(8));root.setBackgroundColor(Color.rgb(44,44,44));
     TextView title=new TextView(this);title.setText("Администрирование интерфейса");
@@ -665,6 +666,7 @@ public class MainActivity extends Activity {
     final int[] selected={0};
     final Runnable[] redrawRef=new Runnable[1];
     Runnable redraw=()->{
+      commitCurrent[0]=null;
       body.removeAllViews();
       LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);
       panel.setPadding(dp(3),dp(5),dp(3),dp(5));
@@ -756,8 +758,9 @@ public class MainActivity extends Activity {
         bitHelp.setPadding(dp(6),dp(10),dp(6),dp(10));content.addView(bitHelp);
         LinearLayout actions=new LinearLayout(this);panel.addView(actions);
         final String[] actionNames={"Добавить","Изменить","Удалить"};
+        final Button[] featureActions=new Button[3];
         for(int action=0;action<3;action++){
-          final int kind=action;Button actionButton=new Button(this);actionButton.setAllCaps(false);
+          final int kind=action;Button actionButton=new Button(this);featureActions[action]=actionButton;actionButton.setAllCaps(false);
           actionButton.setText(actionNames[action]);actionButton.setTextSize(12);
           actionButton.setMinWidth(0);actionButton.setPadding(dp(3),0,dp(3),0);
           actions.addView(actionButton,new LinearLayout.LayoutParams(0,dp(48),1));
@@ -827,6 +830,7 @@ public class MainActivity extends Activity {
             }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
           });
         }
+        commitCurrent[0]=()->featureActions[chosen[0]>=0?1:0].performClick();
       }
       if(selected[0]==1){
         final int rowsModule=adminRowsModule;
@@ -861,8 +865,9 @@ public class MainActivity extends Activity {
         }
         LinearLayout actions=new LinearLayout(this);panel.addView(actions);
         String[] labelsActions={"Добавить","Изменить","Удалить"};
+        final Button[] rowActions=new Button[3];
         for(int action=0;action<3;action++){
-          final int kind=action;Button button=new Button(this);button.setText(labelsActions[action]);button.setAllCaps(false);
+          final int kind=action;Button button=new Button(this);rowActions[action]=button;button.setText(labelsActions[action]);button.setAllCaps(false);
           button.setTextSize(12);button.setMinWidth(0);button.setPadding(dp(3),0,dp(3),0);actions.addView(button,new LinearLayout.LayoutParams(0,dp(48),1));
           button.setOnClickListener(v->{
             if(kind==2){
@@ -895,6 +900,7 @@ public class MainActivity extends Activity {
             }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
           });
         }
+        commitCurrent[0]=()->rowActions[chosen[0]>=0?1:0].performClick();
       }
       if(selected[0]==2){
         final int[] moduleSelection={active};
@@ -992,7 +998,7 @@ public class MainActivity extends Activity {
     LinearLayout footer=new LinearLayout(this);
     Button save=new Button(this);save.setText("Сохранить изменения");save.setAllCaps(false);
     footer.addView(save,new LinearLayout.LayoutParams(0,dp(52),1));
-    save.setOnClickListener(v->{StudioSettings.save(this,features);Toast.makeText(this,"Настройки сохранены",Toast.LENGTH_SHORT).show();});
+    save.setOnClickListener(v->{if(commitCurrent[0]!=null)commitCurrent[0].run();else Toast.makeText(this,"Для сохранения используйте кнопку в выбранной вкладке",Toast.LENGTH_LONG).show();});
     Button close=new Button(this);close.setText("Закрыть");close.setAllCaps(false);
     footer.addView(close,new LinearLayout.LayoutParams(0,dp(52),1));close.setOnClickListener(v->dialog.dismiss());
     root.addView(footer);

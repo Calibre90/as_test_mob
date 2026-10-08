@@ -235,9 +235,19 @@ public class MainActivity extends Activity {
       }
       card(c,10,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"open_text","Открыть ABT"),10,720,185,52,15,Color.BLACK);
       card(c,205,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"save_text","Сохранить ABT"),205,720,185,52,15,Color.BLACK);
-      card(c,10,782,380,57,12,true);
-      txt(c,"↗",27,818,25,Color.BLACK,true);
-      txt(c,"›",355,821,34,Color.BLACK,true);
+      card(c,10,782,319,57,12,true);
+      String status="Изменений нет";
+      int differences=0;
+      for(AbtCodec.Row row:abtRows[active]){
+        String old=original.get(key(row));String now=AbtCodec.norm(row.value);
+        if(old!=null&&!old.equals(now)){differences++;if(differences==1)status=row.address+": "+old+" → "+now;}
+      }
+      if(differences>1)status="Изменено строк: "+differences;
+      p.setTypeface(Typeface.create("sans-serif",Typeface.NORMAL));p.setTextSize(10);p.setColor(Color.BLACK);
+      if(status.length()>44)status=status.substring(0,41)+"…";
+      c.drawText(status,22,814,p);
+      card(c,336,782,54,57,12,true);
+      txt(c,"♙",350,821,32,Color.BLACK,true);
       actual.restore();
     }
     float startY;
@@ -249,7 +259,7 @@ public class MainActivity extends Activity {
       // HEX rows on the main screen are read-only; edit via features or admin panel.
       if(y>=380&&y<=713&&Math.abs(y-startY)<=18)return true;
       if(y>=717&&y<=777){if(x<200)open();else save();return true;}
-      if(y>=779){about();return true;}
+      if(y>=779){if(x>=336)about();return true;}
       return true;
     }
   }
@@ -712,12 +722,12 @@ public class MainActivity extends Activity {
         Button featureSelector=new Button(this);
         featureSelector.setAllCaps(false);featureSelector.setTextSize(13);
         featureSelector.setText("Выберите функцию…");
-        panel.addView(featureSelector,new LinearLayout.LayoutParams(-1,dp(42)));
+        // The heading is the single feature selector; avoid a duplicate button.
         Runnable refreshFeatureChoices=()->{
           int n=chosen[0];
-          featureSelector.setText(n>=0&&n<features.size()?(n+1)+" · "+features.get(n).label:"Выберите функцию…");
+          heading.setText(n>=0&&n<features.size()?(n+1)+" · "+features.get(n).label:"Выберите запись");
         };
-        featureSelector.setOnClickListener(v->{
+        heading.setOnClickListener(v->{
           String[] options=new String[features.size()];
           for(int n=0;n<features.size();n++)options[n]=(n+1)+" · "+features.get(n).label;
           new AlertDialog.Builder(this).setTitle("Выберите функцию")
@@ -870,7 +880,7 @@ public class MainActivity extends Activity {
         panel.addView(form);
         final EditText[] inputs=new EditText[3];
         String[] labels={"Модуль","Строка","Значение"};
-        for(int k=0;k<3;k++){
+        for(int k=1;k<3;k++){
           LinearLayout field=new LinearLayout(this);field.setOrientation(LinearLayout.HORIZONTAL);
           TextView label=new TextView(this);label.setText(labels[k]);label.setTextColor(Color.WHITE);
           label.setGravity(Gravity.CENTER_VERTICAL);label.setTextSize(12);field.addView(label,new LinearLayout.LayoutParams(0,dp(44),1));
@@ -878,8 +888,7 @@ public class MainActivity extends Activity {
           input.setBackgroundColor(Color.WHITE);input.setPadding(dp(7),0,dp(5),0);
           field.addView(input,new LinearLayout.LayoutParams(0,dp(44),1));field.setPadding(dp(4),dp(3),dp(4),dp(3));form.addView(field);inputs[k]=input;
         }
-        inputs[0].setText(modules[rowsModule]);inputs[0].setFocusable(false);
-        inputs[0].setOnClickListener(v->new AlertDialog.Builder(this).setTitle("Выберите блок")
+        heading.setOnClickListener(v->new AlertDialog.Builder(this).setTitle("Выберите блок")
           .setItems(modules,(d,which)->{adminRowsModule=which;redrawRef[0].run();}).show());
         android.widget.ScrollView listScroll=new android.widget.ScrollView(this);
         LinearLayout entries=new LinearLayout(this);entries.setOrientation(LinearLayout.VERTICAL);
@@ -889,7 +898,7 @@ public class MainActivity extends Activity {
             final int index=n;AbtCodec.Row row=rows.get(n);
             Button entry=new Button(this);entry.setAllCaps(false);entry.setText((n+1)+" · "+row.address);
             entries.addView(entry,new LinearLayout.LayoutParams(-1,dp(48)));
-            entry.setOnClickListener(v->{chosen[0]=index;heading.setText(row.address);
+            entry.setOnClickListener(v->{chosen[0]=index;
               inputs[1].setText(row.address);inputs[2].setText(row.value);});
           }
         }

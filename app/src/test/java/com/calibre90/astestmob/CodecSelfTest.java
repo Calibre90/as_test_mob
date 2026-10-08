@@ -88,6 +88,11 @@ public final class CodecSelfTest {
     check(AbtCodec.parse(mixed,allModules).size()==2,"mixed delimiters and line endings");
     check(AbtCodec.parse("720G1G1A0\n",modules).isEmpty(),"reject one-byte rows");
     check(AbtCodec.parse("; comment\n# comment\ninvalid\n",modules).isEmpty(),"ignore comments and invalid lines");
+    check(AbtCodec.parseChecked(mixed,allModules).size()==2,"strict parser accepts valid mixed ABT");
+    boolean malformedRejected=false;
+    try{AbtCodec.parseChecked("720G1G11F407126809F\n720G1G1ZZZZ\n",allModules);}
+    catch(IllegalArgumentException ex){malformedRejected=ex.getMessage().contains("2");}
+    check(malformedRejected,"strict parser reports malformed line number");
     System.out.println("PASS: ABT parse, roundtrip, checksum, index, HEX toggle, restore");
   }
 }

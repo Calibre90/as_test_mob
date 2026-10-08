@@ -219,7 +219,9 @@ public class MainActivity extends Activity {
         float px=177;int hexIndex=0;
         c.save();c.clipRect(175,y+2,381,y+33);
         for(int j=0;j<value.length();j++){
-          char ch=value.charAt(j);p.setColor(ch!=' '&&changed.contains(hexIndex)?Color.rgb(20,105,220):Color.BLACK);
+          char ch=value.charAt(j);boolean marked=ch!=' '&&changed.contains(hexIndex);
+          p.setColor(marked?Color.rgb(20,105,220):Color.BLACK);
+          p.setTypeface(Typeface.create("monospace",marked?Typeface.BOLD:Typeface.NORMAL));
           if(px>381)break;
           c.drawText(String.valueOf(ch),px,y+23,p);px+=p.measureText(String.valueOf(ch));if(ch!=' ')hexIndex++;
         }
@@ -845,7 +847,9 @@ public class MainActivity extends Activity {
                 throw new IllegalArgumentException("Функция с таким ID и адресом уже есть");
               FeatureEngine.Feature updated=new FeatureEngine.Feature(id,module,address,mode,indices,vls[8],vls[9],byteIndex,vls[2]);
               if(kind==0){features.add(updated);chosen[0]=features.size()-1;}else features.set(chosen[0],updated);
-              StudioSettings.save(this,features);resetAllEngines();view.invalidate();refreshFeatureChoices.run();redrawRef[0].run();
+              StudioSettings.save(this,features);resetAllEngines();view.invalidate();refreshFeatureChoices.run();
+              heading.setText((chosen[0]+1)+" · "+updated.label);
+              // Keep the selected feature and all edited fields visible after saving.
               Toast.makeText(this,"Настройки функции сохранены",Toast.LENGTH_SHORT).show();
             }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
           });

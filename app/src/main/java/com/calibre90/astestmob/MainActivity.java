@@ -776,7 +776,7 @@ public class MainActivity extends Activity {
           input.setBackgroundColor(Color.WHITE);input.setTextColor(Color.BLACK);
           appearanceFields.addView(input,new LinearLayout.LayoutParams(-1,dp(46)));appearanceInputs[k]=input;
         }
-        TextView note=new TextView(this);note.setText("Настройки сохраняются отдельно. Применение всех полей к оболочке выполняется на следующем этапе.");
+        TextView note=new TextView(this);note.setText("Название приложения, подписи кнопок открытия/сохранения и текст автора применяются. Цвета, колонки и статус пока сохраняются без изменения оболочки.");
         note.setTextColor(Color.LTGRAY);appearanceFields.addView(note);
         Button saveAppearance=new Button(this);saveAppearance.setText("Сохранить оформление");saveAppearance.setAllCaps(false);
         panel.addView(saveAppearance,new LinearLayout.LayoutParams(-1,dp(55)));

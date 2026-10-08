@@ -212,7 +212,8 @@ public class MainActivity extends Activity {
   }
   final FeatureEngine[] engines={new FeatureEngine(),new FeatureEngine(),new FeatureEngine(),new FeatureEngine()};
   void resetAllEngines(){for(FeatureEngine e:engines)e.reset();checkedFeatures.clear();for(int m=0;m<4;m++)if(loaded[m])syncFeatureChecks(m);}
-  void resetCurrentEngine(){engines[active].reset();for(FeatureEngine.Feature f:moduleFeatures(active))checkedFeatures.remove(featureKey(f));}
+  void resetCurrentEngine(){resetEngineForModule(active);}
+  void resetEngineForModule(int module){engines[module].reset();for(FeatureEngine.Feature f:moduleFeatures(module))checkedFeatures.remove(featureKey(f));}
   final ArrayList<AbtCodec.Row>[] abtRows=new ArrayList[]{new ArrayList<>(),new ArrayList<>(),new ArrayList<>(),new ArrayList<>()};
   final HashMap<String,String> original=new HashMap<>();
   final AbtSnapshot[] importedSnapshots=new AbtSnapshot[4];
@@ -840,7 +841,7 @@ public class MainActivity extends Activity {
               final int index=chosen[0];
               new AlertDialog.Builder(this).setTitle("Удалить строку "+rows.get(index).address+"?")
                 .setNegativeButton("Отмена",null).setPositiveButton("Удалить",(d,w)->{
-                  rows.remove(index);saveAdminRows(rowsModule);resetCurrentEngine();syncFeatureChecks(rowsModule);refreshRows(rowsModule);view.invalidate();redrawRef[0].run();
+                  AbtCodec.Row removed=rows.remove(index);original.remove(key(removed));saveAdminRows(rowsModule);resetEngineForModule(rowsModule);syncFeatureChecks(rowsModule);refreshRows(rowsModule);view.invalidate();redrawRef[0].run();
                 }).show();return;
             }
             try{
@@ -859,8 +860,9 @@ public class MainActivity extends Activity {
                 if(AbtCodec.norm(existing.value).length()!=hex.length())throw new IllegalArgumentException("Длина HEX должна остаться прежней");
                 existing.value=updated;
               }
-              resetCurrentEngine();syncFeatureChecks(rowsModule);refreshRows(rowsModule);view.invalidate();redrawRef[0].run();
-              Toast.makeText(this,"Изменения в памяти; сохраните ABT в файл",Toast.LENGTH_LONG).show();
+              for(AbtCodec.Row current:rows)original.put(key(current),AbtCodec.norm(current.value));
+              saveAdminRows(rowsModule);resetEngineForModule(rowsModule);syncFeatureChecks(rowsModule);refreshRows(rowsModule);view.invalidate();redrawRef[0].run();
+              Toast.makeText(this,"Строки сохранены в приложении",Toast.LENGTH_LONG).show();
             }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
           });
         }

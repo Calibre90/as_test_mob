@@ -211,7 +211,7 @@ public class MainActivity extends Activity {
     }
   }
   final FeatureEngine[] engines={new FeatureEngine(),new FeatureEngine(),new FeatureEngine(),new FeatureEngine()};
-  void resetAllEngines(){for(FeatureEngine e:engines)e.reset();checkedFeatures.clear();for(int m=0;m<4;m++)if(loaded[m])syncFeatureChecks(m);}
+  void resetAllEngines(){for(FeatureEngine e:engines)e.reset();checkedFeatures.clear();for(int m=0;m<4;m++)if(!abtRows[m].isEmpty())syncFeatureChecks(m);}
   void resetCurrentEngine(){resetEngineForModule(active);}
   void resetEngineForModule(int module){engines[module].reset();for(FeatureEngine.Feature f:moduleFeatures(module))checkedFeatures.remove(featureKey(f));}
   final ArrayList<AbtCodec.Row>[] abtRows=new ArrayList[]{new ArrayList<>(),new ArrayList<>(),new ArrayList<>(),new ArrayList<>()};

@@ -5,13 +5,16 @@ import java.util.*;
 /** Feature application logic based on Run89: multiple active features share a baseline. */
 public final class FeatureEngine {
   public static final class Feature {
-    public final String id,module,address,mode,indices,on,off;
+    public final String id,module,address,mode,indices,on,off,label;
     public final int byteIndex;
     public Feature(String id,String module,String address,String mode,String indices,String on,int byteIndex){
       this(id,module,address,mode,indices,on,"",byteIndex);
     }
     public Feature(String id,String module,String address,String mode,String indices,String on,String off,int byteIndex){
-      this.id=id;this.module=module;this.address=address;this.mode=mode;this.indices=indices;this.on=on;this.off=off;this.byteIndex=byteIndex;
+      this(id,module,address,mode,indices,on,off,byteIndex,id);
+    }
+    public Feature(String id,String module,String address,String mode,String indices,String on,String off,int byteIndex,String label){
+      this.id=id;this.module=module;this.address=address;this.mode=mode;this.indices=indices;this.on=on;this.off=off;this.byteIndex=byteIndex;this.label=(label==null||label.trim().isEmpty())?id:label.trim();
     }
   }
   private final Map<String,String> baselines=new HashMap<>();

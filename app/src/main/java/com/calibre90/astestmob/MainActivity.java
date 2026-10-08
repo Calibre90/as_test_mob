@@ -997,6 +997,80 @@ public class MainActivity extends Activity {
           view.invalidate();Toast.makeText(this,"Блок "+modules[m]+" сохранён",Toast.LENGTH_SHORT).show();
         });
       }
+
+      // Custom module catalog: persistent admin CRUD, separate from the protected factory modules.
+      if(selected[0]==2){
+        Button addCustom=new Button(this);addCustom.setAllCaps(false);addCustom.setText("＋ Добавить блок");
+        panel.addView(addCustom,new LinearLayout.LayoutParams(-1,dp(44)));
+        Button removeCustom=new Button(this);removeCustom.setAllCaps(false);removeCustom.setText("− Удалить блок");
+        panel.addView(removeCustom,new LinearLayout.LayoutParams(-1,dp(44)));
+        final android.content.SharedPreferences customPrefs=getSharedPreferences("studio_custom_modules",MODE_PRIVATE);
+        final Runnable[] updateCatalog={null};
+        updateCatalog[0]=()->{
+          org.json.JSONArray catalog;
+          try{catalog=new org.json.JSONArray(customPrefs.getString("catalog","[]"));}
+          catch(Exception ex){catalog=new org.json.JSONArray();}
+          StringBuilder description=new StringBuilder("Дополнительные блоки: ");
+          if(catalog.length()==0)description.append("нет");
+          for(int i=0;i<catalog.length();i++){
+            org.json.JSONObject item=catalog.optJSONObject(i);
+            if(item!=null)description.append("\\n").append(item.optString("id")).append(" · ").append(item.optString("name")).append(" · ").append(item.optString("address"));
+          }
+          warning.setText("Заводские блоки IC, BCM, RKE, ABS защищены от удаления.\\n"+description.toString());
+        };
+        updateCatalog[0].run();
+        addCustom.setOnClickListener(v->{
+          LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(16),dp(8),dp(16),dp(8));
+          final EditText[] edits=new EditText[4];
+          String[] hints={"ID блока (например AFS)","Название блока","Адрес (3 HEX-символа)","Версия (необязательно)"};
+          for(int i=0;i<edits.length;i++){
+            edits[i]=new EditText(this);edits[i].setSingleLine(true);edits[i].setHint(hints[i]);form.addView(edits[i]);
+          }
+          new AlertDialog.Builder(this).setTitle("Добавить блок").setView(form)
+            .setNegativeButton("Отмена",null).setPositiveButton("Добавить",(d,w)->{
+              String id=edits[0].getText().toString().trim().toUpperCase(Locale.US);
+              String name=edits[1].getText().toString().trim();
+              String address=edits[2].getText().toString().trim().toUpperCase(Locale.US);
+              String version=edits[3].getText().toString().trim();
+              if(!id.matches("[A-Z0-9_]{2,12}")||name.isEmpty()||!address.matches("[0-9A-F]{3}")){
+                Toast.makeText(this,"Укажите ID, название и трёхзначный HEX-адрес",Toast.LENGTH_LONG).show();return;
+              }
+              try{
+                org.json.JSONArray catalog=new org.json.JSONArray(customPrefs.getString("catalog","[]"));
+                for(String factory:modules)if(factory.equalsIgnoreCase(id)){Toast.makeText(this,"ID уже занят",Toast.LENGTH_SHORT).show();return;}
+                for(String factoryAddress:ids)if(factoryAddress.equalsIgnoreCase(address)){Toast.makeText(this,"Адрес уже занят",Toast.LENGTH_SHORT).show();return;}
+                for(int i=0;i<catalog.length();i++){
+                  org.json.JSONObject existing=catalog.getJSONObject(i);
+                  if(id.equalsIgnoreCase(existing.optString("id"))||address.equalsIgnoreCase(existing.optString("address"))){
+                    Toast.makeText(this,"ID или адрес уже существует",Toast.LENGTH_SHORT).show();return;
+                  }
+                }
+                org.json.JSONObject item=new org.json.JSONObject();
+                item.put("id",id);item.put("name",name);item.put("address",address);item.put("version",version);
+                catalog.put(item);customPrefs.edit().putString("catalog",catalog.toString()).apply();
+                updateCatalog[0].run();Toast.makeText(this,"Блок "+id+" добавлен в каталог",Toast.LENGTH_SHORT).show();
+              }catch(Exception ex){Toast.makeText(this,"Ошибка сохранения блока",Toast.LENGTH_SHORT).show();}
+            }).show();
+        });
+        removeCustom.setOnClickListener(v->{
+          try{
+            org.json.JSONArray catalog=new org.json.JSONArray(customPrefs.getString("catalog","[]"));
+            if(catalog.length()==0){Toast.makeText(this,"Нет дополнительных блоков",Toast.LENGTH_SHORT).show();return;}
+            String[] choices=new String[catalog.length()];
+            for(int i=0;i<catalog.length();i++){org.json.JSONObject item=catalog.getJSONObject(i);choices[i]=item.optString("id")+" · "+item.optString("name");}
+            new AlertDialog.Builder(this).setTitle("Удалить дополнительный блок").setItems(choices,(d,index)->{
+              try{
+                org.json.JSONArray current=new org.json.JSONArray(customPrefs.getString("catalog","[]"));
+                org.json.JSONArray updated=new org.json.JSONArray();
+                for(int j=0;j<current.length();j++)if(j!=index)updated.put(current.get(j));
+                customPrefs.edit().putString("catalog",updated.toString()).apply();
+                updateCatalog[0].run();
+                Toast.makeText(this,"Блок удалён из каталога",Toast.LENGTH_SHORT).show();
+              }catch(Exception ex){Toast.makeText(this,"Ошибка удаления",Toast.LENGTH_SHORT).show();}
+            }).show();
+          }catch(Exception ex){Toast.makeText(this,"Ошибка каталога",Toast.LENGTH_SHORT).show();}
+        });
+      }
       if(selected[0]==3){
         final String[] keys={"title","background","panel","feature_columns","open_text","save_text","admin_text","author_text","ready_text","about_description","creator1_name","creator1_url","creator2_name","creator2_url"};
         final String[] labels={"Название окна","Фон приложения","Фон HEX-блока","Колонки функций","Кнопка открытия","Кнопка сохранения","Кнопка Admin","Заголовок авторов","Текст статуса","Описание программы","Автор 1 — имя","Автор 1 — ссылка","Автор 2 — имя","Автор 2 — ссылка"};

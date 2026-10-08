@@ -906,12 +906,13 @@ public class MainActivity extends Activity {
     redrawRef[0]=redraw;
     for(int i=0;i<names.length;i++){
       final int tab=i;Button b=new Button(this);b.setAllCaps(false);b.setText(names[i]);
-      b.setTextSize(12);
+      b.setTextSize(10);b.setMinWidth(0);b.setMinimumWidth(0);b.setPadding(dp(2),0,dp(2),0);
       LinearLayout tabBox=new LinearLayout(this);tabBox.setOrientation(LinearLayout.VERTICAL);
       tabBox.addView(b,new LinearLayout.LayoutParams(-1,dp(45)));
       View underline=new View(this);underline.setBackgroundColor(Color.rgb(40,170,210));underline.setVisibility(i==0?View.VISIBLE:View.INVISIBLE);
       tabBox.addView(underline,new LinearLayout.LayoutParams(-1,dp(3)));
-      tabs.addView(tabBox,new LinearLayout.LayoutParams(dp(142),dp(49)));
+      int tabWidth=Math.max(dp(72),(getResources().getDisplayMetrics().widthPixels-dp(24))/4);
+      tabs.addView(tabBox,new LinearLayout.LayoutParams(tabWidth,dp(49)));
       buttons[i]=b;underlines[i]=underline;b.setOnClickListener(v->{selected[0]=tab;redrawRef[0].run();});
     }
     LinearLayout footer=new LinearLayout(this);

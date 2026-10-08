@@ -882,16 +882,17 @@ public class MainActivity extends Activity {
         final EditText[] appearanceInputs=new EditText[keys.length];
         for(int k=0;k<keys.length;k++){
           TextView label=new TextView(this);label.setText(labels[k]);label.setTextColor(Color.WHITE);label.setTextSize(13);
-          appearanceFields.addView(label);
+          label.setPadding(dp(5),dp(7),dp(5),dp(3));appearanceFields.addView(label);
           EditText input=new EditText(this);input.setSingleLine(true);input.setTextSize(14);
           input.setText(StudioSettings.appearance(this,keys[k],defaults[k]));
-          input.setBackgroundColor(Color.WHITE);input.setTextColor(Color.BLACK);
-          appearanceFields.addView(input,new LinearLayout.LayoutParams(-1,dp(46)));appearanceInputs[k]=input;
+          input.setBackgroundColor(Color.WHITE);input.setTextColor(Color.BLACK);input.setPadding(dp(8),0,dp(6),0);
+          appearanceFields.addView(input,new LinearLayout.LayoutParams(-1,dp(42)));appearanceInputs[k]=input;
         }
         TextView note=new TextView(this);note.setText("Цвета: #RRGGBB, пустое поле — стандартный цвет. Количество колонок функций: 1–4. Название, кнопки, админка, автор и статус применяются после сохранения.");
         note.setTextColor(Color.LTGRAY);appearanceFields.addView(note);
         Button saveAppearance=new Button(this);saveAppearance.setText("Сохранить оформление");saveAppearance.setAllCaps(false);
-        panel.addView(saveAppearance,new LinearLayout.LayoutParams(-1,dp(55)));
+        saveAppearance.setTextSize(12);saveAppearance.setMinWidth(0);saveAppearance.setPadding(dp(4),0,dp(4),0);
+        panel.addView(saveAppearance,new LinearLayout.LayoutParams(-1,dp(48)));
         saveAppearance.setOnClickListener(v->{
           try{
             java.util.HashMap<String,String> changes=new java.util.HashMap<>();

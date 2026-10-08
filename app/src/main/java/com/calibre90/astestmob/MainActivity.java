@@ -197,10 +197,14 @@ public class MainActivity extends Activity {
   }
   String findRowValue(String address){AbtCodec.Row row=findRow(active,address);return row==null?"":row.value;}
   boolean[] loaded=new boolean[4];
-  void open(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("*/*");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,10);}
-  void save(){Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);i.setType("application/octet-stream");i.putExtra(Intent.EXTRA_TITLE,modules[active]+".abt");startActivityForResult(i,11);}
+  int pendingModule=-1;
+  void open(){pendingModule=active;Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("*/*");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,10);}
+  void save(){pendingModule=active;Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);i.setType("application/octet-stream");i.putExtra(Intent.EXTRA_TITLE,modules[active]+".abt");startActivityForResult(i,11);}
   @Override protected void onActivityResult(int req,int result,Intent data){super.onActivityResult(req,result,data);if(result!=RESULT_OK||data==null||data.getData()==null)return;
     Uri uri=data.getData();
+    int previous=active;
+    if(pendingModule>=0&&pendingModule<modules.length)active=pendingModule;
+    pendingModule=-1;
     try{
       if(req==10){
         ByteArrayOutputStream buf=new ByteArrayOutputStream();byte[] chunk=new byte[4096];int n;
@@ -214,6 +218,7 @@ public class MainActivity extends Activity {
         Toast.makeText(this,"ABT блока "+modules[active]+" сохранён",Toast.LENGTH_SHORT).show();
       }
     }catch(Exception ex){Toast.makeText(this,"Ошибка ABT: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+    finally{active=previous;view.invalidate();}
   }
 
   int dp(float v){return Math.round(v*getResources().getDisplayMetrics().density);}

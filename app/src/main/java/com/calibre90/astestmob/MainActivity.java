@@ -1156,9 +1156,9 @@ public class MainActivity extends Activity {
           try{
             org.json.JSONArray catalog=new org.json.JSONArray(customPrefs.getString("catalog","[]"));
             if(catalog.length()==0){Toast.makeText(this,"Нет дополнительных блоков",Toast.LENGTH_SHORT).show();return;}
-            String[] choices=new String[catalog.length()];
-            for(int i=0;i<catalog.length();i++){org.json.JSONObject item=catalog.getJSONObject(i);choices[i]=item.optString("id")+" · "+item.optString("name");}
-            new AlertDialog.Builder(this).setTitle("Удалить дополнительный блок").setItems(choices,(d,index)->{
+            String[] removeChoices=new String[catalog.length()];
+            for(int i=0;i<catalog.length();i++){org.json.JSONObject item=catalog.getJSONObject(i);removeChoices[i]=item.optString("id")+" · "+item.optString("name");}
+            new AlertDialog.Builder(this).setTitle("Удалить дополнительный блок").setItems(removeChoices,(d,index)->{
               try{
                 org.json.JSONArray current=new org.json.JSONArray(customPrefs.getString("catalog","[]"));
                 org.json.JSONArray updated=new org.json.JSONArray();

@@ -288,10 +288,10 @@ public class MainActivity extends Activity {
     try{stored=new org.json.JSONArray(prefs.getString(id,"[]"));}catch(Exception ex){stored=new org.json.JSONArray();}
     final org.json.JSONArray entries=stored;
     LinearLayout layout=new LinearLayout(this);layout.setOrientation(LinearLayout.VERTICAL);layout.setPadding(dp(12),dp(8),dp(12),dp(8));
-    TextView info=new TextView(this);info.setText("Адрес: "+address+"\\nСтроки блока сохраняются отдельно. Импорт/экспорт ABT будет подключён на следующем этапе.");
+    TextView info=new TextView(this);info.setText("Адрес: "+address+"\\nРедактирование и импорт/экспорт ABT");
     layout.addView(info);
     ScrollView scroll=new ScrollView(this);LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);
-    scroll.addView(list);layout.addView(scroll,new LinearLayout.LayoutParams(-1,dp(290)));
+    scroll.addView(list);layout.addView(scroll,new LinearLayout.LayoutParams(-1,dp(150)));
     Runnable[] refresh={null};
     refresh[0]=()->{
       list.removeAllViews();
@@ -477,7 +477,8 @@ public class MainActivity extends Activity {
         card(c,10,190,380,82,13,true);
         txtFit(c,id+" · "+module.optString("name"),25,224,18,Color.BLACK,350);
         txt(c,"Адрес: "+prefix+"   Ver: "+module.optString("version"),25,251,12,Color.DKGRAY,false);
-        card(c,10,279,380,434,13,true);
+        card(c,10,279,380,91,12,true);
+        card(c,10,379,380,334,13,true);
         int featureY=303;
         int featureCount=0;
         int featureTotal=0;
@@ -511,7 +512,7 @@ public class MainActivity extends Activity {
         card(c,10,720,185,52,12,true);centered(c,"Строки блока",10,720,185,52,15,Color.BLACK);
         card(c,205,720,185,52,12,true);centered(c,"Админка",205,720,185,52,15,Color.BLACK);
         card(c,10,782,380,57,12,true);
-        txtFit(c,"Дополнительный блок · HEX-редактор",22,816,12,Color.BLACK,355);
+        txtFit(c,id+" · As-Built · "+customRows.length()+" строк",22,816,12,Color.BLACK,355);
         actual.restore();return;
       }
       card(c,10,190,380,82,13,true);
@@ -1173,10 +1174,17 @@ public class MainActivity extends Activity {
         values[1].setFocusable(false);
         values[1].setClickable(true);
         values[1].setHint("Выберите модуль");
-        values[1].setOnClickListener(v->new AlertDialog.Builder(this)
-          .setTitle("Модуль As-Built")
-          .setItems(new String[]{"IC","BCM","RKE","ABS"},(d,which)->values[1].setText(new String[]{"IC","BCM","RKE","ABS"}[which]))
-          .show());
+        values[1].setOnClickListener(v->{
+          org.json.JSONArray catalog=customModuleCatalog();
+          String[] choices=new String[modules.length+catalog.length()];
+          for(int i=0;i<modules.length;i++)choices[i]=modules[i];
+          for(int i=0;i<catalog.length();i++){
+            org.json.JSONObject entry=catalog.optJSONObject(i);
+            choices[modules.length+i]=entry==null?"":entry.optString("id");
+          }
+          new AlertDialog.Builder(this).setTitle("Модуль As-Built")
+            .setItems(choices,(d,which)->values[1].setText(choices[which])).show();
+        });
         values[4].setFocusable(false);
         values[4].setClickable(true);
         values[4].setHint("Нажмите: HEX или BITS");

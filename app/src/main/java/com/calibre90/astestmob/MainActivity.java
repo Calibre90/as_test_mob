@@ -609,6 +609,7 @@ public class MainActivity extends Activity {
       }).show());
     new AlertDialog.Builder(this).setTitle("Админка · функции и биты").setView(scroll).setPositiveButton("Закрыть",null).show();
   }
+  int adminRowsModule=0;
   void showAdminTabs(){
     final Dialog dialog=new Dialog(this);
     LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);
@@ -798,7 +799,7 @@ public class MainActivity extends Activity {
         }
       }
       if(selected[0]==1){
-        final int rowsModule=active;
+        final int rowsModule=adminRowsModule;
         final ArrayList<AbtCodec.Row> rows=abtRows[rowsModule];
         final int[] chosen={-1};
         LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);
@@ -813,7 +814,9 @@ public class MainActivity extends Activity {
           input.setBackgroundColor(Color.WHITE);input.setPadding(dp(7),0,dp(5),0);
           field.addView(input,new LinearLayout.LayoutParams(0,dp(44),1));field.setPadding(dp(4),dp(3),dp(4),dp(3));form.addView(field);inputs[k]=input;
         }
-        inputs[0].setText(modules[rowsModule]);inputs[0].setEnabled(false);
+        inputs[0].setText(modules[rowsModule]);inputs[0].setFocusable(false);
+        inputs[0].setOnClickListener(v->new AlertDialog.Builder(this).setTitle("Выберите блок")
+          .setItems(modules,(d,which)->{adminRowsModule=which;redrawRef[0].run();}).show());
         android.widget.ScrollView listScroll=new android.widget.ScrollView(this);
         LinearLayout entries=new LinearLayout(this);entries.setOrientation(LinearLayout.VERTICAL);
         listScroll.addView(entries);panel.addView(listScroll,new LinearLayout.LayoutParams(-1,0,1));

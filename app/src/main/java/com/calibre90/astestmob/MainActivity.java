@@ -130,7 +130,9 @@ public class MainActivity extends Activity {
       return true;
     }
   }
-  final FeatureEngine engine=new FeatureEngine();
+  final FeatureEngine[] engines={new FeatureEngine(),new FeatureEngine(),new FeatureEngine(),new FeatureEngine()};
+  void resetAllEngines(){for(FeatureEngine e:engines)e.reset();checkedFeatures.clear();for(int m=0;m<4;m++)if(loaded[m])syncFeatureChecks(m);}
+  void resetCurrentEngine(){engines[active].reset();for(FeatureEngine.Feature f:moduleFeatures(active))checkedFeatures.remove(featureKey(f));}
   final ArrayList<AbtCodec.Row>[] abtRows=new ArrayList[]{new ArrayList<>(),new ArrayList<>(),new ArrayList<>(),new ArrayList<>()};
   final HashMap<String,String> original=new HashMap<>();
   final int[] scrollOffset={0,0,0,0};
@@ -138,7 +140,7 @@ public class MainActivity extends Activity {
   final HashMap<String,Boolean> checkedFeatures=new HashMap<>();
   String featureKey(FeatureEngine.Feature f){return f.module+"|"+f.id;}
   boolean isChecked(FeatureEngine.Feature f){Boolean b=checkedFeatures.get(featureKey(f));return b!=null&&b;}
-  void syncFeatureChecks(int module){for(FeatureEngine.Feature f:moduleFeatures(module)){boolean on=engine.state(f,findRowValueFor(module,f.address));checkedFeatures.put(featureKey(f),on);engine.seed(f,on);}}
+  void syncFeatureChecks(int module){for(FeatureEngine.Feature f:moduleFeatures(module)){boolean on=engines[module].state(f,findRowValueFor(module,f.address));checkedFeatures.put(featureKey(f),on);engines[module].seed(f,on);}}
   String findRowValueFor(int module,String address){AbtCodec.Row r=findRow(module,address);return r==null?"":r.value;}
   ArrayList<FeatureEngine.Feature> moduleFeatures(int module){ArrayList<FeatureEngine.Feature> result=new ArrayList<>();for(FeatureEngine.Feature f:features)if(f.module.equals(modules[module]))result.add(f);return result;}
   int rowCount(int module){return abtRows[module].size();}
@@ -155,7 +157,7 @@ public class MainActivity extends Activity {
     if(index>=available.size()){Toast.makeText(this,"Функция для этого блока ещё не настроена",Toast.LENGTH_SHORT).show();return;}
     FeatureEngine.Feature f=available.get(index);AbtCodec.Row row=findRow(active,f.address);
     if(row==null){Toast.makeText(this,"Загрузите ABT со строкой "+f.address,Toast.LENGTH_LONG).show();return;}
-    try{boolean next=!isChecked(f);engine.apply(row,f,next,features);checkedFeatures.put(featureKey(f),next);refreshRows(active);view.invalidate();}
+    try{boolean next=!isChecked(f);engines[active].apply(row,f,next,features);checkedFeatures.put(featureKey(f),next);refreshRows(active);view.invalidate();}
     catch(Exception ex){Toast.makeText(this,"Ошибка функции: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
   }
   void editHexRow(int index){
@@ -175,7 +177,7 @@ public class MainActivity extends Activity {
           if(input.isEmpty()||input.length()%2!=0||!input.matches("[0-9A-Fa-f]+"))throw new IllegalArgumentException("Допустимы только полные HEX-байты");
           if(input.length()!=AbtCodec.norm(row.value).length())throw new IllegalArgumentException("Длина строки должна остаться прежней");
           String updated=AbtCodec.recalc(row.address,input);
-          row.value=updated;engine.reset();checkedFeatures.clear();syncFeatureChecks(active);
+          row.value=updated;resetCurrentEngine();syncFeatureChecks(active);
           refreshRows(active);view.invalidate();
           Toast.makeText(this,"Строка сохранена, checksum пересчитан",Toast.LENGTH_SHORT).show();
         }catch(Exception ex){Toast.makeText(this,"Ошибка HEX: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
@@ -190,7 +192,7 @@ public class MainActivity extends Activity {
     for(AbtCodec.Row row:parsed)if(row.module.equals(modules[active]))selected.add(row);
     if(selected.isEmpty())throw new IllegalArgumentException("В файле нет строк блока "+modules[active]);
     for(AbtCodec.Row old:abtRows[active])original.remove(key(old));
-    abtRows[active].clear();abtRows[active].addAll(selected);scrollOffset[active]=0;engine.reset();checkedFeatures.clear();
+    abtRows[active].clear();abtRows[active].addAll(selected);scrollOffset[active]=0;resetAllEngines();
     for(AbtCodec.Row row:selected)original.put(key(row),AbtCodec.norm(row.value));
     ArrayList<FeatureEngine.Feature> available=moduleFeatures(active);
     featurePage[active]=0;syncFeatureChecks(active);
@@ -352,7 +354,7 @@ public class MainActivity extends Activity {
           if(AbtCodec.norm(old.value).length()!=hex.length())throw new IllegalArgumentException("Длина существующей строки должна остаться прежней");
           old.value=updated;
         }
-        engine.reset();checkedFeatures.clear();syncFeatureChecks(active);refreshRows(active);
+        resetCurrentEngine();syncFeatureChecks(active);refreshRows(active);
         names.clear();for(AbtCodec.Row r:list)names.add(r.address);adapter.notifyDataSetChanged();view.invalidate();
         Toast.makeText(this,"Строка обновлена; сохраните ABT в файл",Toast.LENGTH_SHORT).show();
       }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
@@ -361,7 +363,7 @@ public class MainActivity extends Activity {
       .setMessage("Удаление будет записано только при сохранении ABT.")
       .setNegativeButton("Отмена",null).setPositiveButton("Удалить",(d,w)->{
         int n=selector.getSelectedItemPosition();if(n<0||n>=list.size())return;
-        list.remove(n);engine.reset();checkedFeatures.clear();syncFeatureChecks(active);refreshRows(active);
+        list.remove(n);resetCurrentEngine();syncFeatureChecks(active);refreshRows(active);
         names.clear();for(AbtCodec.Row r:list)names.add(r.address);adapter.notifyDataSetChanged();view.invalidate();
       }).show());
     new AlertDialog.Builder(this).setTitle("Админка · строки "+modules[active]).setView(root).setPositiveButton("Закрыть",null).show();
@@ -394,7 +396,7 @@ public class MainActivity extends Activity {
         int bi=Integer.parseInt(edits[7].getText().toString().trim());
         FeatureEngine.Feature f=new FeatureEngine.Feature(id,module,address,mode,edits[4].getText().toString(),edits[5].getText().toString(),edits[6].getText().toString(),bi);
         int n=selector.getSelectedItemPosition();if(!creating[0]&&n>=0&&n<features.size())features.set(n,f);else {features.add(f);creating[0]=false;}
-        StudioSettings.save(this,features);engine.reset();checkedFeatures.clear();
+        StudioSettings.save(this,features);resetAllEngines();
         labels.clear();for(FeatureEngine.Feature item:features)labels.add(item.id+" · "+item.module+" · "+item.address);adapter.notifyDataSetChanged();Toast.makeText(this,"Функция сохранена",Toast.LENGTH_SHORT).show();view.invalidate();
       }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
     };
@@ -406,7 +408,7 @@ public class MainActivity extends Activity {
     });
     Button remove=new Button(this);remove.setText("Удалить");actions.addView(remove);remove.setOnClickListener(v->{
       int n=selector.getSelectedItemPosition();if(n<0||n>=features.size())return;
-      features.remove(n);StudioSettings.save(this,features);engine.reset();checkedFeatures.clear();
+      features.remove(n);StudioSettings.save(this,features);resetAllEngines();
       labels.clear();for(FeatureEngine.Feature f:features)labels.add(f.id+" · "+f.module+" · "+f.address);adapter.notifyDataSetChanged();view.invalidate();
     });
     root.addView(actions);
@@ -425,7 +427,7 @@ public class MainActivity extends Activity {
             if(current.module.equals(item.module)&&current.id.equals(item.id)){exists=true;break;}
           if(!exists){features.add(item);added++;}
         }
-        StudioSettings.save(this,features);engine.reset();checkedFeatures.clear();
+        StudioSettings.save(this,features);resetAllEngines();
         labels.clear();for(FeatureEngine.Feature item:features)labels.add(item.id+" · "+item.module+" · "+item.address);
         adapter.notifyDataSetChanged();view.invalidate();
         Toast.makeText(this,"Добавлено шаблонов: "+added,Toast.LENGTH_LONG).show();

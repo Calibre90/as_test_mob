@@ -109,10 +109,10 @@ public class MainActivity extends Activity {
     try{return Math.max(1,Math.min(10,Integer.parseInt(StudioSettings.appearance(this,"feature_columns","3").trim())));}
     catch(Exception ignored){return 3;}
   }
-  int featureSlots(){return Math.max(1,featureColumns()*2-1);}
+  int featureSlots(){return featureColumns();}
   float featureCellWidth(){return 370f/featureColumns();}
   float featureX(int index){return 15+(index%featureColumns())*featureCellWidth()+5;}
-  float featureY(int index){return 285+(index/featureColumns())*40;}
+  float featureY(int index){return 305;}
   class StudioView extends View {
     Paint p=new Paint(3); HashMap<String,Bitmap> bitmaps=new HashMap<>();
     float sx=1,sy=1,offX=0,offY=0;
@@ -182,7 +182,7 @@ public class MainActivity extends Activity {
       float cellW=featureCellWidth();
       p.setColor(Color.rgb(190,199,211));p.setStrokeWidth(1);
       for(int col=1;col<columns;col++){float xx=15+col*cellW;c.drawLine(xx,284,xx,365,p);}
-      c.drawLine(15,324,385,324,p);
+      // One feature row: exactly the configured number of columns.
       for(int i=0;i<slots&&page+i<shown.size();i++){
         float x=featureX(i),y=featureY(i),maxLabel=Math.max(3,cellW-31);
         card(c,x,y+5,18,18,4,false);
@@ -255,7 +255,7 @@ public class MainActivity extends Activity {
       if(startY>=376&&startY<=713&&y>=376&&y<=713&&Math.abs(y-startY)>18){int delta=Math.round((startY-y)/36.5f);scrollOffset[active]=Math.max(0,Math.min(Math.max(0,rowCount(active)-9),scrollOffset[active]+delta));invalidate();return true;}
       if(y>=127&&y<=183){if(x<12||x>=392)return true;int selected=(int)((x-12)/95);if(selected>=0&&selected<modules.length){active=selected;invalidate();}return true;}
       if(x>=346&&y>=8&&y<=70){admin();return true;}
-      if(y>=279&&y<=370){int slots=featureSlots(),col=(int)((x-15)/featureCellWidth()),row=(int)((y-284)/40);if(col<0||col>=featureColumns()||row<0||row>=2)return true;int i=row*featureColumns()+col;if(i==slots&&moduleFeatures(active).size()>slots){featurePage[active]=(featurePage[active]+slots>=moduleFeatures(active).size())?0:featurePage[active]+slots;invalidate();return true;}if(i<slots&&featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}
+      if(y>=279&&y<=370){int slots=featureSlots(),col=(int)((x-15)/featureCellWidth());if(col<0||col>=featureColumns())return true;int i=col;if(i==slots&&moduleFeatures(active).size()>slots){featurePage[active]=(featurePage[active]+slots>=moduleFeatures(active).size())?0:featurePage[active]+slots;invalidate();return true;}if(i<slots&&featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}
       // HEX rows on the main screen are read-only; edit via features or admin panel.
       if(y>=380&&y<=713&&Math.abs(y-startY)<=18)return true;
       if(y>=717&&y<=777){if(x<200)open();else save();return true;}
@@ -505,7 +505,7 @@ public class MainActivity extends Activity {
       place(root,version,.09f,.245f,.82f,.11f,width,height);
       View divider=new View(this);divider.setBackgroundColor(Color.rgb(220,50,55));
       place(root,divider,.09f,.375f,.82f,.004f,width,height);
-      TextView description=caption("Редактор As-Built для Mazda 6 GH",15,Color.BLACK,false);
+      TextView description=caption(StudioSettings.appearance(this,"about_description","Редактор As-Built для Mazda 6 GH"),15,Color.BLACK,false);
       place(root,description,.09f,.42f,.84f,.12f,width,height);
       TextView author=caption(StudioSettings.appearance(this,"author_text","Разработчик: Dim304"),15,Color.BLACK,true);
       place(root,author,.09f,.555f,.84f,.12f,width,height);
@@ -987,9 +987,9 @@ public class MainActivity extends Activity {
         });
       }
       if(selected[0]==3){
-        final String[] keys={"title","background","panel","feature_columns","open_text","save_text","admin_text","author_text","ready_text"};
-        final String[] labels={"Название окна","Фон приложения","Фон HEX-блока","Колонки функций","Кнопка открытия","Кнопка сохранения","Кнопка Admin","Кто сделал приложение","Текст статуса"};
-        final String[] defaults={"Mazda 6 GH As-Built Studio","","","3","Открыть ABT","Сохранить ABT","Админка","Кто сделал приложение","Готово"};
+        final String[] keys={"title","background","panel","feature_columns","open_text","save_text","admin_text","author_text","ready_text","about_description","creator1_name","creator1_url","creator2_name","creator2_url"};
+        final String[] labels={"Название окна","Фон приложения","Фон HEX-блока","Колонки функций","Кнопка открытия","Кнопка сохранения","Кнопка Admin","Заголовок авторов","Текст статуса","Описание программы","Автор 1 — имя","Автор 1 — ссылка","Автор 2 — имя","Автор 2 — ссылка"};
+        final String[] defaults={"Mazda 6 GH As-Built Studio","","","3","Открыть ABT","Сохранить ABT","Админка","Кто сделал приложение","Готово","Редактор As-Built для Mazda 6 GH","Dim304","https://www.drive2.ru/users/dim304/","Wolis11","https://www.drive2.ru/users/wolis11/"};
         android.widget.ScrollView appearanceScroll=new android.widget.ScrollView(this);
         LinearLayout appearanceFields=new LinearLayout(this);appearanceFields.setOrientation(LinearLayout.VERTICAL);
         appearanceScroll.addView(appearanceFields);panel.addView(appearanceScroll,new LinearLayout.LayoutParams(-1,0,1));

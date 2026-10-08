@@ -26,7 +26,7 @@ jobs:
       - name: Run ABT and feature engine regression tests
         run: |
           mkdir -p /tmp/abt-test-classes
-          javac -d /tmp/abt-test-classes app/src/main/java/com/calibre90/astestmob/AbtCodec.java app/src/main/java/com/calibre90/astestmob/FeatureEngine.java app/src/test/java/com/calibre90/astestmob/CodecSelfTest.java
+          javac -d /tmp/abt-test-classes app/src/main/java/com/calibre90/astestmob/AbtCodec.java app/src/main/java/com/calibre90/astestmob/FeatureEngine.java app/src/main/java/com/calibre90/astestmob/AbtSnapshot.java app/src/test/java/com/calibre90/astestmob/CodecSelfTest.java
           java -cp /tmp/abt-test-classes com.calibre90.astestmob.CodecSelfTest
       - run: gradle assembleDebug
       - uses: actions/upload-artifact@v4

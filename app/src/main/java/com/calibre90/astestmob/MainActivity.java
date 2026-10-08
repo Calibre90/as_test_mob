@@ -124,7 +124,7 @@ public class MainActivity extends Activity {
           Path mark=new Path();mark.moveTo(x+4,y+11);mark.lineTo(x+8,y+15);mark.lineTo(x+17,y+5);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
         }
         float available=columns==3?(i==2?135:140):(340f/columns-27);
-        txtFit(c,shown.get(page+i).id,x+26,y+15,columns==4?9:11,Color.BLACK,available);
+        txtFit(c,shown.get(page+i).label,x+26,y+15,columns==4?9:11,Color.BLACK,available);
       }
       card(c,10,376,380,337,13,true);
       int hexPanelColor=appearanceColor("panel",Color.TRANSPARENT);

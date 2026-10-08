@@ -167,6 +167,60 @@ public class MainActivity extends Activity {
       Toast.makeText(this,"Строка "+feature.address+" не найдена в блоке "+id,Toast.LENGTH_LONG).show();
     }catch(Exception ex){Toast.makeText(this,"Ошибка HEX/BITS: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
   }
+  String pendingCustomId="";
+  void customAbtPicker(boolean save,String id){
+    pendingCustomId=id;
+    Intent intent=new Intent(save?Intent.ACTION_CREATE_DOCUMENT:Intent.ACTION_OPEN_DOCUMENT);
+    intent.setType("*/*");intent.addCategory(Intent.CATEGORY_OPENABLE);
+    if(save)intent.putExtra(Intent.EXTRA_TITLE,id+".abt");
+    startActivityForResult(intent,save?13:12);
+  }
+  void handleCustomAbt(int request,Uri uri)throws Exception{
+    String id=pendingCustomId;pendingCustomId="";
+    org.json.JSONObject module=null;
+    org.json.JSONArray catalog=customModuleCatalog();
+    for(int i=0;i<catalog.length();i++){
+      org.json.JSONObject item=catalog.optJSONObject(i);
+      if(item!=null&&id.equals(item.optString("id")))module=item;
+    }
+    if(module==null)throw new IllegalArgumentException("Дополнительный блок не найден");
+    String prefix=module.optString("address").toUpperCase(java.util.Locale.US);
+    android.content.SharedPreferences prefs=getSharedPreferences("studio_custom_rows",MODE_PRIVATE);
+    if(request==12){
+      ByteArrayOutputStream buffer=new ByteArrayOutputStream();byte[] chunk=new byte[4096];int n;
+      try(InputStream in=getContentResolver().openInputStream(uri)){
+        if(in==null)throw new IOException("Файл недоступен");
+        while((n=in.read(chunk))!=-1){if(buffer.size()+n>4*1024*1024)throw new IOException("ABT слишком большой");buffer.write(chunk,0,n);}
+      }
+      java.util.HashMap<String,String> mapping=new java.util.HashMap<>();mapping.put(prefix,id);
+      java.util.List<AbtCodec.Row> parsed=AbtCodec.parseChecked(new String(buffer.toByteArray(),"UTF-8"),mapping);
+      java.util.ArrayList<AbtCodec.Row> rows=AbtCodec.requireModule(parsed,id);
+      org.json.JSONArray entries=new org.json.JSONArray();
+      for(AbtCodec.Row row:rows){
+        org.json.JSONObject item=new org.json.JSONObject();
+        item.put("address",row.address);item.put("value",row.value);entries.put(item);
+      }
+      prefs.edit().putString(id,entries.toString()).apply();
+      customEngines.remove(id);customChecks.clear();view.invalidate();
+      Toast.makeText(this,"Импортировано строк: "+rows.size(),Toast.LENGTH_LONG).show();
+    }else{
+      org.json.JSONArray entries=new org.json.JSONArray(prefs.getString(id,"[]"));
+      java.util.ArrayList<AbtCodec.Row> rows=new java.util.ArrayList<>();
+      for(int i=0;i<entries.length();i++){
+        org.json.JSONObject item=entries.optJSONObject(i);if(item==null)continue;
+        String address=item.optString("address");
+        if(!address.startsWith(prefix+"-"))throw new IllegalArgumentException("Адрес строки не соответствует блоку");
+        rows.add(new AbtCodec.Row(id,address,item.optString("value"),Integer.parseInt(address.split("-")[1])));
+      }
+      if(rows.isEmpty())throw new IllegalArgumentException("Нет строк для сохранения");
+      String content=AbtCodec.write(rows,id);
+      try(java.io.OutputStream out=getContentResolver().openOutputStream(uri)){
+        if(out==null)throw new IOException("Файл недоступен");
+        out.write(content.getBytes("UTF-8"));
+      }
+      Toast.makeText(this,"Сохранено строк: "+rows.size(),Toast.LENGTH_LONG).show();
+    }
+  }
   void showCustomRows(org.json.JSONObject module){
     final String id=module.optString("id"), address=module.optString("address");
     android.content.SharedPreferences prefs=getSharedPreferences("studio_custom_rows",MODE_PRIVATE);
@@ -190,6 +244,10 @@ public class MainActivity extends Activity {
     refresh[0].run();
     Button add=new Button(this);add.setText("Добавить строку");
     layout.addView(add);add.setOnClickListener(v->editCustomRow(id,address,entries,-1,prefs,refresh[0]));
+    Button importAbt=new Button(this);importAbt.setText("Открыть ABT");
+    layout.addView(importAbt);importAbt.setOnClickListener(v->customAbtPicker(false,id));
+    Button exportAbt=new Button(this);exportAbt.setText("Сохранить ABT");
+    layout.addView(exportAbt);exportAbt.setOnClickListener(v->customAbtPicker(true,id));
     new AlertDialog.Builder(this).setTitle(id+" · "+module.optString("name")).setView(layout).setPositiveButton("Закрыть",null).show();
   }
   void editCustomRow(String id,String prefix,org.json.JSONArray entries,int index,android.content.SharedPreferences prefs,Runnable refresh){
@@ -587,7 +645,7 @@ public class MainActivity extends Activity {
     i.setType("application/octet-stream");i.putExtra(Intent.EXTRA_TITLE,modules[active]+".abt");
     startActivityForResult(i,11);
   }
-  @Override protected void onActivityResult(int req,int result,Intent data){super.onActivityResult(req,result,data);if(req!=10&&req!=11)return;if(result!=RESULT_OK||data==null||data.getData()==null){pendingModule=-1;return;}
+  @Override protected void onActivityResult(int req,int result,Intent data){super.onActivityResult(req,result,data);if(req==12||req==13){if(result==RESULT_OK&&data!=null&&data.getData()!=null){try{handleCustomAbt(req,data.getData());}catch(Exception ex){Toast.makeText(this,"Ошибка ABT: "+ex.getMessage(),Toast.LENGTH_LONG).show();}}else pendingCustomId="";return;}if(req!=10&&req!=11)return;if(result!=RESULT_OK||data==null||data.getData()==null){pendingModule=-1;return;}
     Uri uri=data.getData();
     int previous=active;
     if(pendingModule>=0&&pendingModule<modules.length)active=pendingModule;

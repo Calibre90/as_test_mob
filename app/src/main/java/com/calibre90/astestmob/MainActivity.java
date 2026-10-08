@@ -212,9 +212,15 @@ public class MainActivity extends Activity {
         String value=rows[active].get(rowIndex);
         AbtCodec.Row row=rowIndex<abtRows[active].size()?abtRows[active].get(rowIndex):null;
         String before=row==null?"":original.get(key(row));
-        Set<Integer> changed=FeatureEngine.changedPositions(before==null?"":before,value);
-        // Imported ABT can already contain enabled options: highlight their configured HEX positions too.
-        if(row!=null)changed.addAll(activeFeaturePositions(active,row));
+        // Only checked (enabled) features may highlight HEX. An unchecked feature must never show blue OFF values.
+        Set<Integer> changed=row==null?new HashSet<>():activeFeaturePositions(active,row);
+        // When an enabled feature changes the checksum, highlight its changed checksum digits as well.
+        if(!changed.isEmpty()&&before!=null){
+          String oldHex=AbtCodec.norm(before),currentHex=AbtCodec.norm(value);
+          int checksumStart=Math.max(0,currentHex.length()-2);
+          for(int k=checksumStart;k<currentHex.length()&&k<oldHex.length();k++)
+            if(currentHex.charAt(k)!=oldHex.charAt(k))changed.add(k);
+        }
         p.setTypeface(Typeface.create("monospace",Typeface.NORMAL));p.setTextSize(13);p.setStyle(Paint.Style.FILL);
         float px=177;int hexIndex=0;
         c.save();c.clipRect(175,y+2,381,y+33);

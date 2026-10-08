@@ -213,11 +213,13 @@ public class MainActivity extends Activity {
         AbtCodec.Row row=rowIndex<abtRows[active].size()?abtRows[active].get(rowIndex):null;
         String before=row==null?"":original.get(key(row));
         Set<Integer> changed=FeatureEngine.changedPositions(before==null?"":before,value);
+        // Imported ABT can already contain enabled options: highlight their configured HEX positions too.
+        if(row!=null)changed.addAll(activeFeaturePositions(active,row));
         p.setTypeface(Typeface.create("monospace",Typeface.NORMAL));p.setTextSize(13);p.setStyle(Paint.Style.FILL);
         float px=177;int hexIndex=0;
         c.save();c.clipRect(175,y+2,381,y+33);
         for(int j=0;j<value.length();j++){
-          char ch=value.charAt(j);p.setColor(ch!=' '&&changed.contains(hexIndex)?Color.rgb(210,25,35):Color.BLACK);
+          char ch=value.charAt(j);p.setColor(ch!=' '&&changed.contains(hexIndex)?Color.rgb(20,105,220):Color.BLACK);
           if(px>381)break;
           c.drawText(String.valueOf(ch),px,y+23,p);px+=p.measureText(String.valueOf(ch));if(ch!=' ')hexIndex++;
         }
@@ -256,6 +258,24 @@ public class MainActivity extends Activity {
   String featureKey(FeatureEngine.Feature f){return f.module+"|"+f.address+"|"+f.id;}
   boolean isChecked(FeatureEngine.Feature f){Boolean b=checkedFeatures.get(featureKey(f));return b!=null&&b;}
   void syncFeatureChecks(int module){for(FeatureEngine.Feature f:moduleFeatures(module)){boolean on=engines[module].state(f,findRowValueFor(module,f.address));checkedFeatures.put(featureKey(f),on);engines[module].seed(f,on);}}
+  Set<Integer> activeFeaturePositions(int module,AbtCodec.Row row){
+    Set<Integer> positions=new HashSet<>();
+    String raw=AbtCodec.norm(row.value);
+    int payloadLength=Math.max(0,raw.length()-2); // Last byte is the checksum.
+    for(FeatureEngine.Feature f:moduleFeatures(module)){
+      if(!f.address.equalsIgnoreCase(row.address)||!isChecked(f))continue;
+      try{
+        if("BITS".equalsIgnoreCase(f.mode)){
+          int offset=f.byteIndex*2;
+          if(offset>=0&&offset+1<payloadLength){positions.add(offset);positions.add(offset+1);}
+        }else{
+          for(int index:FeatureEngine.indices(f.indices))
+            if(index>=0&&index<payloadLength)positions.add(index);
+        }
+      }catch(RuntimeException ignored){/* Ignore invalid admin configuration while drawing. */}
+    }
+    return positions;
+  }
   String findRowValueFor(int module,String address){AbtCodec.Row r=findRow(module,address);return r==null?"":r.value;}
   ArrayList<FeatureEngine.Feature> moduleFeatures(int module){ArrayList<FeatureEngine.Feature> result=new ArrayList<>();for(FeatureEngine.Feature f:features)if(f.module.equals(modules[module]))result.add(f);return result;}
   int rowCount(int module){return abtRows[module].size();}

@@ -585,6 +585,7 @@ public class MainActivity extends Activity {
     root.addView(body,bodyParams);
     final String[] names={"Функции и биты","Строки As-Built","Блоки и доступ","Оформление"};
     final Button[] buttons=new Button[4];
+    final View[] underlines=new View[4];
     final int[] selected={0};
     final Runnable[] redrawRef=new Runnable[1];
     Runnable redraw=()->{
@@ -823,13 +824,18 @@ public class MainActivity extends Activity {
           }catch(Exception ex){Toast.makeText(this,"Ошибка оформления: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
         });
       }
-      for(int i=0;i<buttons.length;i++)buttons[i].setAlpha(i==selected[0]?1f:.72f);
+      for(int i=0;i<buttons.length;i++){buttons[i].setAlpha(i==selected[0]?1f:.72f);if(underlines[i]!=null)underlines[i].setVisibility(i==selected[0]?View.VISIBLE:View.INVISIBLE);}
     };
     redrawRef[0]=redraw;
     for(int i=0;i<names.length;i++){
       final int tab=i;Button b=new Button(this);b.setAllCaps(false);b.setText(names[i]);
-      b.setTextSize(12);tabs.addView(b,new LinearLayout.LayoutParams(dp(142),dp(49)));
-      buttons[i]=b;b.setOnClickListener(v->{selected[0]=tab;redrawRef[0].run();});
+      b.setTextSize(12);
+      LinearLayout tabBox=new LinearLayout(this);tabBox.setOrientation(LinearLayout.VERTICAL);
+      tabBox.addView(b,new LinearLayout.LayoutParams(-1,dp(45)));
+      View underline=new View(this);underline.setBackgroundColor(Color.rgb(40,170,210));underline.setVisibility(i==0?View.VISIBLE:View.INVISIBLE);
+      tabBox.addView(underline,new LinearLayout.LayoutParams(-1,dp(3)));
+      tabs.addView(tabBox,new LinearLayout.LayoutParams(dp(142),dp(49)));
+      buttons[i]=b;underlines[i]=underline;b.setOnClickListener(v->{selected[0]=tab;redrawRef[0].run();});
     }
     LinearLayout footer=new LinearLayout(this);
     Button save=new Button(this);save.setText("Сохранить изменения");save.setAllCaps(false);

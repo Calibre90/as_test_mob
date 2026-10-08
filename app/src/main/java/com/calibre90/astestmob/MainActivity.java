@@ -292,6 +292,11 @@ public class MainActivity extends Activity {
       java.util.HashMap<String,String> mapping=new java.util.HashMap<>();mapping.put(prefix,id);
       java.util.List<AbtCodec.Row> parsed=AbtCodec.parseChecked(new String(buffer.toByteArray(),"UTF-8"),mapping);
       java.util.ArrayList<AbtCodec.Row> rows=AbtCodec.requireModule(parsed,id);
+      java.util.HashSet<String> importedAddresses=new java.util.HashSet<>();
+      for(AbtCodec.Row row:rows){
+        if(!importedAddresses.add(row.address.toUpperCase(java.util.Locale.US)))
+          throw new IllegalArgumentException("Повтор адреса "+row.address+" в ABT. Импорт отменён.");
+      }
       org.json.JSONArray entries=new org.json.JSONArray();
       for(AbtCodec.Row row:rows){
         org.json.JSONObject item=new org.json.JSONObject();

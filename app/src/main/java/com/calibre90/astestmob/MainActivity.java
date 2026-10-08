@@ -85,7 +85,9 @@ public class MainActivity extends Activity {
         for(int i=0;i<array.length();i++){
           org.json.JSONObject item=array.getJSONObject(i);
           String address=item.getString("address"),value=item.getString("value");
-          if(!address.matches(ids[m]+"-[0-9]{2}-[0-9]{2}")||!AbtCodec.norm(value).matches("[0-9A-F]{4,}"))throw new IllegalArgumentException("Invalid saved row");
+          String hex=AbtCodec.norm(value);
+          if(!address.matches(ids[m]+"-[0-9]{2}-[0-9]{2}")||!hex.matches("[0-9A-F]{4,}")||hex.length()%2!=0)throw new IllegalArgumentException("Invalid saved row");
+          for(AbtCodec.Row previous:restored)if(previous.address.equals(address))throw new IllegalArgumentException("Duplicate saved row "+address);
           restored.add(new AbtCodec.Row(modules[m],address,value,Integer.parseInt(address.split("-")[1])));
         }
         for(AbtCodec.Row old:abtRows[m])original.remove(key(old));

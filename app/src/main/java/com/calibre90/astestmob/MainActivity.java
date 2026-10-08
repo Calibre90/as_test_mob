@@ -95,7 +95,16 @@ public class MainActivity extends Activity {
         p.setColor(Color.rgb(202,209,219));p.setStrokeWidth(1);c.drawLine(165,y+4,165,y+31,p);
         String index=i<abtRows[active].size()?abtRows[active].get(i).address:ids[active]+"-"+String.format(java.util.Locale.US,"01-%02d",i+1);
         txt(c,index,28,y+23,14,Color.BLACK,false);
-        txt(c,rows[active].get(i),180,y+23,14,Color.BLACK,false);
+        String value=rows[active].get(i);
+        AbtCodec.Row row=i<abtRows[active].size()?abtRows[active].get(i):null;
+        String before=row==null?"":original.get(key(row));
+        Set<Integer> changed=FeatureEngine.changedPositions(before==null?"":before,value);
+        p.setTypeface(Typeface.create("monospace",Typeface.NORMAL));p.setTextSize(13);p.setStyle(Paint.Style.FILL);
+        float px=177;int hexIndex=0;
+        for(int j=0;j<value.length();j++){
+          char ch=value.charAt(j);p.setColor(ch!=' '&&changed.contains(hexIndex)?Color.rgb(210,25,35):Color.BLACK);
+          c.drawText(String.valueOf(ch),px,y+23,p);px+=p.measureText(String.valueOf(ch));if(ch!=' ')hexIndex++;
+        }
       }
       card(c,10,720,185,52,12,true);centered(c,"Открыть ABT",10,720,185,52,15,Color.BLACK);
       card(c,205,720,185,52,12,true);centered(c,"Сохранить ABT",205,720,185,52,15,Color.BLACK);

@@ -547,7 +547,7 @@ public class MainActivity extends Activity {
   void showAdminTabs(){
     final Dialog dialog=new Dialog(this);
     LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);
-    root.setPadding(dp(12),dp(12),dp(12),dp(10));root.setBackgroundColor(Color.rgb(44,44,44));
+    root.setPadding(dp(8),dp(8),dp(8),dp(8));root.setBackgroundColor(Color.rgb(44,44,44));
     TextView title=new TextView(this);title.setText("Администрирование интерфейса");
     title.setTextSize(18);title.setTextColor(Color.WHITE);title.setPadding(dp(8),dp(8),0,dp(14));root.addView(title);
     View line=new View(this);line.setBackgroundColor(Color.rgb(40,170,210));
@@ -566,7 +566,7 @@ public class MainActivity extends Activity {
     Runnable redraw=()->{
       body.removeAllViews();
       LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);
-      panel.setPadding(dp(5),dp(8),dp(5),dp(8));
+      panel.setPadding(dp(3),dp(5),dp(3),dp(5));
       body.addView(panel);
       TextView heading=new TextView(this);heading.setText("Выберите запись");
       heading.setTextSize(20);heading.setTextColor(Color.WHITE);heading.setGravity(Gravity.CENTER);
@@ -795,7 +795,7 @@ public class MainActivity extends Activity {
       Button edit=new Button(this);edit.setAllCaps(false);
       String[] captions={"Открыть редактор функций и битов","Открыть редактор строк As-Built","Редактировать блок IC / BCM / ABS / RKE","Настроить оформление"};
       edit.setText(captions[selected[0]]);
-      edit.setVisibility(selected[0]==3?View.GONE:View.VISIBLE);
+      edit.setVisibility(View.GONE);
       panel.addView(edit,new LinearLayout.LayoutParams(-1,dp(48)));
       edit.setOnClickListener(v->{
         dialog.dismiss();

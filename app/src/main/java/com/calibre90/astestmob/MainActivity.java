@@ -20,7 +20,7 @@ public class MainActivity extends Activity {
   ArrayList<String>[] rows=new ArrayList[4];
   boolean[][] checks=new boolean[4][3];
   int active=0;
-  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(Color.BLACK);getWindow().setNavigationBarColor(Color.BLACK);
+  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(Color.BLACK);getWindow().setNavigationBarColor(Color.BLACK);getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
     for(int i=0;i<4;i++){rows[i]=new ArrayList<>();for(String s:defaults)rows[i].add(s);}
     view=new StudioView();setContentView(view);
   }
@@ -28,7 +28,7 @@ public class MainActivity extends Activity {
     Paint p=new Paint(3); HashMap<String,Bitmap> bitmaps=new HashMap<>();
     float sx=1,sy=1,offX=0,offY=0;
     StudioView(){super(MainActivity.this);setBackgroundColor(Color.rgb(239,241,244));
-      String[] keys={"header_logo","active_red","inactive_1","module_info","features_panel","row_01","checkbox_empty","checkbox_checked","open_abt","save_abt","creator_link","settings","gauge_round","main_screen_content","feature_left","feature_right"};
+      String[] keys={"header_logo","active_red","inactive_1","module_info","features_panel","row_01","checkbox_empty","checkbox_checked","open_abt","save_abt","creator_link","settings","gauge_round","feature_left","feature_right","admin_dialog","about_dialog"};
       for(String key:keys){int id=getResources().getIdentifier(key,"drawable",getPackageName());if(id!=0)bitmaps.put(key,BitmapFactory.decodeResource(getResources(),id));}
     }
     void img(Canvas c,String key,float x,float y,float w,float h){Bitmap b=bitmaps.get(key);if(b!=null){p.setColor(Color.WHITE);p.setAlpha(255);c.drawBitmap(b,null,new RectF(x,y,x+w,y+h),p);}}
@@ -37,7 +37,7 @@ public class MainActivity extends Activity {
     @Override protected void onDraw(Canvas actual){super.onDraw(actual);
       float w=getWidth(),h=getHeight();sx=w/400f;sy=h/860f;actual.save();actual.scale(sx,sy);
       Canvas c=actual; c.drawColor(Color.rgb(242,243,246));
-      img(c,"main_screen_content",0,0,400,860);
+      // No full-screen screenshot as a background: only isolated component assets.
       rect(c,Color.rgb(243,245,247),7,0,386,137,4);
       img(c,"header_logo",8,8,384,125);
       // System status icons are intentionally not painted into the application.
@@ -46,9 +46,23 @@ public class MainActivity extends Activity {
       img(c,"module_info",11,201,378,79);
       txt(c,modules[active]+": "+names[active],23,231,17,Color.BLACK,true);
       txt(c,"ID: "+ids[active]+"  |  Ver: "+(loaded[active]?"ABT загружен":"Загрузите файл ABT"),23,257,12,Color.DKGRAY,false);
-      img(c,"features_panel",11,288,378,91);
+      // Build clean feature rows, rather than layering checkboxes on baked-in screenshots.
+      rect(c,Color.rgb(218,222,228),11,288,378,94,11);
+      rect(c,Color.WHITE,13,290,374,90,10);
+      p.setColor(Color.rgb(215,219,224));p.setStrokeWidth(1);
+      c.drawLine(203,291,203,379,p);c.drawLine(13,335,203,335,p);
       String[] labels={"RVM / контроль слепых зон","Новая функция","Keyless ON/OFF"};
-      for(int i=0;i<3;i++){float x=i==2?209:20,y=i==0?302:i==1?341:302;img(c,checks[active][i]?"checkbox_checked":"checkbox_empty",x,y,26,27);txt(c,labels[i],x+31,y+19,i==0?11:12,Color.BLACK,false);}
+      for(int i=0;i<3;i++){
+        float x=i==2?214:22,y=i==0?300:i==1?346:300;
+        p.setColor(Color.rgb(90,102,116));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.8f);
+        c.drawRoundRect(x,y,x+24,y+24,4,4,p);p.setStyle(Paint.Style.FILL);
+        if(checks[active][i]){
+          rect(c,Color.rgb(44,55,67),x+3,y+3,18,18,3);
+          p.setColor(Color.WHITE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2.4f);
+          Path mark=new Path();mark.moveTo(x+5,y+12);mark.lineTo(x+10,y+17);mark.lineTo(x+20,y+6);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
+        }
+        txt(c,labels[i],x+29,y+17,i==0?10.5f:11.5f,Color.BLACK,false);
+      }
       int count=Math.min(rows[active].size(),9);
       for(int i=0;i<count;i++){float y=389+i*37;img(c,"row_01",11,y,378,36);
         String index=ids[active]+"-"+(i==8?"02-01":String.format(java.util.Locale.US,"01-%02d",i+1));
@@ -56,7 +70,7 @@ public class MainActivity extends Activity {
         txt(c,rows[active].get(i),174,y+24,15,Color.BLACK,false);
       }
       img(c,"open_abt",12,730,181,55);img(c,"save_abt",205,730,183,55);
-      txt(c,"Открыть ABT",55,763,13,Color.BLACK,true);txt(c,"Сохранить ABT",244,763,13,Color.BLACK,true);
+      txt(c,"Открыть ABT",76,764,13,Color.BLACK,true);txt(c,"Сохранить ABT",267,764,12,Color.BLACK,true);
       img(c,"creator_link",11,792,378,61);txt(c,"Dim304",134,826,16,Color.BLACK,true);
       actual.restore();
     }
@@ -92,9 +106,46 @@ public class MainActivity extends Activity {
       }
     }catch(Exception ex){Toast.makeText(this,"Ошибка ABT: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
   }
-  void admin(){final EditText user=new EditText(this),pass=new EditText(this);user.setHint("Логин");pass.setHint("Пароль");pass.setInputType(129);
-    LinearLayout box=new LinearLayout(this);box.setPadding(28,10,28,10);box.setOrientation(1);box.addView(user);box.addView(pass);
-    new AlertDialog.Builder(this).setTitle("Админка").setView(box).setNegativeButton("Отмена",null).setPositiveButton("Войти",(d,w)->Toast.makeText(this,"Настройки администратора пока не перенесены",Toast.LENGTH_LONG).show()).show();
+
+  int dp(float v){return Math.round(v*getResources().getDisplayMetrics().density);}
+  void modal(boolean isAdmin){
+    final Dialog d=new Dialog(this);
+    final FrameLayout frame=new FrameLayout(this);
+    int sw=getResources().getDisplayMetrics().widthPixels;
+    int width=Math.round(sw*.87f);
+    int height=Math.round(width*(isAdmin?646f/478f:668f/458f));
+    ImageView bg=new ImageView(this);bg.setScaleType(ImageView.ScaleType.FIT_XY);
+    int res=getResources().getIdentifier(isAdmin?"admin_dialog":"about_dialog","drawable",getPackageName());
+    if(res!=0)bg.setImageResource(res);
+    frame.addView(bg,new FrameLayout.LayoutParams(width,height));
+    View close=new View(this);FrameLayout.LayoutParams cp=new FrameLayout.LayoutParams(Math.round(width*.17f),Math.round(height*.12f),Gravity.RIGHT|Gravity.TOP);
+    frame.addView(close,cp);close.setOnClickListener(v->d.dismiss());
+    if(isAdmin){
+      EditText user=new EditText(this),pass=new EditText(this);
+      user.setSingleLine(true);pass.setSingleLine(true);pass.setInputType(129);
+      user.setTextColor(Color.BLACK);pass.setTextColor(Color.BLACK);
+      user.setTextSize(15);pass.setTextSize(15);
+      user.setBackgroundColor(Color.TRANSPARENT);pass.setBackgroundColor(Color.TRANSPARENT);
+      FrameLayout.LayoutParams up=new FrameLayout.LayoutParams(Math.round(width*.59f),Math.round(height*.12f));
+      up.leftMargin=Math.round(width*.31f);up.topMargin=Math.round(height*.38f);frame.addView(user,up);
+      FrameLayout.LayoutParams pp=new FrameLayout.LayoutParams(Math.round(width*.59f),Math.round(height*.12f));
+      pp.leftMargin=Math.round(width*.31f);pp.topMargin=Math.round(height*.55f);frame.addView(pass,pp);
+      View cancel=new View(this);FrameLayout.LayoutParams ca=new FrameLayout.LayoutParams(Math.round(width*.40f),Math.round(height*.16f));
+      ca.leftMargin=Math.round(width*.09f);ca.topMargin=Math.round(height*.77f);frame.addView(cancel,ca);cancel.setOnClickListener(v->d.dismiss());
+      View login=new View(this);FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(Math.round(width*.40f),Math.round(height*.16f));
+      lp.leftMargin=Math.round(width*.53f);lp.topMargin=Math.round(height*.77f);frame.addView(login,lp);
+      login.setOnClickListener(v->{Toast.makeText(this,"Функции админки ещё не перенесены",Toast.LENGTH_LONG).show();d.dismiss();});
+    }else{
+      TextView ver=new TextView(this);ver.setText("Версия: тестовая сборка");ver.setTextColor(Color.DKGRAY);ver.setTextSize(13);
+      FrameLayout.LayoutParams vp=new FrameLayout.LayoutParams(-2,-2);vp.leftMargin=Math.round(width*.13f);vp.topMargin=Math.round(height*.59f);frame.addView(ver,vp);
+      TextView credit=new TextView(this);credit.setText("Dim304");credit.setTextColor(Color.BLACK);credit.setTextSize(16);
+      FrameLayout.LayoutParams cr=new FrameLayout.LayoutParams(-2,-2);cr.leftMargin=Math.round(width*.15f);cr.topMargin=Math.round(height*.69f);frame.addView(credit,cr);
+      View ok=new View(this);FrameLayout.LayoutParams op=new FrameLayout.LayoutParams(Math.round(width*.75f),Math.round(height*.17f));
+      op.leftMargin=Math.round(width*.12f);op.topMargin=Math.round(height*.79f);frame.addView(ok,op);ok.setOnClickListener(v->d.dismiss());
+    }
+    d.setContentView(frame);Window win=d.getWindow();d.show();win=d.getWindow();
+    if(win!=null){win.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));win.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);win.setDimAmount(.62f);win.setLayout(width,height);}
   }
-  void about(){new AlertDialog.Builder(this).setTitle("О программе").setMessage("MAZDA 6 GH AS-BUILT STUDIO\\nDim304").setPositiveButton("OK",null).show();}
+  void admin(){modal(true);}
+  void about(){modal(false);}
 }

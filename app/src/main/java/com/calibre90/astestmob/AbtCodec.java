@@ -92,7 +92,7 @@ public final class AbtCodec {
       group.getValue().sort(Comparator.comparing(r->r.address));
       for(Row row:group.getValue()){
         String[] parts=row.address.split("-");
-        String value=recalc(row.address,row.value);
+        String value=row.value;
         out.append(parts[0]).append(encodeIndex(Integer.parseInt(parts[1]))).append(encodeIndex(Integer.parseInt(parts[2]))).append(norm(value)).append("\r\n");
       }
     }

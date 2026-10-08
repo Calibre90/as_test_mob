@@ -332,6 +332,29 @@ public class MainActivity extends Activity {
       window.setDimAmount(.65f);window.setLayout(width,height);
     }
   }
+  void restoreCurrentModule(){
+    if(!loaded[active]){Toast.makeText(this,"Сначала откройте ABT блока "+modules[active],Toast.LENGTH_LONG).show();return;}
+    final int module=active;
+    int changes=0;
+    for(AbtCodec.Row row:abtRows[module]){
+      String initial=original.get(key(row));
+      if(initial!=null&&!AbtCodec.norm(row.value).equals(initial))changes++;
+    }
+    final int count=changes;
+    new AlertDialog.Builder(this).setTitle("Восстановить исходный ABT?")
+      .setMessage("Блок "+modules[module]+": изменённых строк — "+count+". Все изменения HEX и галочек этого блока будут отменены. Остальные блоки не затрагиваются.")
+      .setNegativeButton("Отмена",null)
+      .setPositiveButton("Восстановить",(d,w)->{
+        for(AbtCodec.Row row:abtRows[module]){
+          String initial=original.get(key(row));
+          if(initial!=null)row.value=AbtCodec.spaced(initial);
+        }
+        engines[module].reset();
+        for(FeatureEngine.Feature f:moduleFeatures(module))checkedFeatures.remove(featureKey(f));
+        syncFeatureChecks(module);refreshRows(module);view.invalidate();
+        Toast.makeText(this,"Исходные HEX блока "+modules[module]+" восстановлены",Toast.LENGTH_SHORT).show();
+      }).show();
+  }
   void showModuleAdmin(){
     final String module=modules[active];
     LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(18),dp(12),dp(18),0);
@@ -449,6 +472,7 @@ public class MainActivity extends Activity {
     });
     root.addView(actions);
     Button rowsAdmin=new Button(this);rowsAdmin.setText("Редактор строк ABT");root.addView(rowsAdmin);rowsAdmin.setOnClickListener(v->showRowsAdmin());
+    Button restore=new Button(this);restore.setText("Восстановить исходный ABT");root.addView(restore);restore.setOnClickListener(v->restoreCurrentModule());
     Button moduleAdmin=new Button(this);moduleAdmin.setText("Настройки блока");root.addView(moduleAdmin);moduleAdmin.setOnClickListener(v->showModuleAdmin());
     Button templates=new Button(this);templates.setText("Добавить шаблоны функций");root.addView(templates);
     templates.setOnClickListener(v->new AlertDialog.Builder(this)

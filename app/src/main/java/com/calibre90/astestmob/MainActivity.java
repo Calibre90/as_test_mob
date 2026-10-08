@@ -48,6 +48,14 @@ public class MainActivity extends Activity {
       // No full-screen screenshot as a background: only isolated component assets.
       // Black backing matches the reference shell; do not paint a white background behind the header.
       img(c,"header_logo",8,8,384,125);
+      // Cover the baked-in gear with a matching lock control.
+      rect(c,Color.rgb(249,250,251),327,43,49,63,8);
+      p.setColor(Color.rgb(190,196,203));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.3f);
+      c.drawRoundRect(327,43,376,106,8,8,p);
+      p.setColor(Color.rgb(32,36,43));p.setStrokeWidth(3.5f);
+      c.drawRoundRect(342,59,361,81,9,9,p);p.setStyle(Paint.Style.FILL);
+      rect(c,Color.rgb(32,36,43),338,72,27,23,4);
+      rect(c,Color.WHITE,350,79,3,10,1);
       // System status icons are intentionally not painted into the application.
       String[] tabs={"IC","BCM","RKE","ABS"};
       for(int i=0;i<4;i++){float x=12+i*95;img(c,i==active?"active_red":"inactive_1",x,143,92,48);txt(c,tabs[i],x+30,174,16,i==active?Color.WHITE:Color.BLACK,true);}
@@ -117,43 +125,83 @@ public class MainActivity extends Activity {
   }
 
   int dp(float v){return Math.round(v*getResources().getDisplayMetrics().density);}
+  android.graphics.drawable.GradientDrawable panel(int top,int bottom,int radius,int border){
+    android.graphics.drawable.GradientDrawable g=new android.graphics.drawable.GradientDrawable(
+      android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM,new int[]{top,bottom});
+    g.setCornerRadius(dp(radius));g.setStroke(dp(1.5f),border);return g;
+  }
+  void place(FrameLayout root,View child,float left,float top,float width,float height,int totalW,int totalH){
+    FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(Math.round(totalW*width),Math.round(totalH*height));
+    lp.leftMargin=Math.round(totalW*left);lp.topMargin=Math.round(totalH*top);root.addView(child,lp);
+  }
+  TextView caption(String s,int size,int color,boolean bold){
+    TextView t=new TextView(this);t.setText(s);t.setTextSize(size);t.setTextColor(color);
+    t.setGravity(Gravity.CENTER_VERTICAL);if(bold)t.setTypeface(null,android.graphics.Typeface.BOLD);return t;
+  }
   void modal(boolean isAdmin){
-    final Dialog d=new Dialog(this);
-    final FrameLayout frame=new FrameLayout(this);
-    int sw=getResources().getDisplayMetrics().widthPixels;
-    int width=Math.round(sw*.87f);
-    int height=Math.round(width*(isAdmin?646f/478f:668f/458f));
-    ImageView bg=new ImageView(this);bg.setScaleType(ImageView.ScaleType.FIT_XY);
-    int res=getResources().getIdentifier(isAdmin?"admin_dialog":"about_dialog","drawable",getPackageName());
-    if(res!=0)bg.setImageResource(res);
-    frame.addView(bg,new FrameLayout.LayoutParams(width,height));
-    View close=new View(this);FrameLayout.LayoutParams cp=new FrameLayout.LayoutParams(Math.round(width*.17f),Math.round(height*.12f),Gravity.RIGHT|Gravity.TOP);
-    frame.addView(close,cp);close.setOnClickListener(v->d.dismiss());
+    final Dialog dialog=new Dialog(this);
+    final int width=Math.round(getResources().getDisplayMetrics().widthPixels*.87f);
+    final int height=Math.round(width*(isAdmin?1.24f:1.35f));
+    final FrameLayout root=new FrameLayout(this);
+    root.setBackground(panel(Color.rgb(252,253,254),Color.rgb(234,239,244),14,Color.rgb(225,50,51)));
+    root.setClipToOutline(true);
+    View header=new View(this);header.setBackground(panel(Color.WHITE,Color.rgb(235,239,244),10,Color.rgb(215,222,230)));
+    place(root,header,.025f,.025f,.95f,.16f,width,height);
+    TextView title=caption(isAdmin?"Админка":"О программе",20,Color.BLACK,true);
+    place(root,title,.16f,.045f,.60f,.11f,width,height);
     if(isAdmin){
-      EditText user=new EditText(this),pass=new EditText(this);
-      user.setSingleLine(true);pass.setSingleLine(true);pass.setInputType(129);
-      user.setTextColor(Color.BLACK);pass.setTextColor(Color.BLACK);
-      user.setTextSize(15);pass.setTextSize(15);
-      user.setBackgroundColor(Color.TRANSPARENT);pass.setBackgroundColor(Color.TRANSPARENT);
-      FrameLayout.LayoutParams up=new FrameLayout.LayoutParams(Math.round(width*.59f),Math.round(height*.12f));
-      up.leftMargin=Math.round(width*.31f);up.topMargin=Math.round(height*.38f);frame.addView(user,up);
-      FrameLayout.LayoutParams pp=new FrameLayout.LayoutParams(Math.round(width*.59f),Math.round(height*.12f));
-      pp.leftMargin=Math.round(width*.31f);pp.topMargin=Math.round(height*.55f);frame.addView(pass,pp);
-      View cancel=new View(this);FrameLayout.LayoutParams ca=new FrameLayout.LayoutParams(Math.round(width*.40f),Math.round(height*.16f));
-      ca.leftMargin=Math.round(width*.09f);ca.topMargin=Math.round(height*.77f);frame.addView(cancel,ca);cancel.setOnClickListener(v->d.dismiss());
-      View login=new View(this);FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(Math.round(width*.40f),Math.round(height*.16f));
-      lp.leftMargin=Math.round(width*.53f);lp.topMargin=Math.round(height*.77f);frame.addView(login,lp);
-      login.setOnClickListener(v->{Toast.makeText(this,"Функции админки ещё не перенесены",Toast.LENGTH_LONG).show();d.dismiss();});
-    }else{
-      TextView ver=new TextView(this);ver.setText("Версия: тестовая сборка");ver.setTextColor(Color.DKGRAY);ver.setTextSize(13);
-      FrameLayout.LayoutParams vp=new FrameLayout.LayoutParams(-2,-2);vp.leftMargin=Math.round(width*.13f);vp.topMargin=Math.round(height*.59f);frame.addView(ver,vp);
-      TextView credit=new TextView(this);credit.setText("Dim304");credit.setTextColor(Color.BLACK);credit.setTextSize(16);
-      FrameLayout.LayoutParams cr=new FrameLayout.LayoutParams(-2,-2);cr.leftMargin=Math.round(width*.15f);cr.topMargin=Math.round(height*.69f);frame.addView(credit,cr);
-      View ok=new View(this);FrameLayout.LayoutParams op=new FrameLayout.LayoutParams(Math.round(width*.75f),Math.round(height*.17f));
-      op.leftMargin=Math.round(width*.12f);op.topMargin=Math.round(height*.79f);frame.addView(ok,op);ok.setOnClickListener(v->d.dismiss());
+      TextView lock=caption("🔒",25,Color.rgb(190,15,22),true);
+      place(root,lock,.065f,.045f,.11f,.11f,width,height);
     }
-    d.setContentView(frame);Window win=d.getWindow();d.show();win=d.getWindow();
-    if(win!=null){win.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));win.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);win.setDimAmount(.62f);win.setLayout(width,height);}
+    TextView close=caption("×",35,Color.BLACK,false);close.setGravity(Gravity.CENTER);
+    close.setBackground(panel(Color.WHITE,Color.rgb(235,238,242),8,Color.rgb(200,205,212)));
+    place(root,close,.82f,.045f,.125f,.105f,width,height);
+    close.setOnClickListener(v->dialog.dismiss());
+    if(isAdmin){
+      TextView help=caption("Вход администратора",15,Color.DKGRAY,false);
+      place(root,help,.085f,.22f,.80f,.07f,width,height);
+      EditText login=new EditText(this),password=new EditText(this);
+      login.setSingleLine(true);login.setHint("Логин");login.setTextSize(16);login.setPadding(dp(12),0,dp(12),0);
+      login.setBackground(panel(Color.WHITE,Color.rgb(247,248,250),8,Color.rgb(192,200,209)));
+      place(root,login,.08f,.33f,.84f,.125f,width,height);
+      password.setSingleLine(true);password.setHint("Пароль");password.setInputType(129);password.setTextSize(16);
+      password.setPadding(dp(12),0,dp(12),0);
+      password.setBackground(panel(Color.WHITE,Color.rgb(247,248,250),8,Color.rgb(192,200,209)));
+      place(root,password,.08f,.49f,.84f,.125f,width,height);
+      TextView cancel=caption("Отмена",15,Color.BLACK,true);cancel.setGravity(Gravity.CENTER);
+      cancel.setBackground(panel(Color.WHITE,Color.rgb(218,224,231),9,Color.rgb(185,193,201)));
+      place(root,cancel,.08f,.75f,.39f,.13f,width,height);cancel.setOnClickListener(v->dialog.dismiss());
+      TextView enter=caption("Войти",15,Color.WHITE,true);enter.setGravity(Gravity.CENTER);
+      enter.setBackground(panel(Color.rgb(240,66,67),Color.rgb(169,0,8),9,Color.rgb(255,108,112)));
+      place(root,enter,.53f,.75f,.39f,.13f,width,height);
+      enter.setOnClickListener(v->{Toast.makeText(this,"Функции админки ещё не перенесены",Toast.LENGTH_LONG).show();dialog.dismiss();});
+    }else{
+      ImageView brand=new ImageView(this);
+      int logoId=getResources().getIdentifier("header_logo","drawable",getPackageName());
+      if(logoId!=0){
+        Bitmap b=BitmapFactory.decodeResource(getResources(),logoId);
+        if(b!=null){Bitmap cropped=Bitmap.createBitmap(b,0,0,Math.round(b.getWidth()*.78f),b.getHeight());brand.setImageBitmap(cropped);}
+      }
+      brand.setScaleType(ImageView.ScaleType.FIT_CENTER);
+      place(root,brand,.055f,.205f,.89f,.255f,width,height);
+      View divider=new View(this);divider.setBackgroundColor(Color.rgb(220,50,55));
+      place(root,divider,.075f,.475f,.85f,.004f,width,height);
+      TextView version=caption("Версия: тестовая сборка",15,Color.DKGRAY,false);
+      place(root,version,.09f,.51f,.82f,.075f,width,height);
+      TextView description=caption("Редактор As-Built для Mazda 6 GH",15,Color.BLACK,false);
+      place(root,description,.09f,.595f,.84f,.075f,width,height);
+      TextView author=caption("Разработчик: Dim304",15,Color.BLACK,true);
+      place(root,author,.09f,.68f,.84f,.075f,width,height);
+      TextView ok=caption("Закрыть",16,Color.WHITE,true);ok.setGravity(Gravity.CENTER);
+      ok.setBackground(panel(Color.rgb(245,69,69),Color.rgb(170,0,10),9,Color.rgb(255,103,109)));
+      place(root,ok,.09f,.81f,.82f,.12f,width,height);ok.setOnClickListener(v->dialog.dismiss());
+    }
+    dialog.setContentView(root);dialog.show();
+    Window window=dialog.getWindow();if(window!=null){
+      window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+      window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+      window.setDimAmount(.65f);window.setLayout(width,height);
+    }
   }
   void admin(){modal(true);}
   void about(){modal(false);}

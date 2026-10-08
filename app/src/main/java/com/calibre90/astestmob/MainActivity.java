@@ -211,7 +211,6 @@ public class MainActivity extends Activity {
           engine.seed(sibling,enabled);
         }
         boolean next=!customChecked(feature);
-        rememberCustomBaseline(id,feature.address,row.value);
         if(next){
           for(FeatureEngine.Feature sibling:available){
             if(sibling==feature||!customChecked(sibling))continue;
@@ -221,6 +220,8 @@ public class MainActivity extends Activity {
             }
           }
         }
+        // Only an accepted edit establishes a comparison baseline.
+        rememberCustomBaseline(id,feature.address,row.value);
         engine.apply(row,feature,next,features);
         item.put("value",row.value);
         prefs.edit().putString(id,entries.toString()).apply();

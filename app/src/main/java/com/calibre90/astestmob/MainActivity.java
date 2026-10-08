@@ -140,6 +140,23 @@ public class MainActivity extends Activity {
     }catch(Exception ignored){}
     return false;
   }
+  boolean customFeatureOverlap(FeatureEngine.Feature a,FeatureEngine.Feature b){
+    if(!a.address.equalsIgnoreCase(b.address))return false;
+    try{
+      java.util.HashSet<Integer> positions=new java.util.HashSet<>();
+      if("BITS".equalsIgnoreCase(a.mode)){
+        for(int bit:FeatureEngine.indices(a.indices))positions.add(a.byteIndex*8+bit);
+      }else{
+        for(int hex:FeatureEngine.indices(a.indices))for(int bit=0;bit<4;bit++)positions.add(hex*4+bit);
+      }
+      if("BITS".equalsIgnoreCase(b.mode)){
+        for(int bit:FeatureEngine.indices(b.indices))if(positions.contains(b.byteIndex*8+bit))return true;
+      }else{
+        for(int hex:FeatureEngine.indices(b.indices))for(int bit=0;bit<4;bit++)if(positions.contains(hex*4+bit))return true;
+      }
+    }catch(Exception ex){return true;}
+    return false;
+  }
   void toggleCustomFeature(int index){
     org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
     if(module==null)return;
@@ -167,6 +184,15 @@ public class MainActivity extends Activity {
           customEngines.put(id,engine);
         }
         boolean next=!customChecked(feature);
+        if(next){
+          for(FeatureEngine.Feature sibling:available){
+            if(sibling==feature||!customChecked(sibling))continue;
+            if(customFeatureOverlap(feature,sibling)){
+              Toast.makeText(this,"Конфликт с активной функцией: "+sibling.label,Toast.LENGTH_LONG).show();
+              return;
+            }
+          }
+        }
         engine.apply(row,feature,next,features);
         item.put("value",row.value);
         prefs.edit().putString(id,entries.toString()).apply();

@@ -1320,6 +1320,23 @@ public class MainActivity extends Activity {
               java.util.List<Integer> positions=FeatureEngine.indices(indices);
               if(byteIndex<0||positions.isEmpty()||new java.util.HashSet<>(positions).size()!=positions.size())
                 throw new IllegalArgumentException("Проверьте индексы: повторы недопустимы");
+              for(int ci=0;ci<catalog.length();ci++){
+                org.json.JSONObject custom=catalog.optJSONObject(ci);
+                if(custom==null||!module.equalsIgnoreCase(custom.optString("id")))continue;
+                org.json.JSONArray customRows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(module,"[]"));
+                for(int ri=0;ri<customRows.length();ri++){
+                  org.json.JSONObject item=customRows.optJSONObject(ri);
+                  if(item==null||!address.equalsIgnoreCase(item.optString("address")))continue;
+                  int hexLength=AbtCodec.norm(item.optString("value")).length();
+                  int dataLength=Math.max(0,hexLength-2);
+                  if(mode.equals("BITS")){
+                    if(byteIndex*2+1>=dataLength)throw new IllegalArgumentException("Байт "+byteIndex+" выходит за пределы HEX-строки");
+                  }else{
+                    for(int position:positions)
+                      if(position<0||position>=dataLength)throw new IllegalArgumentException("HEX индекс "+position+" выходит за пределы данных строки");
+                  }
+                }
+              }
               if(mode.equals("BITS")){
                 for(int bit:positions)if(bit<0||bit>7)throw new IllegalArgumentException("Биты должны быть от 0 до 7");
                 if(!vls[8].isEmpty()||!vls[9].isEmpty())

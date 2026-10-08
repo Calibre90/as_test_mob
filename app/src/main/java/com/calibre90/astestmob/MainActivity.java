@@ -178,11 +178,17 @@ public class MainActivity extends Activity {
   }
   void inspectHexRow(int index){
     if(index<0||index>=abtRows[active].size())return;
-    AbtCodec.Row row=abtRows[active].get(index);
-    new AlertDialog.Builder(this).setTitle(modules[active]+" · "+row.address)
+    final int inspectedModule=active;
+    AbtCodec.Row row=abtRows[inspectedModule].get(index);
+    new AlertDialog.Builder(this).setTitle(modules[inspectedModule]+" · "+row.address)
       .setMessage("Полное значение HEX:\n"+row.value+"\n\nДля изменения выберите «Редактировать».")
       .setNegativeButton("Закрыть",null)
-      .setPositiveButton("Редактировать",(d,w)->editHexRow(index)).show();
+      .setPositiveButton("Редактировать",(d,w)->{
+        if(active!=inspectedModule||index>=abtRows[inspectedModule].size()||abtRows[inspectedModule].get(index)!=row){
+          Toast.makeText(this,"Строка изменилась. Откройте её повторно.",Toast.LENGTH_LONG).show();return;
+        }
+        editHexRow(index);
+      }).show();
   }
   void editHexRow(int index){
     if(index<0||index>=abtRows[active].size())return;

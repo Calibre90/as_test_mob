@@ -109,10 +109,11 @@ public class MainActivity extends Activity {
     try{return Math.max(1,Math.min(10,Integer.parseInt(StudioSettings.appearance(this,"feature_columns","3").trim())));}
     catch(Exception ignored){return 3;}
   }
-  int featureSlots(){return featureColumns();}
-  float featureCellWidth(){return 370f/featureColumns();}
-  float featureX(int index){return 15+(index%featureColumns())*featureCellWidth()+5;}
-  float featureY(int index){return 305;}
+  int featureSlots(){return 3;} // Three readable vertical rows per page
+  float featureCellWidth(){return 370f;}
+  float featureX(int index){return 25f;}
+  float featureY(int index){return 289f+index*26f;}
+  String lastFeatureStatus="Изменений нет";
   class StudioView extends View {
     Paint p=new Paint(3); HashMap<String,Bitmap> bitmaps=new HashMap<>();
     float sx=1,sy=1,offX=0,offY=0;
@@ -178,27 +179,20 @@ public class MainActivity extends Activity {
       txt(c,"ID: "+ids[active]+"  |  Ver: "+(!configuredVersion.isEmpty()?configuredVersion:(loaded[active]?"ABT загружен":"Образец")),25,252,12,Color.rgb(91,103,119),false);
       card(c,10,279,380,91,12,true);
       ArrayList<FeatureEngine.Feature> shown=moduleFeatures(active);
-      int page=featurePage[active],slots=featureSlots(),columns=featureColumns();
-      float cellW=featureCellWidth();
+      int page=featurePage[active],slots=featureSlots();
       p.setColor(Color.rgb(190,199,211));p.setStrokeWidth(1);
-      for(int col=1;col<columns;col++){float xx=15+col*cellW;c.drawLine(xx,284,xx,365,p);}
-      // One feature row: exactly the configured number of columns.
+      for(int line=1;line<3;line++){float yy=284+line*27;c.drawLine(15,yy,385,yy,p);}
       for(int i=0;i<slots&&page+i<shown.size();i++){
-        float x=featureX(i),y=featureY(i),maxLabel=Math.max(3,cellW-31);
-        card(c,x,y+5,18,18,4,false);
+        float x=featureX(i),y=featureY(i);
+        card(c,x,y,17,17,4,false);
         if(isChecked(shown.get(page+i))){
-          rect(c,Color.rgb(210,28,37),x+3,y+8,12,12,2);
+          rect(c,Color.rgb(210,28,37),x+3,y+3,11,11,2);
           p.setColor(Color.WHITE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);
-          Path mark=new Path();mark.moveTo(x+3,y+14);mark.lineTo(x+7,y+18);mark.lineTo(x+15,y+9);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
+          Path mark=new Path();mark.moveTo(x+3,y+9);mark.lineTo(x+7,y+13);mark.lineTo(x+14,y+4);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
         }
-        String label=shown.get(page+i).label;
-        float font=columns>=8?8:columns>=5?9:11;
-        txtFit(c,label,x+22,y+17,font,Color.BLACK,maxLabel);
+        txtFit(c,shown.get(page+i).label,x+25,y+13,12,Color.BLACK,310);
       }
-      if(shown.size()>slots){
-        float bx=featureX(slots),by=featureY(slots);
-        txt(c,"›",bx+Math.max(8,cellW/2-5),by+24,19,Color.rgb(155,0,0),true);
-      }
+      if(shown.size()>slots)txt(c,"›",365,346,22,Color.rgb(155,0,0),true);
       card(c,10,376,380,337,13,true);
       int hexPanelColor=appearanceColor("panel",Color.TRANSPARENT);
       if(hexPanelColor!=Color.TRANSPARENT){p.setColor(hexPanelColor);p.setStyle(Paint.Style.FILL);c.drawRoundRect(13,379,387,710,10,10,p);}
@@ -236,13 +230,7 @@ public class MainActivity extends Activity {
       card(c,10,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"open_text","Открыть ABT"),10,720,185,52,15,Color.BLACK);
       card(c,205,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"save_text","Сохранить ABT"),205,720,185,52,15,Color.BLACK);
       card(c,10,782,319,57,12,true);
-      String status="Изменений нет";
-      int differences=0;
-      for(AbtCodec.Row row:abtRows[active]){
-        String old=original.get(key(row));String now=AbtCodec.norm(row.value);
-        if(old!=null&&!old.equals(now)){differences++;if(differences==1)status=row.address+": "+old+" → "+now;}
-      }
-      if(differences>1)status="Изменено строк: "+differences;
+      String status=lastFeatureStatus;
       p.setTypeface(Typeface.create("sans-serif",Typeface.NORMAL));p.setTextSize(10);p.setColor(Color.BLACK);
       if(status.length()>44)status=status.substring(0,41)+"…";
       c.drawText(status,22,814,p);
@@ -255,7 +243,7 @@ public class MainActivity extends Activity {
       if(startY>=376&&startY<=713&&y>=376&&y<=713&&Math.abs(y-startY)>18){int delta=Math.round((startY-y)/36.5f);scrollOffset[active]=Math.max(0,Math.min(Math.max(0,rowCount(active)-9),scrollOffset[active]+delta));invalidate();return true;}
       if(y>=127&&y<=183){if(x<12||x>=392)return true;int selected=(int)((x-12)/95);if(selected>=0&&selected<modules.length){active=selected;invalidate();}return true;}
       if(x>=346&&y>=8&&y<=70){admin();return true;}
-      if(y>=279&&y<=370){int slots=featureSlots(),col=(int)((x-15)/featureCellWidth());if(col<0||col>=featureColumns())return true;int i=col;if(i==slots&&moduleFeatures(active).size()>slots){featurePage[active]=(featurePage[active]+slots>=moduleFeatures(active).size())?0:featurePage[active]+slots;invalidate();return true;}if(i<slots&&featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}
+      if(y>=279&&y<=370){int slots=featureSlots();if(x>=345&&moduleFeatures(active).size()>slots){featurePage[active]=(featurePage[active]+slots>=moduleFeatures(active).size())?0:featurePage[active]+slots;invalidate();return true;}int i=(int)((y-284)/27);if(i>=0&&i<slots&&featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}
       // HEX rows on the main screen are read-only; edit via features or admin panel.
       if(y>=380&&y<=713&&Math.abs(y-startY)<=18)return true;
       if(y>=717&&y<=777){if(x<200)open();else save();return true;}
@@ -310,7 +298,7 @@ public class MainActivity extends Activity {
     if(index>=available.size()){Toast.makeText(this,"Функция для этого блока ещё не настроена",Toast.LENGTH_SHORT).show();return;}
     FeatureEngine.Feature f=available.get(index);AbtCodec.Row row=findRow(active,f.address);
     if(row==null){Toast.makeText(this,"Строка "+f.address+" отсутствует в блоке "+modules[active]+". Добавьте её через админку или загрузите ABT.",Toast.LENGTH_LONG).show();return;}
-    try{boolean next=!isChecked(f);engines[active].apply(row,f,next,features);checkedFeatures.put(featureKey(f),next);refreshRows(active);view.invalidate();}
+    try{boolean next=!isChecked(f);engines[active].apply(row,f,next,features);checkedFeatures.put(featureKey(f),next);lastFeatureStatus=f.label+": "+(next?"изменено":"исходное значение");refreshRows(active);view.invalidate();}
     catch(Exception ex){Toast.makeText(this,"Ошибка функции: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
   }
   void inspectHexRow(int index){

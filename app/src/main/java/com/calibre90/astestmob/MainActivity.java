@@ -581,6 +581,16 @@ public class MainActivity extends Activity {
       actual.restore();
     }
     float startY,startX,moduleTabOffset=0;
+    void revealActiveTab(){
+      int count=4+customModuleCatalog().length();
+      float width=count<=4?93.75f:90f;
+      float maxOffset=Math.max(0,count*width-370f);
+      float left=active*width-moduleTabOffset;
+      float right=left+width;
+      if(left<0)moduleTabOffset=active*width;
+      else if(right>370f)moduleTabOffset=(active+1)*width-370f;
+      moduleTabOffset=Math.max(0,Math.min(maxOffset,moduleTabOffset));
+    }
     @Override public boolean onTouchEvent(MotionEvent e){if(e.getAction()==MotionEvent.ACTION_DOWN){startY=e.getY()/sy;startX=e.getX()/sx;return true;}if(e.getAction()!=MotionEvent.ACTION_UP)return true;float x=e.getX()/sx,y=e.getY()/sy;
       if(active>=4&&startY>=391&&startY<=713&&y>=391&&y<=713&&Math.abs(y-startY)>18){
         org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
@@ -606,7 +616,7 @@ public class MainActivity extends Activity {
         int selected=(int)((x-15+moduleTabOffset)/width);
         if(selected>=4&&selected<count){
           org.json.JSONObject item=customModuleCatalog().optJSONObject(selected-4);
-          active=selected;saveSelectedModule();invalidate();
+          active=selected;saveSelectedModule();revealActiveTab();invalidate();
           return true;
         }
         if(selected>=0&&selected<modules.length){active=selected;invalidate();}

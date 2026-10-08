@@ -57,7 +57,9 @@ public class MainActivity extends Activity {
       sx=getWidth()/400f;sy=getHeight()/860f;actual.save();actual.scale(sx,sy);
       Canvas c=actual;c.drawColor(Color.BLACK);
       img(c,"header_mazda_no_lock",8,4,384,106);
-      img(c,"admin_lock_button",356,13,25,26);
+      card(c,351,12,33,34,9,false);
+      p.setTypeface(Typeface.DEFAULT);p.setTextSize(23);p.setColor(Color.BLACK);p.setStyle(Paint.Style.FILL);
+      c.drawText("🔒",355,38,p);
       String[] tabs={"IC","BCM","RKE","ABS"};
       card(c,10,125,380,57,13,false);
       for(int i=0;i<4;i++){

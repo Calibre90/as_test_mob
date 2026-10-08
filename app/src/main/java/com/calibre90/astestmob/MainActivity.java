@@ -5,7 +5,7 @@ import android.os.*;
 import android.content.*;
 import android.graphics.*;
 import android.graphics.drawable.ColorDrawable;
-import android.view.*;
+import android.view.*;\nimport android.graphics.Insets;
 import android.widget.*;
 import java.util.*;
 
@@ -14,7 +14,7 @@ public class MainActivity extends Activity {
     super.onCreate(b);
     getWindow().setStatusBarColor(Color.BLACK);
     getWindow().setNavigationBarColor(Color.BLACK);
-    setContentView(new StudioView(this));
+    getWindow().setDecorFitsSystemWindows(true);\n    setContentView(new StudioView(this));
   }
 
   class StudioView extends View {

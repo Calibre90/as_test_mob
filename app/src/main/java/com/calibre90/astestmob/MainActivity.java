@@ -507,7 +507,29 @@ public class MainActivity extends Activity {
           float yy=409+i*30;
           card(c,17,yy,366,28,7,false);
           txtFit(c,item.optString("address"),24,yy+19,12,Color.BLACK,138);
-          txtFit(c,item.optString("value"),168,yy+19,12,Color.BLACK,205);
+          String hex=item.optString("value");
+          java.util.HashSet<Integer> marked=new java.util.HashSet<>();
+          for(FeatureEngine.Feature feature:features){
+            if(!id.equalsIgnoreCase(feature.module)||!item.optString("address").equalsIgnoreCase(feature.address)||!customChecked(feature))continue;
+            try{
+              if("BITS".equalsIgnoreCase(feature.mode)){
+                for(int bit:FeatureEngine.indices(feature.indices))marked.add(feature.byteIndex*2+(bit/4));
+              }else marked.addAll(FeatureEngine.indices(feature.indices));
+            }catch(Exception ignored){}
+          }
+          p.setTextSize(12);p.setStyle(Paint.Style.FILL);
+          c.save();c.clipRect(168,yy+1,374,yy+27);
+          float px=168;
+          for(int k=0;k<hex.length();k++){
+            String ch=hex.substring(k,k+1);
+            boolean highlight=marked.contains(k);
+            p.setTypeface(Typeface.create("monospace",highlight?Typeface.BOLD:Typeface.NORMAL));
+            p.setColor(highlight?Color.rgb(210,38,48):Color.BLACK);
+            if(px+p.measureText(ch)>374)break;
+            c.drawText(ch,px,yy+19,p);
+            px+=p.measureText(ch);
+          }
+          c.restore();
         }
         card(c,10,720,185,52,12,true);centered(c,"Строки блока",10,720,185,52,15,Color.BLACK);
         card(c,205,720,185,52,12,true);centered(c,"Админка",205,720,185,52,15,Color.BLACK);

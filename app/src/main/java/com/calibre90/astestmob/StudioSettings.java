@@ -22,6 +22,17 @@ public final class StudioSettings {
     out.add(new FeatureEngine.Feature("keyless","IC","720-01-01","HEX","0,1","2B","1F",0));
     return out;
   }
+  public static String moduleName(Context ctx,String id,String fallback){
+    return ctx.getSharedPreferences(PREF,0).getString("module_name_"+id,fallback);
+  }
+  public static String moduleVersion(Context ctx,String id){
+    return ctx.getSharedPreferences(PREF,0).getString("module_version_"+id,"");
+  }
+  public static void saveModule(Context ctx,String id,String name,String version){
+    if(!ctx.getSharedPreferences(PREF,0).edit()
+      .putString("module_name_"+id,name).putString("module_version_"+id,version).commit())
+      throw new IllegalStateException("Module settings not saved");
+  }
   public static void save(Context ctx,List<FeatureEngine.Feature> list){
     JSONArray a=new JSONArray();
     try{

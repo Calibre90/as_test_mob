@@ -1324,9 +1324,11 @@ public class MainActivity extends Activity {
                 org.json.JSONObject custom=catalog.optJSONObject(ci);
                 if(custom==null||!module.equalsIgnoreCase(custom.optString("id")))continue;
                 org.json.JSONArray customRows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(module,"[]"));
+                boolean addressFound=false;
                 for(int ri=0;ri<customRows.length();ri++){
                   org.json.JSONObject item=customRows.optJSONObject(ri);
                   if(item==null||!address.equalsIgnoreCase(item.optString("address")))continue;
+                  addressFound=true;
                   int hexLength=AbtCodec.norm(item.optString("value")).length();
                   int dataLength=Math.max(0,hexLength-2);
                   if(mode.equals("BITS")){
@@ -1336,6 +1338,7 @@ public class MainActivity extends Activity {
                       if(position<0||position>=dataLength)throw new IllegalArgumentException("HEX индекс "+position+" выходит за пределы данных строки");
                   }
                 }
+                if(!addressFound)throw new IllegalArgumentException("Строка "+address+" отсутствует в блоке "+module+". Сначала добавьте строку.");
               }
               if(mode.equals("BITS")){
                 for(int bit:positions)if(bit<0||bit>7)throw new IllegalArgumentException("Биты должны быть от 0 до 7");

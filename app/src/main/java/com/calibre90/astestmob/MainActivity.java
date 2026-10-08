@@ -168,6 +168,7 @@ public class MainActivity extends Activity {
     }catch(Exception ex){Toast.makeText(this,"Ошибка HEX/BITS: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
   }
   final HashMap<String,Integer> customScroll=new HashMap<>();
+  final HashMap<String,Integer> customFeaturePage=new HashMap<>();
   String pendingCustomId="";
   void customAbtPicker(boolean save,String id){
     pendingCustomId=id;
@@ -374,13 +375,20 @@ public class MainActivity extends Activity {
         card(c,10,279,380,434,13,true);
         int featureY=303;
         int featureCount=0;
+        int featureTotal=0;
+        for(FeatureEngine.Feature feature:features)if(id.equalsIgnoreCase(feature.module))featureTotal++;
+        int featureStart=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;
+        if(featureStart>=featureTotal)featureStart=0;
+        int featureSkip=0;
         for(FeatureEngine.Feature feature:features){
           if(!id.equalsIgnoreCase(feature.module))continue;
+          if(featureSkip++<featureStart)continue;
           if(featureCount>=3)break;
           txtFit(c,(customChecked(feature)?"☑ ":"□ ")+feature.label,24,featureY,12,Color.BLACK,350);
           featureY+=25;featureCount++;
         }
         if(featureCount==0)txt(c,"Функции не настроены",24,302,12,Color.DKGRAY,false);
+        if(featureTotal>3)txt(c,"Далее › "+(featureStart+1)+"-"+Math.min(featureTotal,featureStart+3)+"/"+featureTotal,244,365,11,Color.DKGRAY,false);
         org.json.JSONArray customRows;
         try{customRows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]"));}
         catch(Exception ex){customRows=new org.json.JSONArray();}
@@ -499,7 +507,11 @@ public class MainActivity extends Activity {
         return true;
       }
       if(x>=346&&y>=8&&y<=70){admin();return true;}
-      if(active>=4){if(y>=282&&y<=365){int slot=(int)((y-283)/25);toggleCustomFeature(slot);return true;}if(y>=717&&y<=777){if(x<200){org.json.JSONObject item=customModuleCatalog().optJSONObject(active-4);if(item!=null)showCustomRows(item);}else showAdminTabs();}return true;}
+      if(active>=4){if(y>=345&&y<=374&&x>=230){
+        org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
+        if(module!=null){String id=module.optString("id");int total=0;for(FeatureEngine.Feature f:features)if(id.equalsIgnoreCase(f.module))total++;int current=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;customFeaturePage.put(id,current+3>=total?0:current+3);invalidate();}
+        return true;
+      }if(y>=282&&y<=355){int slot=(int)((y-283)/25);org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);if(module!=null){String id=module.optString("id");int offset=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;toggleCustomFeature(offset+slot);}return true;}if(y>=717&&y<=777){if(x<200){org.json.JSONObject item=customModuleCatalog().optJSONObject(active-4);if(item!=null)showCustomRows(item);}else showAdminTabs();}return true;}
       if(y>=279&&y<=370){int slots=featureSlots();if(x>=345&&moduleFeatures(active).size()>slots){featurePage[active]=(featurePage[active]+slots>=moduleFeatures(active).size())?0:featurePage[active]+slots;invalidate();return true;}int i=(int)((y-284)/27);if(i>=0&&i<slots&&featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}
       // HEX rows on the main screen are read-only; edit via features or admin panel.
       if(y>=380&&y<=713&&Math.abs(y-startY)<=18)return true;

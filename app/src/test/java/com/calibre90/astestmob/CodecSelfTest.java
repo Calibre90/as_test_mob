@@ -48,6 +48,40 @@ public final class CodecSelfTest {
     String untouched=alreadyOn.value;boolean thrown=false;
     try{invalid.apply(alreadyOn,bad,true,Arrays.asList(bad));}catch(IllegalArgumentException ex){thrown=true;}
     check(thrown&&alreadyOn.value.equals(untouched),"failed apply leaves row intact");
+    Map<String,String> allModules=new HashMap<>();
+    allModules.put("720","IC");allModules.put("726","BCM");allModules.put("731","RKE");allModules.put("760","ABS");
+    List<AbtCodec.Row> allRows=new ArrayList<>();
+    String[] prefixes={"720","726","731","760"};
+    String[] moduleNames={"IC","BCM","RKE","ABS"};
+    for(int i=0;i<prefixes.length;i++){
+      String address=prefixes[i]+"-01-01";
+      String payload="000E F255 E700";
+      String valid=AbtCodec.recalc(address,payload);
+      AbtCodec.Row row=new AbtCodec.Row(moduleNames[i],address,valid,1);
+      allRows.add(row);
+      String single=AbtCodec.write(Arrays.asList(row),moduleNames[i]);
+      List<AbtCodec.Row> parsedSingle=AbtCodec.parse(single,allModules);
+      check(parsedSingle.size()==1&&parsedSingle.get(0).module.equals(moduleNames[i]),"module parse "+moduleNames[i]);
+      check(AbtCodec.norm(parsedSingle.get(0).value).equals(AbtCodec.norm(valid)),"checksum roundtrip "+moduleNames[i]);
+      FeatureEngine local=new FeatureEngine();
+      FeatureEngine.Feature feature=new FeatureEngine.Feature("test"+i,moduleNames[i],address,"HEX","0","A",0);
+      String initial=row.value;
+      local.apply(row,feature,true,Arrays.asList(feature));
+      Set<Integer> changed=FeatureEngine.changedPositions(initial,row.value);
+      check(changed.contains(0),"highlight modified nibble "+moduleNames[i]);
+      check(changed.size()>=1,"highlight changed digits "+moduleNames[i]);
+      check(AbtCodec.norm(row.value).endsWith(AbtCodec.checksum(address,AbtCodec.norm(row.value).substring(0,AbtCodec.norm(row.value).length()-2))),"recalculated checksum "+moduleNames[i]);
+      local.apply(row,feature,false,Arrays.asList(feature));
+      check(row.value.equals(initial),"restore original row "+moduleNames[i]);
+    }
+    String combinedAbt=AbtCodec.write(allRows,"IC")+AbtCodec.write(allRows,"BCM")+AbtCodec.write(allRows,"RKE")+AbtCodec.write(allRows,"ABS");
+    check(AbtCodec.parse(combinedAbt,allModules).size()==4,"all module rows survive serialization");
+    for(String moduleName:moduleNames){
+      List<AbtCodec.Row> selected=new ArrayList<>();
+      for(AbtCodec.Row row:AbtCodec.parse(combinedAbt,allModules))if(row.module.equals(moduleName))selected.add(row);
+      check(selected.size()==1,"filter only selected module "+moduleName);
+      check(AbtCodec.parse(AbtCodec.write(selected,moduleName),allModules).size()==1,"save only selected module "+moduleName);
+    }
     System.out.println("PASS: ABT parse, roundtrip, checksum, index, HEX toggle, restore");
   }
 }

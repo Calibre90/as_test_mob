@@ -126,8 +126,8 @@ public class MainActivity extends Activity {
         }
         c.restore();
       }
-      card(c,10,720,185,52,12,true);centered(c,"Открыть ABT",10,720,185,52,15,Color.BLACK);
-      card(c,205,720,185,52,12,true);centered(c,"Сохранить ABT",205,720,185,52,15,Color.BLACK);
+      card(c,10,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"open_text","Открыть ABT"),10,720,185,52,15,Color.BLACK);
+      card(c,205,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"save_text","Сохранить ABT"),205,720,185,52,15,Color.BLACK);
       card(c,10,782,380,57,12,true);
       txt(c,"↗",27,818,25,Color.BLACK,true);
       txt(c,"›",355,821,34,Color.BLACK,true);
@@ -787,6 +787,7 @@ public class MainActivity extends Activity {
             int columns=Integer.parseInt(changes.get("feature_columns").trim());
             if(columns<1||columns>4)throw new IllegalArgumentException("Колонки функций: от 1 до 4");
             StudioSettings.saveAppearance(this,changes);
+            view.invalidate();
             Toast.makeText(this,"Оформление сохранено",Toast.LENGTH_SHORT).show();
           }catch(Exception ex){Toast.makeText(this,"Ошибка оформления: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
         });

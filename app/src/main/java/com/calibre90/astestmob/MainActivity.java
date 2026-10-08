@@ -147,7 +147,7 @@ public class MainActivity extends Activity {
       TextView lock=caption("🔒",25,Color.rgb(190,15,22),true);
       place(root,lock,.065f,.045f,.11f,.11f,width,height);
     }
-    TextView close=caption("×",35,Color.BLACK,false);close.setGravity(Gravity.CENTER);
+    TextView close=caption("×",31,Color.BLACK,true);close.setGravity(Gravity.CENTER);close.setIncludeFontPadding(false);close.setPadding(0,0,0,0);
     close.setBackground(panel(Color.WHITE,Color.rgb(235,238,242),8,Color.rgb(200,205,212)));
     place(root,close,.82f,.045f,.125f,.105f,width,height);
     close.setOnClickListener(v->dialog.dismiss());
@@ -155,10 +155,10 @@ public class MainActivity extends Activity {
       TextView help=caption("Вход администратора",15,Color.DKGRAY,false);
       place(root,help,.085f,.22f,.80f,.07f,width,height);
       EditText login=new EditText(this),password=new EditText(this);
-      login.setSingleLine(true);login.setHint("Логин");login.setTextSize(16);login.setPadding(dp(12),0,dp(12),0);
+      login.setSingleLine(true);login.setTextColor(Color.BLACK);login.setHintTextColor(Color.DKGRAY);login.setHint("Логин");login.setTextSize(16);login.setPadding(dp(12),0,dp(12),0);
       login.setBackground(panel(Color.WHITE,Color.rgb(247,248,250),8,Color.rgb(192,200,209)));
       place(root,login,.08f,.33f,.84f,.125f,width,height);
-      password.setSingleLine(true);password.setHint("Пароль");password.setInputType(129);password.setTextSize(16);
+      password.setSingleLine(true);password.setTextColor(Color.BLACK);password.setHintTextColor(Color.DKGRAY);password.setHint("Пароль");password.setInputType(129);password.setTextSize(16);
       password.setPadding(dp(12),0,dp(12),0);
       password.setBackground(panel(Color.WHITE,Color.rgb(247,248,250),8,Color.rgb(192,200,209)));
       place(root,password,.08f,.49f,.84f,.125f,width,height);

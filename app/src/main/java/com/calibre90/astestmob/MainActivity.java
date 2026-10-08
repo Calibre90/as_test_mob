@@ -167,6 +167,7 @@ public class MainActivity extends Activity {
       Toast.makeText(this,"Строка "+feature.address+" не найдена в блоке "+id,Toast.LENGTH_LONG).show();
     }catch(Exception ex){Toast.makeText(this,"Ошибка HEX/BITS: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
   }
+  final HashMap<String,Integer> customScroll=new HashMap<>();
   String pendingCustomId="";
   void customAbtPicker(boolean save,String id){
     pendingCustomId=id;
@@ -385,8 +386,10 @@ public class MainActivity extends Activity {
         catch(Exception ex){customRows=new org.json.JSONArray();}
         if(customRows.length()==0)txt(c,"Нет строк. Добавьте их через админку.",24,415,13,Color.DKGRAY,false);
         txt(c,"Строк: "+customRows.length(),278,286,11,Color.DKGRAY,false);
-        for(int i=0;i<Math.min(10,customRows.length());i++){
-          org.json.JSONObject item=customRows.optJSONObject(i);if(item==null)continue;
+        int offset=Math.max(0,Math.min(customScroll.containsKey(id)?customScroll.get(id):0,Math.max(0,customRows.length()-10)));
+        txt(c,(customRows.length()==0?"0":(offset+1)+"-"+Math.min(customRows.length(),offset+10))+"/"+customRows.length(),283,380,11,Color.DKGRAY,false);
+        for(int i=0;i<Math.min(10,customRows.length()-offset);i++){
+          org.json.JSONObject item=customRows.optJSONObject(i+offset);if(item==null)continue;
           float yy=393+i*30;
           card(c,17,yy,366,28,7,false);
           txtFit(c,item.optString("address"),24,yy+19,12,Color.BLACK,138);
@@ -466,6 +469,19 @@ public class MainActivity extends Activity {
     }
     float startY,startX,moduleTabOffset=0;
     @Override public boolean onTouchEvent(MotionEvent e){if(e.getAction()==MotionEvent.ACTION_DOWN){startY=e.getY()/sy;startX=e.getX()/sx;return true;}if(e.getAction()!=MotionEvent.ACTION_UP)return true;float x=e.getX()/sx,y=e.getY()/sy;
+      if(active>=4&&startY>=391&&startY<=713&&y>=391&&y<=713&&Math.abs(y-startY)>18){
+        org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
+        if(module!=null){
+          String id=module.optString("id");
+          int total=0;
+          try{total=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]")).length();}catch(Exception ignored){}
+          int old=customScroll.containsKey(id)?customScroll.get(id):0;
+          int delta=Math.round((startY-y)/30f);
+          customScroll.put(id,Math.max(0,Math.min(Math.max(0,total-10),old+delta)));
+          invalidate();
+        }
+        return true;
+      }
       if(active<4&&startY>=376&&startY<=713&&y>=376&&y<=713&&Math.abs(y-startY)>18){int delta=Math.round((startY-y)/36.5f);scrollOffset[active]=Math.max(0,Math.min(Math.max(0,rowCount(active)-9),scrollOffset[active]+delta));invalidate();return true;}
       if(y>=127&&y<=183){
         int count=4+customModuleCatalog().length();

@@ -104,12 +104,12 @@ public class MainActivity extends Activity {
   void showCustomModulePicker(){
     org.json.JSONArray catalog=customModuleCatalog();
     if(catalog.length()==0)return;
-    String[] choices=new String[catalog.length()];
+    String[] removeChoices=new String[catalog.length()];
     for(int i=0;i<catalog.length();i++){
       org.json.JSONObject item=catalog.optJSONObject(i);
       choices[i]=item==null?"":item.optString("id")+" · "+item.optString("name");
     }
-    new AlertDialog.Builder(this).setTitle("Дополнительные блоки").setItems(choices,(d,index)->{
+    new AlertDialog.Builder(this).setTitle("Дополнительные блоки").setItems(removeChoices,(d,index)->{
       org.json.JSONObject item=catalog.optJSONObject(index);
       if(item==null)return;
       new AlertDialog.Builder(this).setTitle(item.optString("id")+" · "+item.optString("name"))
@@ -1146,7 +1146,7 @@ public class MainActivity extends Activity {
                 item.put("id",id);item.put("name",name);item.put("address",address);item.put("version",version);
                 catalog.put(item);customPrefs.edit().putString("catalog",catalog.toString()).apply();
                 // Reveal the new tab immediately; otherwise it remains off-screen after the fourth module.
-                moduleTabOffset=Math.max(0f,(4+catalog.length())*90f-370f);
+                view.moduleTabOffset=Math.max(0f,(4+catalog.length())*90f-370f);
                 updateCatalog[0].run();view.invalidate();
                 Toast.makeText(this,"Блок "+id+" добавлен. Его вкладка доступна сверху.",Toast.LENGTH_LONG).show();
               }catch(Exception ex){Toast.makeText(this,"Ошибка сохранения блока",Toast.LENGTH_SHORT).show();}
@@ -1157,14 +1157,14 @@ public class MainActivity extends Activity {
             org.json.JSONArray catalog=new org.json.JSONArray(customPrefs.getString("catalog","[]"));
             if(catalog.length()==0){Toast.makeText(this,"Нет дополнительных блоков",Toast.LENGTH_SHORT).show();return;}
             String[] choices=new String[catalog.length()];
-            for(int i=0;i<catalog.length();i++){org.json.JSONObject item=catalog.getJSONObject(i);choices[i]=item.optString("id")+" · "+item.optString("name");}
+            for(int i=0;i<catalog.length();i++){org.json.JSONObject item=catalog.getJSONObject(i);removeChoices[i]=item.optString("id")+" · "+item.optString("name");}
             new AlertDialog.Builder(this).setTitle("Удалить дополнительный блок").setItems(choices,(d,index)->{
               try{
                 org.json.JSONArray current=new org.json.JSONArray(customPrefs.getString("catalog","[]"));
                 org.json.JSONArray updated=new org.json.JSONArray();
                 for(int j=0;j<current.length();j++)if(j!=index)updated.put(current.get(j));
                 customPrefs.edit().putString("catalog",updated.toString()).apply();
-                moduleTabOffset=Math.min(moduleTabOffset,Math.max(0f,(4+updated.length())*90f-370f));
+                view.moduleTabOffset=Math.min(view.moduleTabOffset,Math.max(0f,(4+updated.length())*90f-370f));
                 updateCatalog[0].run();view.invalidate();
                 Toast.makeText(this,"Блок удалён из каталога и вкладок",Toast.LENGTH_SHORT).show();
               }catch(Exception ex){Toast.makeText(this,"Ошибка удаления",Toast.LENGTH_SHORT).show();}

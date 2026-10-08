@@ -22,7 +22,7 @@ public class MainActivity extends Activity {
   int active=0;
   @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(Color.BLACK);getWindow().setNavigationBarColor(Color.BLACK);getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
     for(int i=0;i<4;i++)rows[i]=new ArrayList<>();
-    features.addAll(StudioSettings.load(this));restoreCustomTabPositions();seedBuiltInRows();restoreAdminRows();
+    features.addAll(StudioSettings.load(this));restoreCustomTabPositions();restoreSelectedModule();seedBuiltInRows();restoreAdminRows();
     setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));view=new StudioView();setContentView(view);
   }
   /** Built-in sample configuration: available before importing any vehicle ABT. */
@@ -310,6 +310,25 @@ public class MainActivity extends Activity {
     layout.addView(exportAbt);exportAbt.setOnClickListener(v->customAbtPicker(true,id));
     new AlertDialog.Builder(this).setTitle(id+" · "+module.optString("name")).setView(layout).setPositiveButton("Закрыть",null).show();
   }
+  void restoreSelectedModule(){
+    android.content.SharedPreferences prefs=getSharedPreferences("studio_custom_positions",MODE_PRIVATE);
+    String saved=prefs.getString("selected_module","IC");
+    for(int i=0;i<modules.length;i++)if(modules[i].equals(saved)){active=i;return;}
+    org.json.JSONArray catalog=customModuleCatalog();
+    for(int i=0;i<catalog.length();i++){
+      org.json.JSONObject module=catalog.optJSONObject(i);
+      if(module!=null&&saved.equals(module.optString("id"))){active=i+4;return;}
+    }
+    active=0;
+  }
+  void saveSelectedModule(){
+    String id=active<4?modules[active]:"";
+    if(active>=4){
+      org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
+      if(module!=null)id=module.optString("id");
+    }
+    if(!id.isEmpty())getSharedPreferences("studio_custom_positions",MODE_PRIVATE).edit().putString("selected_module",id).apply();
+  }
   void restoreCustomTabPositions(){
     android.content.SharedPreferences prefs=getSharedPreferences("studio_custom_positions",MODE_PRIVATE);
     org.json.JSONArray catalog=customModuleCatalog();
@@ -587,7 +606,7 @@ public class MainActivity extends Activity {
         int selected=(int)((x-15+moduleTabOffset)/width);
         if(selected>=4&&selected<count){
           org.json.JSONObject item=customModuleCatalog().optJSONObject(selected-4);
-          active=selected;invalidate();
+          active=selected;saveSelectedModule();invalidate();
           return true;
         }
         if(selected>=0&&selected<modules.length){active=selected;invalidate();}

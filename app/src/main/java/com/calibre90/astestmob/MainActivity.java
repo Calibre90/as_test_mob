@@ -854,14 +854,16 @@ public class MainActivity extends Activity {
         for(int m=0;m<modules.length;m++){
           final int index=m;Button choose=new Button(this);choose.setAllCaps(false);
           choose.setText((m+1)+" · "+modules[m]+" · "+names[m]);
-          choose.setTextSize(12);choices.addView(choose,new LinearLayout.LayoutParams(-1,dp(46)));
+          choose.setTextSize(12);choose.setMinWidth(0);choose.setPadding(dp(5),0,dp(5),0);
+          choices.addView(choose,new LinearLayout.LayoutParams(-1,dp(42)));
           choose.setOnClickListener(v->{moduleSelection[0]=index;fill.run();});
         }
         TextView warning=new TextView(this);
         warning.setText("ID и адрес блока защищены: они используются для распознавания файлов ABT.");
         warning.setTextColor(Color.LTGRAY);warning.setTextSize(12);panel.addView(warning);
         Button saveModule=new Button(this);saveModule.setAllCaps(false);saveModule.setText("Сохранить настройки блока");
-        saveModule.setTextSize(12);panel.addView(saveModule,new LinearLayout.LayoutParams(-1,dp(48)));
+        saveModule.setTextSize(12);saveModule.setMinWidth(0);saveModule.setPadding(dp(4),0,dp(4),0);
+        panel.addView(saveModule,new LinearLayout.LayoutParams(-1,dp(46)));
         saveModule.setOnClickListener(v->{
           String newName=inputs[1].getText().toString().trim();
           if(newName.isEmpty()){inputs[1].setError("Название не может быть пустым");return;}

@@ -374,7 +374,7 @@ public class MainActivity extends Activity {
       enter.setOnClickListener(v->{if(login.getText().toString().equals("admin")&&password.getText().toString().equals("admin")){dialog.dismiss();showAdminTabs();}else Toast.makeText(this,"Неверный логин или пароль",Toast.LENGTH_SHORT).show();});
     }else{
       // Information-only layout without duplicated Mazda logo/banner.
-      TextView version=caption("Версия: тестовая сборка",15,Color.DKGRAY,false);
+      TextView version=caption(StudioSettings.appearance(this,"ready_text","Версия: тестовая сборка"),15,Color.DKGRAY,false);
       place(root,version,.09f,.245f,.82f,.11f,width,height);
       View divider=new View(this);divider.setBackgroundColor(Color.rgb(220,50,55));
       place(root,divider,.09f,.375f,.82f,.004f,width,height);
@@ -786,7 +786,7 @@ public class MainActivity extends Activity {
           input.setBackgroundColor(Color.WHITE);input.setTextColor(Color.BLACK);
           appearanceFields.addView(input,new LinearLayout.LayoutParams(-1,dp(46)));appearanceInputs[k]=input;
         }
-        TextView note=new TextView(this);note.setText("Цвета фона: #RRGGBB (например #202020), пустое поле — стандартный цвет. Название, подписи кнопок и автор применяются. Колонки и статус пока только сохраняются.");
+        TextView note=new TextView(this);note.setText("Цвета: #RRGGBB, пустое поле — стандартный цвет. Текст статуса показывается в окне «О программе». Количество колонок пока сохраняется, но не меняет сетку функций.");
         note.setTextColor(Color.LTGRAY);appearanceFields.addView(note);
         Button saveAppearance=new Button(this);saveAppearance.setText("Сохранить оформление");saveAppearance.setAllCaps(false);
         panel.addView(saveAppearance,new LinearLayout.LayoutParams(-1,dp(55)));

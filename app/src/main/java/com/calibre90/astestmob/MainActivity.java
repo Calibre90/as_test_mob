@@ -27,18 +27,26 @@ public class MainActivity extends Activity {
   class StudioView extends View {
     Paint p=new Paint(3); HashMap<String,Bitmap> bitmaps=new HashMap<>();
     float sx=1,sy=1,offX=0,offY=0;
-    StudioView(){super(MainActivity.this);setBackgroundColor(Color.rgb(239,241,244));
+    StudioView(){super(MainActivity.this);setBackgroundColor(Color.BLACK);
       String[] keys={"header_logo","active_red","inactive_1","module_info","features_panel","row_01","checkbox_empty","checkbox_checked","open_abt","save_abt","creator_link","settings","gauge_round","feature_left","feature_right","admin_dialog","about_dialog"};
       for(String key:keys){int id=getResources().getIdentifier(key,"drawable",getPackageName());if(id!=0)bitmaps.put(key,BitmapFactory.decodeResource(getResources(),id));}
     }
     void img(Canvas c,String key,float x,float y,float w,float h){Bitmap b=bitmaps.get(key);if(b!=null){p.setColor(Color.WHITE);p.setAlpha(255);c.drawBitmap(b,null,new RectF(x,y,x+w,y+h),p);}}
     void rect(Canvas c,int color,float x,float y,float w,float h,float r){p.setColor(color);p.setStyle(Paint.Style.FILL);c.drawRoundRect(x,y,x+w,y+h,r,r,p);}
     void txt(Canvas c,String s,float x,float y,float size,int color,boolean bold){p.setColor(color);p.setTypeface(bold?Typeface.create("sans-serif",Typeface.BOLD):Typeface.create("sans-serif",Typeface.NORMAL));p.setTextSize(size);p.setStyle(Paint.Style.FILL);c.drawText(s,x,y,p);}
+    void cleanButton(Canvas c,float x,float y,float w,float h,String label){
+      p.setStyle(Paint.Style.FILL);p.setShader(new LinearGradient(x,y,x,y+h,new int[]{Color.WHITE,Color.rgb(247,248,250),Color.rgb(218,223,229)},null,Shader.TileMode.CLAMP));
+      c.drawRoundRect(x,y,x+w,y+h,9,9,p);p.setShader(null);
+      p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.6f);p.setColor(Color.rgb(179,187,196));
+      c.drawRoundRect(x+1,y+1,x+w-1,y+h-1,9,9,p);p.setStyle(Paint.Style.FILL);
+      p.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));p.setTextSize(15);p.setColor(Color.BLACK);
+      c.drawText(label,x+(w-p.measureText(label))/2f,y+h/2f-(p.ascent()+p.descent())/2f,p);
+    }
     @Override protected void onDraw(Canvas actual){super.onDraw(actual);
       float w=getWidth(),h=getHeight();sx=w/400f;sy=h/860f;actual.save();actual.scale(sx,sy);
-      Canvas c=actual; c.drawColor(Color.rgb(242,243,246));
+      Canvas c=actual; c.drawColor(Color.BLACK);
       // No full-screen screenshot as a background: only isolated component assets.
-      rect(c,Color.rgb(243,245,247),7,0,386,137,4);
+      // Black backing matches the reference shell; do not paint a white background behind the header.
       img(c,"header_logo",8,8,384,125);
       // System status icons are intentionally not painted into the application.
       String[] tabs={"IC","BCM","RKE","ABS"};
@@ -69,9 +77,10 @@ public class MainActivity extends Activity {
         txt(c,index,29,y+24,15,Color.BLACK,false);
         txt(c,rows[active].get(i),174,y+24,15,Color.BLACK,false);
       }
-      img(c,"open_abt",12,730,181,55);img(c,"save_abt",205,730,183,55);
-      txt(c,"Открыть ABT",76,764,13,Color.BLACK,true);txt(c,"Сохранить ABT",267,764,12,Color.BLACK,true);
-      img(c,"creator_link",11,792,378,61);txt(c,"Dim304",134,826,16,Color.BLACK,true);
+      // Icon-free buttons: the previous PNGs had folder/disk glyphs baked in.
+      cleanButton(c,12,730,181,55,"Открыть ABT");
+      cleanButton(c,205,730,183,55,"Сохранить ABT");
+      img(c,"creator_link",11,792,378,61);
       actual.restore();
     }
     @Override public boolean onTouchEvent(MotionEvent e){if(e.getAction()!=MotionEvent.ACTION_UP)return true;float x=e.getX()/sx,y=e.getY()/sy;

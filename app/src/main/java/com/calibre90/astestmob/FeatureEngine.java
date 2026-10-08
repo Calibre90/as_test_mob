@@ -18,7 +18,7 @@ public final class FeatureEngine {
   private final Set<String> enabled=new HashSet<>();
   private final Set<String> initiallyEnabled=new HashSet<>();
   private String featureKey(Feature f){return f.module+"|"+f.address+"|"+f.id;}
-  public void seed(Feature f,boolean on){if(on)initiallyEnabled.add(featureKey(f));}
+  public void seed(Feature f,boolean on){if(on){initiallyEnabled.add(featureKey(f));enabled.add(featureKey(f));}}
   public static List<Integer> indices(String text){
     ArrayList<Integer> out=new ArrayList<>();
     for(String p:text.trim().split("[,;\\s]+")){
@@ -50,6 +50,19 @@ public final class FeatureEngine {
     Set<String> next=new HashSet<>(enabled);
     if(active)next.add(changedKey);else next.remove(changedKey);
     char[] raw=baselines.get(key).toCharArray();boolean any=false;
+    if(!active&&initiallyEnabled.contains(changedKey)&&!changed.off.isEmpty()){
+      if("BITS".equalsIgnoreCase(changed.mode)){
+        int p=changed.byteIndex*2;if(p<0||p+2>raw.length)throw new IllegalArgumentException("Byte out of range");
+        int val=Integer.parseInt(new String(raw,p,2),16);
+        for(int bit:indices(changed.indices)){if(bit<0||bit>7)throw new IllegalArgumentException("Bit out of range");val&=~(1<<bit);}
+        String hex=String.format(Locale.US,"%02X",val);raw[p]=hex.charAt(0);raw[p+1]=hex.charAt(1);
+      }else{
+        List<Integer> idx=indices(changed.indices);String off=AbtCodec.norm(changed.off);
+        if(idx.size()!=off.length())throw new IllegalArgumentException("OFF target/index mismatch");
+        for(int i=0;i<idx.size();i++){int p=idx.get(i);if(p<0||p>=raw.length)throw new IllegalArgumentException("OFF index out of range");raw[p]=off.charAt(i);}
+      }
+      any=true;
+    }
     for(Feature f:features){
       if(!next.contains(featureKey(f))||!f.module.equals(row.module)||!f.address.equals(row.address))continue;
       any=true;
@@ -63,19 +76,6 @@ public final class FeatureEngine {
         if(idx.size()!=target.length())throw new IllegalArgumentException("HEX target/index mismatch");
         for(int i=0;i<idx.size();i++){int p=idx.get(i);if(p<0||p>=raw.length)throw new IllegalArgumentException("HEX index out of range");raw[p]=target.charAt(i);}
       }
-    }
-    if(!active&&initiallyEnabled.contains(changedKey)&&!changed.off.isEmpty()){
-      if("BITS".equalsIgnoreCase(changed.mode)){
-        int p=changed.byteIndex*2;if(p<0||p+2>raw.length)throw new IllegalArgumentException("Byte out of range");
-        int val=Integer.parseInt(new String(raw,p,2),16);
-        for(int bit:indices(changed.indices)){if(bit<0||bit>7)throw new IllegalArgumentException("Bit out of range");val&=~(1<<bit);}
-        String hex=String.format(Locale.US,"%02X",val);raw[p]=hex.charAt(0);raw[p+1]=hex.charAt(1);
-      }else{
-        List<Integer> idx=indices(changed.indices);String off=AbtCodec.norm(changed.off);
-        if(idx.size()!=off.length())throw new IllegalArgumentException("OFF target/index mismatch");
-        for(int i=0;i<idx.size();i++){int p=idx.get(i);if(p<0||p>=raw.length)throw new IllegalArgumentException("OFF index out of range");raw[p]=off.charAt(i);}
-      }
-      any=true;
     }
     String result=any?AbtCodec.recalc(row.address,new String(raw)):AbtCodec.spaced(baselines.get(key));
     row.value=result;enabled.clear();enabled.addAll(next);

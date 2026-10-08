@@ -341,7 +341,7 @@ public class MainActivity extends Activity {
     if(index>=available.size()){Toast.makeText(this,"Функция для этого блока ещё не настроена",Toast.LENGTH_SHORT).show();return;}
     FeatureEngine.Feature f=available.get(index);AbtCodec.Row row=findRow(active,f.address);
     if(row==null){Toast.makeText(this,"Строка "+f.address+" отсутствует в блоке "+modules[active]+". Добавьте её через админку или загрузите ABT.",Toast.LENGTH_LONG).show();return;}
-    try{boolean next=!isChecked(f);engines[active].apply(row,f,next,features);checkedFeatures.put(featureKey(f),next);lastFeatureStatus=f.label+": "+(next?"изменено":"исходное значение");refreshRows(active);view.invalidate();}
+    try{boolean next=!isChecked(f);engines[active].apply(row,f,next,features);checkedFeatures.put(featureKey(f),next);if(!loaded[active])saveAdminRows(active);lastFeatureStatus=f.label+": "+(next?"изменено":"исходное значение");refreshRows(active);view.invalidate();}
     catch(Exception ex){Toast.makeText(this,"Ошибка функции: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
   }
   void inspectHexRow(int index){

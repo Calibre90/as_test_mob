@@ -695,7 +695,7 @@ public class MainActivity extends Activity {
                 .setMessage(features.get(index).id)
                 .setNegativeButton("Отмена",null)
                 .setPositiveButton("Удалить",(d,w)->{
-                  features.remove(index);StudioSettings.save(this,features);resetAllEngines();view.invalidate();refreshFeatureChoices.run();redrawRef[0].run();
+                  features.remove(index);chosen[0]=-1;StudioSettings.save(this,features);resetAllEngines();view.invalidate();refreshFeatureChoices.run();redrawRef[0].run();
                 }).show();return;
             }
             if(kind==1&&(chosen[0]<0||chosen[0]>=features.size())){
@@ -747,7 +747,7 @@ public class MainActivity extends Activity {
               for(int j=0;j<features.size();j++)if((kind==0||j!=chosen[0])&&features.get(j).id.equals(id)&&features.get(j).module.equals(module)&&features.get(j).address.equals(address))
                 throw new IllegalArgumentException("Функция с таким ID и адресом уже есть");
               FeatureEngine.Feature updated=new FeatureEngine.Feature(id,module,address,mode,indices,vls[8],vls[9],byteIndex,vls[2]);
-              if(kind==0)features.add(updated);else features.set(chosen[0],updated);
+              if(kind==0){features.add(updated);chosen[0]=features.size()-1;}else features.set(chosen[0],updated);
               StudioSettings.save(this,features);resetAllEngines();view.invalidate();refreshFeatureChoices.run();redrawRef[0].run();
               Toast.makeText(this,"Настройки функции сохранены",Toast.LENGTH_SHORT).show();
             }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}

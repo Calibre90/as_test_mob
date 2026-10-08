@@ -117,6 +117,63 @@ public class MainActivity extends Activity {
         .setPositiveButton("Закрыть",null).show();
     }).setNegativeButton("Закрыть",null).show();
   }
+
+  void showCustomRows(org.json.JSONObject module){
+    final String id=module.optString("id"), address=module.optString("address");
+    android.content.SharedPreferences prefs=getSharedPreferences("studio_custom_rows",MODE_PRIVATE);
+    org.json.JSONArray stored;
+    try{stored=new org.json.JSONArray(prefs.getString(id,"[]"));}catch(Exception ex){stored=new org.json.JSONArray();}
+    final org.json.JSONArray entries=stored;
+    LinearLayout layout=new LinearLayout(this);layout.setOrientation(LinearLayout.VERTICAL);layout.setPadding(dp(12),dp(8),dp(12),dp(8));
+    TextView info=new TextView(this);info.setText("Адрес: "+address+"\\nСтроки блока сохраняются отдельно. Импорт/экспорт ABT будет подключён на следующем этапе.");
+    layout.addView(info);
+    ScrollView scroll=new ScrollView(this);LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);
+    scroll.addView(list);layout.addView(scroll,new LinearLayout.LayoutParams(-1,dp(290)));
+    Runnable[] refresh={null};
+    refresh[0]=()->{
+      list.removeAllViews();
+      for(int i=0;i<entries.length();i++){
+        final int index=i;org.json.JSONObject row=entries.optJSONObject(i);if(row==null)continue;
+        Button entry=new Button(this);entry.setAllCaps(false);entry.setText(row.optString("address")+"    "+row.optString("value"));
+        list.addView(entry);entry.setOnClickListener(v->editCustomRow(id,address,entries,index,prefs,refresh[0]));
+      }
+    };
+    refresh[0].run();
+    Button add=new Button(this);add.setText("Добавить строку");
+    layout.addView(add);add.setOnClickListener(v->editCustomRow(id,address,entries,-1,prefs,refresh[0]));
+    new AlertDialog.Builder(this).setTitle(id+" · "+module.optString("name")).setView(layout).setPositiveButton("Закрыть",null).show();
+  }
+  void editCustomRow(String id,String prefix,org.json.JSONArray entries,int index,android.content.SharedPreferences prefs,Runnable refresh){
+    org.json.JSONObject current=index>=0?entries.optJSONObject(index):null;
+    LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(18),dp(8),dp(18),dp(8));
+    EditText address=new EditText(this);address.setSingleLine(true);address.setHint(prefix+"-01-01");
+    address.setText(current==null?prefix+"-01-01":current.optString("address"));form.addView(address);
+    EditText value=new EditText(this);value.setSingleLine(true);value.setHint("HEX значение с checksum");
+    value.setText(current==null?"":current.optString("value"));form.addView(value);
+    AlertDialog.Builder builder=new AlertDialog.Builder(this).setTitle(index<0?"Добавить строку":"Изменить строку").setView(form)
+      .setNegativeButton("Отмена",null);
+    if(index>=0)builder.setNeutralButton("Удалить",(d,w)->{
+      org.json.JSONArray updated=new org.json.JSONArray();
+      for(int i=0;i<entries.length();i++)if(i!=index)updated.put(entries.optJSONObject(i));
+      prefs.edit().putString(id,updated.toString()).apply();
+      while(entries.length()>0)entries.remove(0);
+      for(int i=0;i<updated.length();i++)entries.put(updated.optJSONObject(i));
+      refresh.run();
+    });
+    builder.setPositiveButton("Сохранить",null);
+    AlertDialog dialog=builder.create();dialog.setOnShowListener(ignored->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
+      try{
+        String addr=address.getText().toString().trim().toUpperCase(Locale.US);
+        String hex=value.getText().toString().replaceAll("\\s+","").toUpperCase(Locale.US);
+        if(!addr.matches(java.util.regex.Pattern.quote(prefix)+"-[0-9]{2}-[0-9]{2}"))throw new IllegalArgumentException("Неверный адрес блока");
+        if(!hex.matches("[0-9A-F]{4,}")||hex.length()%2!=0)throw new IllegalArgumentException("Неверное HEX значение");
+        for(int i=0;i<entries.length();i++)if(i!=index&&addr.equals(entries.optJSONObject(i).optString("address")))throw new IllegalArgumentException("Строка уже существует");
+        org.json.JSONObject row=new org.json.JSONObject();row.put("address",addr);row.put("value",AbtCodec.recalc(addr,hex));
+        if(index<0)entries.put(row);else entries.put(index,row);
+        prefs.edit().putString(id,entries.toString()).apply();refresh.run();dialog.dismiss();
+      }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+    }));dialog.show();
+  }
   int appearanceColor(String key,int fallback){
     String value=StudioSettings.appearance(this,key,"").trim();
     if(value.isEmpty())return fallback;
@@ -276,10 +333,7 @@ public class MainActivity extends Activity {
         int selected=(int)((x-15+moduleTabOffset)/width);
         if(selected>=4&&selected<count){
           org.json.JSONObject item=customModuleCatalog().optJSONObject(selected-4);
-          if(item!=null)new AlertDialog.Builder(MainActivity.this)
-            .setTitle(item.optString("id")+" · "+item.optString("name"))
-            .setMessage("Адрес: "+item.optString("address")+"\\nВерсия: "+item.optString("version")+"\\n\\nРедактор As-Built для дополнительных блоков пока не подключён.")
-            .setPositiveButton("Закрыть",null).show();
+          if(item!=null)showCustomRows(item);
           return true;
         }
         if(selected>=0&&selected<modules.length){active=selected;invalidate();}

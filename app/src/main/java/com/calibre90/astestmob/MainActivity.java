@@ -347,7 +347,20 @@ public class MainActivity extends Activity {
         out.write(payload);
         out.flush();
       }
-      Toast.makeText(this,"Сохранено строк: "+rows.size(),Toast.LENGTH_LONG).show();
+      // Reopen the document to detect truncated or corrupted writes where supported.
+      try(InputStream verifyIn=getContentResolver().openInputStream(uri)){
+        if(verifyIn==null)throw new IOException("Не удалось проверить записанный ABT");
+        byte[] checkBuffer=new byte[4096];
+        int read,offset=0;
+        while((read=verifyIn.read(checkBuffer))!=-1){
+          if(offset+read>payload.length)throw new IOException("Размер записанного ABT отличается от ожидаемого");
+          for(int j=0;j<read;j++)if(checkBuffer[j]!=payload[offset+j])
+            throw new IOException("Записанный ABT отличается от подготовленного файла");
+          offset+=read;
+        }
+        if(offset!=payload.length)throw new IOException("ABT записан не полностью: "+offset+" из "+payload.length+" байт");
+      }
+      Toast.makeText(this,"Сохранено и проверено строк: "+rows.size(),Toast.LENGTH_LONG).show();
     }
   }
   void showCustomRows(org.json.JSONObject module){

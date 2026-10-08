@@ -195,9 +195,10 @@ public class MainActivity extends Activity {
     LinearLayout container=new LinearLayout(this);container.setOrientation(LinearLayout.VERTICAL);container.setPadding(dp(16),dp(8),dp(16),0);
     TextView hint=new TextView(this);hint.setText("Введите HEX-байты. Последний байт — контрольная сумма, она пересчитывается автоматически.");
     container.addView(hint);container.addView(edit);
-    new AlertDialog.Builder(this).setTitle("Редактор "+row.address).setView(container)
+    AlertDialog dialog=new AlertDialog.Builder(this).setTitle("Редактор "+row.address).setView(container)
       .setNegativeButton("Отмена",null)
-      .setPositiveButton("Сохранить",(d,w)->{
+      .setPositiveButton("Сохранить",null).create();
+    dialog.setOnShowListener(ignored->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(button->{
         try{
           String input=edit.getText().toString().replaceAll("\\s+","");
           if(input.isEmpty()||input.length()%2!=0||!input.matches("[0-9A-Fa-f]+"))throw new IllegalArgumentException("Допустимы только полные HEX-байты");
@@ -215,12 +216,13 @@ public class MainActivity extends Activity {
               if(active!=editingModule||!abtRows[editingModule].contains(row)||!row.value.equals(startingValue)){
                 Toast.makeText(this,"Данные изменились. Откройте строку повторно.",Toast.LENGTH_LONG).show();return;
               }
-              row.value=updated;resetCurrentEngine();syncFeatureChecks(editingModule);
+              row.value=updated;dialog.dismiss();resetCurrentEngine();syncFeatureChecks(editingModule);
               refreshRows(editingModule);view.invalidate();
               Toast.makeText(this,"Строка сохранена, checksum пересчитан",Toast.LENGTH_SHORT).show();
             }).show();
         }catch(Exception ex){Toast.makeText(this,"Ошибка HEX: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
-      }).show();
+      }));
+    dialog.show();
   }
   void refreshRows(int module){rows[module].clear();for(AbtCodec.Row row:abtRows[module])rows[module].add(row.value);}
   void loadRows(String content){

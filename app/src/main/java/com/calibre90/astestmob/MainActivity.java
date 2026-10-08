@@ -1037,19 +1037,31 @@ public class MainActivity extends Activity {
         Button removeCustom=new Button(this);removeCustom.setAllCaps(false);removeCustom.setText("Удалить блок");removeCustom.setTextSize(12);
         customActions.addView(removeCustom,new LinearLayout.LayoutParams(0,-1,1));
         final android.content.SharedPreferences customPrefs=getSharedPreferences("studio_custom_modules",MODE_PRIVATE);
-        TextView customCatalogInfo=new TextView(this);customCatalogInfo.setTextColor(Color.LTGRAY);customCatalogInfo.setTextSize(12);customCatalogInfo.setPadding(dp(8),dp(12),dp(8),dp(16));choices.addView(customCatalogInfo);
+        // Keep factory entries and render every custom module as a real scrollable list item.
+        final int factoryEntryCount=choices.getChildCount();
+        TextView customCatalogInfo=new TextView(this);
+        customCatalogInfo.setTextColor(Color.LTGRAY);customCatalogInfo.setTextSize(12);
+        customCatalogInfo.setPadding(dp(8),dp(12),dp(8),dp(8));
+        choices.addView(customCatalogInfo);
         final Runnable[] updateCatalog={null};
         updateCatalog[0]=()->{
-          org.json.JSONArray catalog;
-          try{catalog=new org.json.JSONArray(customPrefs.getString("catalog","[]"));}
-          catch(Exception ex){catalog=new org.json.JSONArray();}
-          StringBuilder description=new StringBuilder("Дополнительные блоки: ");
-          if(catalog.length()==0)description.append("нет");
+          while(choices.getChildCount()>factoryEntryCount+1)
+            choices.removeViewAt(choices.getChildCount()-1);
+          org.json.JSONArray catalog=customModuleCatalog();
+          customCatalogInfo.setText("Заводские блоки IC, BCM, RKE, ABS защищены от удаления.\\nДополнительные блоки: "+catalog.length());
           for(int i=0;i<catalog.length();i++){
             org.json.JSONObject item=catalog.optJSONObject(i);
-            if(item!=null)description.append("\\n").append(item.optString("id")).append(" · ").append(item.optString("name")).append(" · ").append(item.optString("address"));
+            if(item==null)continue;
+            String id=item.optString("id"), name=item.optString("name");
+            Button entry=new Button(this);entry.setAllCaps(false);entry.setTextSize(12);
+            entry.setText((factoryEntryCount+i+1)+" · "+id+" · "+name);
+            entry.setMinWidth(0);entry.setPadding(dp(5),0,dp(5),0);
+            choices.addView(entry,new LinearLayout.LayoutParams(-1,dp(42)));
+            entry.setOnClickListener(v->new AlertDialog.Builder(this)
+              .setTitle("Блок "+id)
+              .setMessage("Название: "+name+"\\nАдрес: "+item.optString("address")+"\\nВерсия: "+item.optString("version"))
+              .setPositiveButton("Закрыть",null).show());
           }
-          customCatalogInfo.setText("Заводские блоки IC, BCM, RKE, ABS защищены от удаления.\\n"+description.toString());
         };
         updateCatalog[0].run();
         addCustom.setOnClickListener(v->{

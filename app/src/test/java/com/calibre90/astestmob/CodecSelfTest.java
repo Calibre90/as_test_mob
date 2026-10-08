@@ -115,11 +115,11 @@ public final class CodecSelfTest {
     check(snapshot.restore().get(0).value.equals("1F40 7126 809F"),"snapshot remains immutable across restores");
     check(Arrays.equals(snapshot.differences(snapshot.restore()),new int[]{0,0,0}),"snapshot clean after restore");
     String nonstandard="720G1G11F4071268000\r\n";
-    List<AbtCodec.Row> untouched=AbtCodec.parse(nonstandard,modules);
-    check(untouched.size()==1,"nonstandard checksum row parsed");
-    check(AbtCodec.write(untouched,"IC").contains("720G1G11F4071268000"),"export preserves unedited checksum bytes");
+    List<AbtCodec.Row> checksumRows=AbtCodec.parse(nonstandard,modules);
+    check(checksumRows.size()==1,"nonstandard checksum row parsed");
+    check(AbtCodec.write(checksumRows,"IC").contains("720G1G11F4071268000"),"export preserves unedited checksum bytes");
     String expectedChanged=AbtCodec.recalc("720-01-01","2B4071268000");
-    untouched.get(0).value=expectedChanged;
+    checksumRows.get(0).value=expectedChanged;
     check(AbtCodec.write(untouched,"IC").contains("720G1G1"+AbtCodec.norm(expectedChanged)),"export writes already recalculated edited row");
     System.out.println("PASS: ABT parse, roundtrip, checksum, index, HEX toggle, restore");
   }

@@ -271,17 +271,26 @@ public class MainActivity extends Activity {
         txtFit(c,id+" · "+module.optString("name"),25,224,18,Color.BLACK,350);
         txt(c,"Адрес: "+prefix+"   Ver: "+module.optString("version"),25,251,12,Color.DKGRAY,false);
         card(c,10,279,380,434,13,true);
+        int featureY=303;
+        int featureCount=0;
+        for(FeatureEngine.Feature feature:features){
+          if(!id.equalsIgnoreCase(feature.module))continue;
+          if(featureCount>=3)break;
+          txtFit(c,"□ "+feature.label,24,featureY,12,Color.BLACK,350);
+          featureY+=25;featureCount++;
+        }
+        if(featureCount==0)txt(c,"Функции не настроены",24,302,12,Color.DKGRAY,false);
         org.json.JSONArray customRows;
         try{customRows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]"));}
         catch(Exception ex){customRows=new org.json.JSONArray();}
-        if(customRows.length()==0)txt(c,"Нет строк. Добавьте их через админку.",24,320,13,Color.DKGRAY,false);
+        if(customRows.length()==0)txt(c,"Нет строк. Добавьте их через админку.",24,415,13,Color.DKGRAY,false);
         txt(c,"Строк: "+customRows.length(),278,286,11,Color.DKGRAY,false);
         for(int i=0;i<Math.min(10,customRows.length());i++){
           org.json.JSONObject item=customRows.optJSONObject(i);if(item==null)continue;
-          float yy=296+i*39;
-          card(c,17,yy,366,35,7,false);
-          txtFit(c,item.optString("address"),24,yy+23,12,Color.BLACK,138);
-          txtFit(c,item.optString("value"),168,yy+23,12,Color.BLACK,205);
+          float yy=393+i*30;
+          card(c,17,yy,366,28,7,false);
+          txtFit(c,item.optString("address"),24,yy+19,12,Color.BLACK,138);
+          txtFit(c,item.optString("value"),168,yy+19,12,Color.BLACK,205);
         }
         card(c,10,720,185,52,12,true);centered(c,"Строки блока",10,720,185,52,15,Color.BLACK);
         card(c,205,720,185,52,12,true);centered(c,"Админка",205,720,185,52,15,Color.BLACK);

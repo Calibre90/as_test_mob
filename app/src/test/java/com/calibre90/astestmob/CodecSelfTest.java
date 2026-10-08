@@ -37,6 +37,10 @@ public final class CodecSelfTest {
     shared.seed(keyless,true);shared.seed(second,true);
     shared.apply(combined,keyless,false,Arrays.asList(keyless,second));
     check(AbtCodec.norm(combined.value).startsWith("1F40"),"OFF preserves another active feature");
+    shared.apply(combined,second,false,Arrays.asList(keyless,second));
+    check(AbtCodec.norm(combined.value).startsWith("1F00"),"OFF override persists after toggling second feature");
+    shared.apply(combined,second,true,Arrays.asList(keyless,second));
+    check(AbtCodec.norm(combined.value).startsWith("1F40"),"second feature ON preserves first OFF");
     shared.apply(combined,keyless,true,Arrays.asList(keyless,second));
     check(AbtCodec.norm(combined.value).startsWith("2B40"),"ON restores feature without clearing another");
     FeatureEngine invalid=new FeatureEngine();

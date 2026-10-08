@@ -641,6 +641,7 @@ public class MainActivity extends Activity {
           EditText value=new EditText(this);value.setSingleLine(true);value.setTextColor(Color.BLACK);value.setTextSize(13);
           value.setGravity(Gravity.CENTER_VERTICAL);value.setPadding(dp(6),0,dp(5),0);
           value.setBackgroundColor(Color.WHITE);lineRow.addView(value,new LinearLayout.LayoutParams(0,dp(42),1));
+          lineRow.setPadding(dp(4),dp(3),dp(4),dp(3));
           values[j]=value;fieldRows[j]=lineRow;fields.addView(lineRow);
         }
         Runnable updateModeFields=()->{
@@ -686,7 +687,8 @@ public class MainActivity extends Activity {
         for(int action=0;action<3;action++){
           final int kind=action;Button actionButton=new Button(this);actionButton.setAllCaps(false);
           actionButton.setText(actionNames[action]);actionButton.setTextSize(12);
-          actions.addView(actionButton,new LinearLayout.LayoutParams(0,dp(55),1));
+          actionButton.setMinWidth(0);actionButton.setPadding(dp(3),0,dp(3),0);
+          actions.addView(actionButton,new LinearLayout.LayoutParams(0,dp(48),1));
           actionButton.setOnClickListener(v->{
             if(kind==2){
               if(chosen[0]<0||chosen[0]>=features.size()){Toast.makeText(this,"Выберите запись",Toast.LENGTH_SHORT).show();return;}

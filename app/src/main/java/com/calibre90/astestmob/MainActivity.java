@@ -608,6 +608,14 @@ public class MainActivity extends Activity {
         for(int n=0;n<features.size();n++)featureNames.add((n+1)+" · "+features.get(n).label);
         android.widget.ArrayAdapter<String> featureAdapter=new android.widget.ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,featureNames);
         featureSelector.setAdapter(featureAdapter);
+        Runnable refreshFeatureChoices=()->{
+          int current=chosen[0];
+          featureNames.clear();featureNames.add("Выберите функцию…");
+          for(int n=0;n<features.size();n++)featureNames.add((n+1)+" · "+features.get(n).label);
+          featureAdapter.notifyDataSetChanged();
+          featureSelector.setSelection(current>=0&&current<features.size()?current+1:0);
+        };
+
         featureSelector.setBackgroundColor(Color.WHITE);
         panel.addView(featureSelector,new LinearLayout.LayoutParams(-1,dp(44)));
         featureSelector.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
@@ -687,7 +695,7 @@ public class MainActivity extends Activity {
                 .setMessage(features.get(index).id)
                 .setNegativeButton("Отмена",null)
                 .setPositiveButton("Удалить",(d,w)->{
-                  features.remove(index);StudioSettings.save(this,features);resetAllEngines();view.invalidate();redrawRef[0].run();
+                  features.remove(index);StudioSettings.save(this,features);resetAllEngines();view.invalidate();refreshFeatureChoices.run();redrawRef[0].run();
                 }).show();return;
             }
             if(kind==1&&(chosen[0]<0||chosen[0]>=features.size())){
@@ -740,7 +748,7 @@ public class MainActivity extends Activity {
                 throw new IllegalArgumentException("Функция с таким ID и адресом уже есть");
               FeatureEngine.Feature updated=new FeatureEngine.Feature(id,module,address,mode,indices,vls[8],vls[9],byteIndex,vls[2]);
               if(kind==0)features.add(updated);else features.set(chosen[0],updated);
-              StudioSettings.save(this,features);resetAllEngines();view.invalidate();redrawRef[0].run();
+              StudioSettings.save(this,features);resetAllEngines();view.invalidate();refreshFeatureChoices.run();redrawRef[0].run();
               Toast.makeText(this,"Настройки функции сохранены",Toast.LENGTH_SHORT).show();
             }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
           });

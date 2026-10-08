@@ -114,7 +114,7 @@ public class MainActivity extends Activity {
       p.setColor(Color.rgb(207,213,221));p.setStrokeWidth(1);c.drawLine(203,284,203,365,p);c.drawLine(15,325,203,325,p);
       ArrayList<FeatureEngine.Feature> shown=moduleFeatures(active);
       int page=featurePage[active],slots=featureSlots(),columns=featureColumns();
-      if(shown.size()>slots)txt(c,(page+1)+"–"+Math.min(page+slots,shown.size())+"/"+shown.size()+"  ›",294,364,10,Color.rgb(150,0,0),true);
+      if(shown.size()>slots){rect(c,Color.rgb(250,235,236),286,343,96,24,6);txt(c,(page+1)+"–"+Math.min(page+slots,shown.size())+"/"+shown.size()+"  ›",294,359,11,Color.rgb(150,0,0),true);}
       for(int i=0;i<slots&&page+i<shown.size();i++){
         float x=featureX(i),y=featureY(i);
         card(c,x,y,22,22,5,false);
@@ -162,7 +162,7 @@ public class MainActivity extends Activity {
       if(startY>=376&&startY<=713&&y>=376&&y<=713&&Math.abs(y-startY)>18){int delta=Math.round((startY-y)/36.5f);scrollOffset[active]=Math.max(0,Math.min(Math.max(0,rowCount(active)-9),scrollOffset[active]+delta));invalidate();return true;}
       if(y>=127&&y<=183){if(x<12||x>=392)return true;int selected=(int)((x-12)/95);if(selected>=0&&selected<modules.length){active=selected;invalidate();}return true;}
       if(x>=346&&y>=8&&y<=70){admin();return true;}
-      if(y>=277&&y<=367){int slots=featureSlots();if(y>351&&x>280&&moduleFeatures(active).size()>slots){featurePage[active]=(featurePage[active]+slots>=moduleFeatures(active).size())?0:featurePage[active]+slots;invalidate();return true;}for(int i=0;i<slots;i++){float fx=featureX(i),fy=featureY(i);float width=featureColumns()==3?(i==2?175:180):(360f/featureColumns());if(x>=fx&&x<fx+width&&y>=fy-2&&y<fy+25){if(featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}}return true;}
+      if(y>=277&&y<=367){int slots=featureSlots();if(y>=343&&x>=286&&moduleFeatures(active).size()>slots){featurePage[active]=(featurePage[active]+slots>=moduleFeatures(active).size())?0:featurePage[active]+slots;invalidate();return true;}for(int i=0;i<slots;i++){float fx=featureX(i),fy=featureY(i);float width=featureColumns()==3?(i==2?175:180):(360f/featureColumns());if(x>=fx&&x<fx+width&&y>=fy-2&&y<fy+25){if(featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}}return true;}
       if(y>=380&&y<=713&&Math.abs(y-startY)<=18){int n=scrollOffset[active]+(int)((y-380)/36.5f);if(n>=0&&n<abtRows[active].size())inspectHexRow(n);return true;}
       if(y>=717&&y<=777){if(x<200)open();else save();return true;}
       if(y>=779){about();return true;}

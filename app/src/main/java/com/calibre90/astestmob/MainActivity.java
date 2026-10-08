@@ -1498,8 +1498,10 @@ public class MainActivity extends Activity {
                 org.json.JSONObject item=new org.json.JSONObject();
                 item.put("id",id);item.put("name",name);item.put("address",address);item.put("version",version);
                 catalog.put(item);customPrefs.edit().putString("catalog",catalog.toString()).apply();
-                // Reveal the new tab immediately; otherwise it remains off-screen after the fourth module.
-                view.moduleTabOffset=Math.max(0f,(4+catalog.length())*90f-370f);
+                // Select and reveal the newly created module immediately.
+                active=4+catalog.length()-1;
+                saveSelectedModule();
+                view.revealActiveTab();
                 updateCatalog[0].run();view.invalidate();
                 Toast.makeText(this,"Блок "+id+" добавлен. Его вкладка доступна сверху.",Toast.LENGTH_LONG).show();
               }catch(Exception ex){Toast.makeText(this,"Ошибка сохранения блока",Toast.LENGTH_SHORT).show();}

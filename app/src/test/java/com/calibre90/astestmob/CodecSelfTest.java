@@ -93,6 +93,13 @@ public final class CodecSelfTest {
     try{AbtCodec.parseChecked("720G1G11F407126809F\n720G1G1ZZZZ\n",allModules);}
     catch(IllegalArgumentException ex){malformedRejected=ex.getMessage().contains("2");}
     check(malformedRejected,"strict parser reports malformed line number");
+    String validChecksum=AbtCodec.recalc("720-01-01","1F40 7126 8000");
+    check(AbtCodec.checksumValid("720-01-01",validChecksum),"checksum valid");
+    String corrupted=AbtCodec.norm(validChecksum);
+    corrupted=corrupted.substring(0,corrupted.length()-2)+"00";
+    if(corrupted.equals(AbtCodec.norm(validChecksum)))corrupted=corrupted.substring(0,corrupted.length()-2)+"FF";
+    check(!AbtCodec.checksumValid("720-01-01",corrupted),"checksum mismatch detected");
+    check(AbtCodec.norm(corrupted).endsWith(corrupted.substring(corrupted.length()-2)),"original corrupt value preserved");
     System.out.println("PASS: ABT parse, roundtrip, checksum, index, HEX toggle, restore");
   }
 }

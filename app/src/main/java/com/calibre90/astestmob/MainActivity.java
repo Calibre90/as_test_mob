@@ -318,11 +318,19 @@ public class MainActivity extends Activity {
     }else{
       org.json.JSONArray entries=new org.json.JSONArray(prefs.getString(id,"[]"));
       java.util.ArrayList<AbtCodec.Row> rows=new java.util.ArrayList<>();
+      java.util.HashSet<String> exportAddresses=new java.util.HashSet<>();
       for(int i=0;i<entries.length();i++){
-        org.json.JSONObject item=entries.optJSONObject(i);if(item==null)continue;
-        String address=item.optString("address");
-        if(!address.startsWith(prefix+"-"))throw new IllegalArgumentException("Адрес строки не соответствует блоку");
-        rows.add(new AbtCodec.Row(id,address,item.optString("value"),Integer.parseInt(address.split("-")[1])));
+        org.json.JSONObject item=entries.optJSONObject(i);
+        if(item==null)throw new IllegalArgumentException("Повреждена строка №"+(i+1));
+        String address=item.optString("address").toUpperCase(java.util.Locale.US);
+        String hex=AbtCodec.norm(item.optString("value"));
+        if(!address.matches(java.util.regex.Pattern.quote(prefix)+"-[0-9]{2}-[0-9]{2}"))
+          throw new IllegalArgumentException("Адрес "+address+" не соответствует блоку");
+        if(!exportAddresses.add(address))
+          throw new IllegalArgumentException("Повтор адреса "+address+" в сохраняемом блоке");
+        if(hex.length()<4||hex.length()%2!=0||!hex.matches("[0-9A-F]+"))
+          throw new IllegalArgumentException("Повреждённое HEX-значение "+address);
+        rows.add(new AbtCodec.Row(id,address,hex,Integer.parseInt(address.split("-")[1])));
       }
       if(rows.isEmpty())throw new IllegalArgumentException("Нет строк для сохранения");
       String content=AbtCodec.write(rows,id);

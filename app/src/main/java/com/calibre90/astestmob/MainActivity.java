@@ -222,7 +222,11 @@ public class MainActivity extends Activity {
           while((n=in.read(chunk))!=-1){if(buf.size()+n>4*1024*1024)throw new IOException("ABT слишком большой");buf.write(chunk,0,n);}
         }
         loadRows(new String(buf.toByteArray(),"UTF-8"));
-        Toast.makeText(this,"Загружено строк: "+abtRows[active].size(),Toast.LENGTH_SHORT).show();
+        int suspect=0;for(AbtCodec.Row row:abtRows[active])if(!AbtCodec.checksumValid(row.address,row.value))suspect++;
+        if(suspect>0)new AlertDialog.Builder(this).setTitle("Проверка ABT")
+          .setMessage("Загружено строк: "+abtRows[active].size()+". Контрольная сумма не совпала у "+suspect+" строк. Исходные значения не изменены. Проверьте формат и файл перед записью в автомобиль.")
+          .setPositiveButton("Понятно",null).show();
+        else Toast.makeText(this,"Загружено строк: "+abtRows[active].size(),Toast.LENGTH_SHORT).show();
       }else if(req==11){
         if(abtRows[active].isEmpty())throw new IllegalArgumentException("Сначала откройте ABT");
         String text=AbtCodec.write(abtRows[active],modules[active]);

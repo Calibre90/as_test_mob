@@ -220,11 +220,13 @@ public class MainActivity extends Activity {
             }
           }
         }
-        // Only an accepted edit establishes a comparison baseline.
-        rememberCustomBaseline(id,feature.address,row.value);
+        String before=row.value;
+        // Compute first. Do not commit checkbox state or baseline if HEX/BITS fails.
         engine.apply(row,feature,next,features);
         item.put("value",row.value);
-        prefs.edit().putString(id,entries.toString()).apply();
+        boolean saved=prefs.edit().putString(id,entries.toString()).commit();
+        if(!saved)throw new IllegalStateException("Не удалось сохранить HEX-строку");
+        rememberCustomBaseline(id,feature.address,before);
         customChecks.put(featureKey(feature),next);
         view.invalidate();return;
       }

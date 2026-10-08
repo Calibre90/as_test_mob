@@ -152,8 +152,8 @@ public final class CodecSelfTest {
     FeatureEngine bcmEngine=new FeatureEngine();
     FeatureEngine.Feature icCheckbox=new FeatureEngine.Feature("shared-name","IC","720-01-01","HEX","0,1","2B","1F",0);
     FeatureEngine.Feature bcmCheckbox=new FeatureEngine.Feature("shared-name","BCM","726-01-01","HEX","0,1","80","00",0);
-    AbtCodec.Row icCheckboxRow=new AbtCodec.Row("IC","720-01-01","2B407126809F","720");
-    AbtCodec.Row bcmCheckboxRow=new AbtCodec.Row("BCM","726-01-01","000EF255E766","726");
+    AbtCodec.Row icCheckboxRow=new AbtCodec.Row("IC","720-01-01","2B407126809F",720);
+    AbtCodec.Row bcmCheckboxRow=new AbtCodec.Row("BCM","726-01-01","000EF255E766",726);
     check(icEngine.state(icCheckbox,icCheckboxRow.value),"imported IC active checkbox detected");
     check(!bcmEngine.state(bcmCheckbox,bcmCheckboxRow.value),"BCM checkbox remains off");
     icEngine.seed(icCheckbox,true);

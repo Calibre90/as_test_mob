@@ -643,6 +643,13 @@ public class MainActivity extends Activity {
           fieldRows[8].setVisibility(bits?View.GONE:View.VISIBLE);
           fieldRows[9].setVisibility(bits?View.GONE:View.VISIBLE);
         };
+        values[1].setFocusable(false);
+        values[1].setClickable(true);
+        values[1].setHint("Выберите модуль");
+        values[1].setOnClickListener(v->new AlertDialog.Builder(this)
+          .setTitle("Модуль As-Built")
+          .setItems(new String[]{"IC","BCM","RKE","ABS"},(d,which)->values[1].setText(new String[]{"IC","BCM","RKE","ABS"}[which]))
+          .show());
         values[4].setFocusable(false);
         values[4].setClickable(true);
         values[4].setHint("Нажмите: HEX или BITS");

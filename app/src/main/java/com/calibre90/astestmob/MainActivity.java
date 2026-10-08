@@ -507,8 +507,31 @@ public class MainActivity extends Activity {
       place(root,divider,.09f,.375f,.82f,.004f,width,height);
       TextView description=caption(StudioSettings.appearance(this,"about_description","Редактор As-Built для Mazda 6 GH"),15,Color.BLACK,false);
       place(root,description,.09f,.42f,.84f,.12f,width,height);
-      TextView author=caption(StudioSettings.appearance(this,"author_text","Разработчик: Dim304"),15,Color.BLACK,true);
-      place(root,author,.09f,.555f,.84f,.12f,width,height);
+      String[] creatorNames={
+        StudioSettings.appearance(this,"creator1_name","Dim304"),
+        StudioSettings.appearance(this,"creator2_name","Wolis11")
+      };
+      String[] creatorUrls={
+        StudioSettings.appearance(this,"creator1_url","https://www.drive2.ru/users/dim304/"),
+        StudioSettings.appearance(this,"creator2_url","https://www.drive2.ru/users/wolis11/")
+      };
+      for(int i=0;i<2;i++){
+        final String url=creatorUrls[i].trim();
+        String role=i==0?"Разработчик: ":"Помощник: ";
+        TextView person=caption(role+creatorNames[i]+"   Drive2",13,Color.BLACK,true);
+        android.text.SpannableString styled=new android.text.SpannableString(person.getText());
+        int linkStart=styled.toString().lastIndexOf("Drive2");
+        styled.setSpan(new android.text.style.ForegroundColorSpan(Color.rgb(24,96,191)),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        styled.setSpan(new android.text.style.UnderlineSpan(),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        person.setText(styled);
+        place(root,person,.09f,i==0?.545f:.645f,.84f,.085f,width,height);
+        person.setOnClickListener(v->{
+          if(!url.isEmpty()&&(url.startsWith("https://")||url.startsWith("http://"))){
+            try{startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse(url)));}
+            catch(Exception ex){Toast.makeText(this,"Не удалось открыть ссылку",Toast.LENGTH_SHORT).show();}
+          }
+        });
+      }
       TextView ok=caption("Закрыть",16,Color.WHITE,true);ok.setGravity(Gravity.CENTER);
       ok.setBackground(panel(Color.rgb(245,69,69),Color.rgb(170,0,10),9,Color.rgb(255,103,109)));
       place(root,ok,.09f,.765f,.82f,.14f,width,height);ok.setOnClickListener(v->dialog.dismiss());

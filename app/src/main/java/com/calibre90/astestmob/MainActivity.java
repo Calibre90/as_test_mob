@@ -350,7 +350,7 @@ public class MainActivity extends Activity {
     try{
       org.json.JSONArray rows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]"));
       int offset=customScroll.containsKey(id)?customScroll.get(id):0;
-      customScroll.put(id,Math.max(0,Math.min(offset,Math.max(0,rows.length()-10))));
+      customScroll.put(id,Math.max(0,Math.min(offset,Math.max(0,rows.length()-9))));
     }catch(Exception ignored){customScroll.put(id,0);}
     saveCustomTabPosition(id);
     java.util.ArrayList<String> keys=new java.util.ArrayList<>(customChecks.keySet());
@@ -494,17 +494,17 @@ public class MainActivity extends Activity {
           featureY+=25;featureCount++;
         }
         if(featureCount==0)txt(c,"Функции не настроены",24,302,12,Color.DKGRAY,false);
-        if(featureTotal>3)txt(c,"Далее › "+(featureStart+1)+"-"+Math.min(featureTotal,featureStart+3)+"/"+featureTotal,244,382,11,Color.DKGRAY,false);
+        if(featureTotal>3)txt(c,"Далее › "+(featureStart+1)+"-"+Math.min(featureTotal,featureStart+3)+"/"+featureTotal,244,365,11,Color.DKGRAY,false);
         org.json.JSONArray customRows;
         try{customRows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]"));}
         catch(Exception ex){customRows=new org.json.JSONArray();}
         if(customRows.length()==0)txt(c,"Нет строк. Добавьте их через админку.",24,415,13,Color.DKGRAY,false);
-        txt(c,"Строк: "+customRows.length(),278,286,11,Color.DKGRAY,false);
-        int offset=Math.max(0,Math.min(customScroll.containsKey(id)?customScroll.get(id):0,Math.max(0,customRows.length()-10)));
-        txt(c,(customRows.length()==0?"0":(offset+1)+"-"+Math.min(customRows.length(),offset+10))+"/"+customRows.length(),283,380,11,Color.DKGRAY,false);
-        for(int i=0;i<Math.min(10,customRows.length()-offset);i++){
+        txt(c,"HEX-строки: "+customRows.length(),24,398,11,Color.DKGRAY,false);
+        int offset=Math.max(0,Math.min(customScroll.containsKey(id)?customScroll.get(id):0,Math.max(0,customRows.length()-9)));
+        txt(c,(customRows.length()==0?"0":(offset+1)+"-"+Math.min(customRows.length(),offset+9))+"/"+customRows.length(),305,398,11,Color.DKGRAY,false);
+        for(int i=0;i<Math.min(9,customRows.length()-offset);i++){
           org.json.JSONObject item=customRows.optJSONObject(i+offset);if(item==null)continue;
-          float yy=393+i*30;
+          float yy=409+i*30;
           card(c,17,yy,366,28,7,false);
           txtFit(c,item.optString("address"),24,yy+19,12,Color.BLACK,138);
           txtFit(c,item.optString("value"),168,yy+19,12,Color.BLACK,205);
@@ -601,7 +601,7 @@ public class MainActivity extends Activity {
           try{total=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]")).length();}catch(Exception ignored){}
           int old=customScroll.containsKey(id)?customScroll.get(id):0;
           int delta=Math.round((startY-y)/30f);
-          customScroll.put(id,Math.max(0,Math.min(Math.max(0,total-10),old+delta)));
+          customScroll.put(id,Math.max(0,Math.min(Math.max(0,total-9),old+delta)));
           saveCustomTabPosition(id);
           invalidate();
         }
@@ -624,7 +624,7 @@ public class MainActivity extends Activity {
         return true;
       }
       if(x>=346&&y>=8&&y<=70){admin();return true;}
-      if(active>=4){if(y>=365&&y<=390&&x>=230){
+      if(active>=4){if(y>=357&&y<=373&&x>=230){
         org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
         if(module!=null){String id=module.optString("id");int total=0;for(FeatureEngine.Feature f:features)if(id.equalsIgnoreCase(f.module))total++;int current=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;customFeaturePage.put(id,current+3>=total?0:current+3);saveCustomTabPosition(id);invalidate();}
         return true;

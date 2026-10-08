@@ -406,12 +406,30 @@ public class MainActivity extends Activity {
     });
     Button remove=new Button(this);remove.setText("Удалить");actions.addView(remove);remove.setOnClickListener(v->{
       int n=selector.getSelectedItemPosition();if(n<0||n>=features.size())return;
-      features.remove(n);StudioSettings.save(this,features);engine.reset();for(boolean[] c:checks)Arrays.fill(c,false);
+      features.remove(n);StudioSettings.save(this,features);engine.reset();checkedFeatures.clear();
       labels.clear();for(FeatureEngine.Feature f:features)labels.add(f.id+" · "+f.module+" · "+f.address);adapter.notifyDataSetChanged();view.invalidate();
     });
     root.addView(actions);
     Button rowsAdmin=new Button(this);rowsAdmin.setText("Редактор строк ABT");root.addView(rowsAdmin);rowsAdmin.setOnClickListener(v->showRowsAdmin());
     Button moduleAdmin=new Button(this);moduleAdmin.setText("Настройки блока");root.addView(moduleAdmin);moduleAdmin.setOnClickListener(v->showModuleAdmin());
+    Button templates=new Button(this);templates.setText("Добавить шаблоны функций");root.addView(templates);
+    templates.setOnClickListener(v->new AlertDialog.Builder(this)
+      .setTitle("Шаблоны из Run #89")
+      .setMessage("Добавить отсутствующие функции IC, BCM, RKE, ABS? Существующие настройки сохранятся. Кодировки требуют проверки на автомобиле.")
+      .setNegativeButton("Отмена",null)
+      .setPositiveButton("Добавить",(dialog,which)->{
+        int added=0;
+        for(FeatureEngine.Feature item:StudioSettings.defaults()){
+          boolean exists=false;
+          for(FeatureEngine.Feature current:features)
+            if(current.module.equals(item.module)&&current.id.equals(item.id)){exists=true;break;}
+          if(!exists){features.add(item);added++;}
+        }
+        StudioSettings.save(this,features);engine.reset();checkedFeatures.clear();
+        labels.clear();for(FeatureEngine.Feature item:features)labels.add(item.id+" · "+item.module+" · "+item.address);
+        adapter.notifyDataSetChanged();view.invalidate();
+        Toast.makeText(this,"Добавлено шаблонов: "+added,Toast.LENGTH_LONG).show();
+      }).show());
     new AlertDialog.Builder(this).setTitle("Админка · функции и биты").setView(scroll).setPositiveButton("Закрыть",null).show();
   }
   void admin(){modal(true);}

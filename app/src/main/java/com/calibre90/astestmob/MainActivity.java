@@ -662,6 +662,10 @@ public class MainActivity extends Activity {
               String mode=vls[4].toUpperCase(java.util.Locale.ROOT);
               if(id.isEmpty()||address.isEmpty()||!(module.equals("IC")||module.equals("BCM")||module.equals("RKE")||module.equals("ABS"))||!(mode.equals("HEX")||mode.equals("BITS")))
                 throw new IllegalArgumentException("Укажите ID, модуль, строку и режим HEX/BITS");
+              if(!address.matches("[0-9A-F]{3}-[0-9]{2}-[0-9]{2}"))
+                throw new IllegalArgumentException("Адрес строки должен иметь вид 720-01-01");
+              try{AbtCodec.checksum(address,"0000");}
+              catch(RuntimeException badAddress){throw new IllegalArgumentException("Неверный адрес строки As-Built");}
               String indices=mode.equals("BITS")?vls[7]:vls[5];
               int byteIndex=mode.equals("BITS")?Integer.parseInt(vls[6]):0;
               java.util.List<Integer> positions=FeatureEngine.indices(indices);

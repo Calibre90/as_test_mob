@@ -222,10 +222,18 @@ public class MainActivity extends Activity {
         }
         String before=row.value;
         // Compute first. Do not commit checkbox state or baseline if HEX/BITS fails.
-        engine.apply(row,feature,next,features);
-        item.put("value",row.value);
-        boolean saved=prefs.edit().putString(id,entries.toString()).commit();
-        if(!saved)throw new IllegalStateException("Не удалось сохранить HEX-строку");
+        try{
+          engine.apply(row,feature,next,features);
+          item.put("value",row.value);
+          boolean saved=prefs.edit().putString(id,entries.toString()).commit();
+          if(!saved)throw new IllegalStateException("Не удалось сохранить HEX-строку");
+        }catch(Exception editFailure){
+          // A failed apply may have mutated the engine's internal state.
+          // Rebuild it from the last persisted HEX on the next attempt.
+          customEngines.remove(id);
+          customChecks.clear();
+          throw editFailure;
+        }
         rememberCustomBaseline(id,feature.address,before);
         customChecks.put(featureKey(feature),next);
         view.invalidate();return;

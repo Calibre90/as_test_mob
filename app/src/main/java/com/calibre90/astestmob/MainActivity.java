@@ -1037,7 +1037,7 @@ public class MainActivity extends Activity {
         Button removeCustom=new Button(this);removeCustom.setAllCaps(false);removeCustom.setText("Удалить блок");removeCustom.setTextSize(12);
         customActions.addView(removeCustom,new LinearLayout.LayoutParams(0,-1,1));
         final android.content.SharedPreferences customPrefs=getSharedPreferences("studio_custom_modules",MODE_PRIVATE);
-        TextView customCatalogInfo=new TextView(this);customCatalogInfo.setTextColor(Color.LTGRAY);customCatalogInfo.setTextSize(12);panel.addView(customCatalogInfo);
+        TextView customCatalogInfo=new TextView(this);customCatalogInfo.setTextColor(Color.LTGRAY);customCatalogInfo.setTextSize(12);customCatalogInfo.setPadding(dp(8),dp(12),dp(8),dp(16));choices.addView(customCatalogInfo);
         final Runnable[] updateCatalog={null};
         updateCatalog[0]=()->{
           org.json.JSONArray catalog;

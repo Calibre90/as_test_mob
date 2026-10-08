@@ -29,8 +29,14 @@ public final class FeatureEngine {
       if(p.isEmpty())continue;
       if(p.contains("-")){
         String[] pair=p.split("-",2);int a=Integer.parseInt(pair[0]),b=Integer.parseInt(pair[1]);
+        if(a<0||b<0||Math.max(a,b)>4095||Math.abs((long)a-b)+out.size()>4096)
+          throw new IllegalArgumentException("Index range is too large");
         for(int n=Math.min(a,b);n<=Math.max(a,b);n++)out.add(n);
-      }else out.add(Integer.parseInt(p));
+      }else{
+        int n=Integer.parseInt(p);
+        if(n<0||n>4095||out.size()>=4096)throw new IllegalArgumentException("Index out of range");
+        out.add(n);
+      }
     }
     return out;
   }

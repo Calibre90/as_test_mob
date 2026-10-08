@@ -975,7 +975,10 @@ public class MainActivity extends Activity {
         };
         fill.run();
         LinearLayout choices=new LinearLayout(this);choices.setOrientation(LinearLayout.VERTICAL);
-        panel.addView(choices,new LinearLayout.LayoutParams(-1,0,1));
+        android.widget.ScrollView moduleListScroll=new android.widget.ScrollView(this);
+        moduleListScroll.setFillViewport(false);
+        moduleListScroll.addView(choices);
+        panel.addView(moduleListScroll,new LinearLayout.LayoutParams(-1,0,1));
         for(int m=0;m<modules.length;m++){
           final int index=m;Button choose=new Button(this);choose.setAllCaps(false);
           choose.setText((m+1)+" · "+modules[m]+" · "+names[m]);
@@ -1000,10 +1003,12 @@ public class MainActivity extends Activity {
 
       // Custom module catalog: persistent admin CRUD, separate from the protected factory modules.
       if(selected[0]==2){
-        Button addCustom=new Button(this);addCustom.setAllCaps(false);addCustom.setText("＋ Добавить блок");
-        panel.addView(addCustom,new LinearLayout.LayoutParams(-1,dp(44)));
-        Button removeCustom=new Button(this);removeCustom.setAllCaps(false);removeCustom.setText("− Удалить блок");
-        panel.addView(removeCustom,new LinearLayout.LayoutParams(-1,dp(44)));
+        LinearLayout customActions=new LinearLayout(this);customActions.setOrientation(LinearLayout.HORIZONTAL);
+        panel.addView(customActions,new LinearLayout.LayoutParams(-1,dp(48)));
+        Button addCustom=new Button(this);addCustom.setAllCaps(false);addCustom.setText("Добавить блок");addCustom.setTextSize(12);
+        customActions.addView(addCustom,new LinearLayout.LayoutParams(0,-1,1));
+        Button removeCustom=new Button(this);removeCustom.setAllCaps(false);removeCustom.setText("Удалить блок");removeCustom.setTextSize(12);
+        customActions.addView(removeCustom,new LinearLayout.LayoutParams(0,-1,1));
         final android.content.SharedPreferences customPrefs=getSharedPreferences("studio_custom_modules",MODE_PRIVATE);
         TextView customCatalogInfo=new TextView(this);customCatalogInfo.setTextColor(Color.LTGRAY);customCatalogInfo.setTextSize(12);panel.addView(customCatalogInfo);
         final Runnable[] updateCatalog={null};

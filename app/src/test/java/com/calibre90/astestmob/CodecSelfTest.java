@@ -22,9 +22,8 @@ public final class CodecSelfTest {
     check(!FeatureEngine.changedPositions(before,rows.get(0).value).isEmpty(),"changed positions");
     engine.apply(rows.get(0),f,false,Arrays.asList(f));
     check(rows.get(0).value.equals(before),"feature OFF restores");
-    boolean rejected=false;
-    try{AbtCodec.parse("726G1G10000",modules).get(0).module.equals("IC");}catch(Exception ex){rejected=true;}
-    check(!rejected,"BCM parse");
+    List<AbtCodec.Row> bcm=AbtCodec.parse("726G1G10000",modules);
+    check(bcm.size()==1&&bcm.get(0).module.equals("BCM"),"BCM module detection");
     System.out.println("PASS: ABT parse, roundtrip, checksum, index, HEX toggle, restore");
   }
 }

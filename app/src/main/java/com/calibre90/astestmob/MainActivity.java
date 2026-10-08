@@ -22,7 +22,7 @@ public class MainActivity extends Activity {
   int active=0;
   @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(Color.BLACK);getWindow().setNavigationBarColor(Color.BLACK);getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
     for(int i=0;i<4;i++)rows[i]=new ArrayList<>();
-    features.addAll(StudioSettings.load(this));seedBuiltInRows();restoreAdminRows();
+    features.addAll(StudioSettings.load(this));restoreCustomTabPositions();seedBuiltInRows();restoreAdminRows();
     setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));view=new StudioView();setContentView(view);
   }
   /** Built-in sample configuration: available before importing any vehicle ABT. */
@@ -310,6 +310,22 @@ public class MainActivity extends Activity {
     layout.addView(exportAbt);exportAbt.setOnClickListener(v->customAbtPicker(true,id));
     new AlertDialog.Builder(this).setTitle(id+" · "+module.optString("name")).setView(layout).setPositiveButton("Закрыть",null).show();
   }
+  void restoreCustomTabPositions(){
+    android.content.SharedPreferences prefs=getSharedPreferences("studio_custom_positions",MODE_PRIVATE);
+    org.json.JSONArray catalog=customModuleCatalog();
+    for(int i=0;i<catalog.length();i++){
+      org.json.JSONObject module=catalog.optJSONObject(i);
+      if(module==null)continue;
+      String id=module.optString("id");
+      customScroll.put(id,Math.max(0,prefs.getInt(id+"_scroll",0)));
+      customFeaturePage.put(id,Math.max(0,prefs.getInt(id+"_features",0)));
+    }
+  }
+  void saveCustomTabPosition(String id){
+    getSharedPreferences("studio_custom_positions",MODE_PRIVATE).edit()
+      .putInt(id+"_scroll",customScroll.containsKey(id)?customScroll.get(id):0)
+      .putInt(id+"_features",customFeaturePage.containsKey(id)?customFeaturePage.get(id):0).apply();
+  }
   void resetCustomFeatureState(String id){
     customEngines.remove(id);
     try{
@@ -317,6 +333,7 @@ public class MainActivity extends Activity {
       int offset=customScroll.containsKey(id)?customScroll.get(id):0;
       customScroll.put(id,Math.max(0,Math.min(offset,Math.max(0,rows.length()-10))));
     }catch(Exception ignored){customScroll.put(id,0);}
+    saveCustomTabPosition(id);
     java.util.ArrayList<String> keys=new java.util.ArrayList<>(customChecks.keySet());
     for(String key:keys)if(key.startsWith(id+"|"))customChecks.remove(key);
   }
@@ -555,6 +572,7 @@ public class MainActivity extends Activity {
           int old=customScroll.containsKey(id)?customScroll.get(id):0;
           int delta=Math.round((startY-y)/30f);
           customScroll.put(id,Math.max(0,Math.min(Math.max(0,total-10),old+delta)));
+          saveCustomTabPosition(id);
           invalidate();
         }
         return true;
@@ -578,7 +596,7 @@ public class MainActivity extends Activity {
       if(x>=346&&y>=8&&y<=70){admin();return true;}
       if(active>=4){if(y>=365&&y<=390&&x>=230){
         org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
-        if(module!=null){String id=module.optString("id");int total=0;for(FeatureEngine.Feature f:features)if(id.equalsIgnoreCase(f.module))total++;int current=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;customFeaturePage.put(id,current+3>=total?0:current+3);invalidate();}
+        if(module!=null){String id=module.optString("id");int total=0;for(FeatureEngine.Feature f:features)if(id.equalsIgnoreCase(f.module))total++;int current=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;customFeaturePage.put(id,current+3>=total?0:current+3);saveCustomTabPosition(id);invalidate();}
         return true;
       }if(y>=282&&y<=355){int slot=(int)((y-283)/25);org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);if(module!=null){String id=module.optString("id");int offset=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;toggleCustomFeature(offset+slot);}return true;}if(y>=717&&y<=777){if(x<200){org.json.JSONObject item=customModuleCatalog().optJSONObject(active-4);if(item!=null)showCustomRows(item);}else showAdminTabs();}return true;}
       if(y>=279&&y<=370){int slots=featureSlots();if(x>=345&&moduleFeatures(active).size()>slots){featurePage[active]=(featurePage[active]+slots>=moduleFeatures(active).size())?0:featurePage[active]+slots;invalidate();return true;}int i=(int)((y-284)/27);if(i>=0&&i<slots&&featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}

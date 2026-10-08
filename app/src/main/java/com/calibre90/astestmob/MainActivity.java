@@ -1145,7 +1145,10 @@ public class MainActivity extends Activity {
                 org.json.JSONObject item=new org.json.JSONObject();
                 item.put("id",id);item.put("name",name);item.put("address",address);item.put("version",version);
                 catalog.put(item);customPrefs.edit().putString("catalog",catalog.toString()).apply();
-                updateCatalog[0].run();Toast.makeText(this,"Блок "+id+" добавлен в каталог",Toast.LENGTH_SHORT).show();
+                // Reveal the new tab immediately; otherwise it remains off-screen after the fourth module.
+                moduleTabOffset=Math.max(0f,(4+catalog.length())*90f-370f);
+                updateCatalog[0].run();view.invalidate();
+                Toast.makeText(this,"Блок "+id+" добавлен. Его вкладка доступна сверху.",Toast.LENGTH_LONG).show();
               }catch(Exception ex){Toast.makeText(this,"Ошибка сохранения блока",Toast.LENGTH_SHORT).show();}
             }).show();
         });
@@ -1161,8 +1164,9 @@ public class MainActivity extends Activity {
                 org.json.JSONArray updated=new org.json.JSONArray();
                 for(int j=0;j<current.length();j++)if(j!=index)updated.put(current.get(j));
                 customPrefs.edit().putString("catalog",updated.toString()).apply();
-                updateCatalog[0].run();
-                Toast.makeText(this,"Блок удалён из каталога",Toast.LENGTH_SHORT).show();
+                moduleTabOffset=Math.min(moduleTabOffset,Math.max(0f,(4+updated.length())*90f-370f));
+                updateCatalog[0].run();view.invalidate();
+                Toast.makeText(this,"Блок удалён из каталога и вкладок",Toast.LENGTH_SHORT).show();
               }catch(Exception ex){Toast.makeText(this,"Ошибка удаления",Toast.LENGTH_SHORT).show();}
             }).show();
           }catch(Exception ex){Toast.makeText(this,"Ошибка каталога",Toast.LENGTH_SHORT).show();}

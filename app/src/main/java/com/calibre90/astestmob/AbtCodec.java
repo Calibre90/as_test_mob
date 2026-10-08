@@ -38,6 +38,27 @@ public final class AbtCodec {
   private static final Pattern ROW=Pattern.compile("^([0-9A-F]{3})[- ]?([0-9A-Z]{2})[- ]?([0-9A-Z]{2})\\s+([0-9A-F][0-9A-F ]*)$");
   private static final Pattern COMPACT=Pattern.compile("^([0-9A-F]{3})([0-9A-Z]{2})([0-9A-Z]{2})([0-9A-F]+)$");
   private static final Pattern BLOCK=Pattern.compile("^;\\s*Block\\s+(\\d+)",Pattern.CASE_INSENSITIVE);
+  /** Reject malformed data rows instead of silently dropping them during an import. */
+  public static List<Row> parseChecked(String content,Map<String,String> modules){
+    ArrayList<String> errors=new ArrayList<>();
+    int lineNumber=0;
+    for(String source:content.split("\\r\\n|\\n|\\r")){
+      lineNumber++;
+      String line=source.trim().replace("\uFEFF","").toUpperCase(Locale.US);
+      if(line.isEmpty()||line.startsWith(";")||line.startsWith("#")||line.startsWith("//"))continue;
+      String clean=line.replaceAll("[,:=\\t]+"," ").replaceAll("\\s+"," ").trim();
+      Matcher m=ROW.matcher(clean);
+      if(!m.matches())m=COMPACT.matcher(clean);
+      if(!m.matches()){errors.add(String.valueOf(lineNumber));continue;}
+      try{
+        decodeIndex(m.group(2));decodeIndex(m.group(3));
+        String data=norm(m.group(4));
+        if(data.length()<4||data.length()%2!=0)errors.add(String.valueOf(lineNumber));
+      }catch(RuntimeException e){errors.add(String.valueOf(lineNumber));}
+    }
+    if(!errors.isEmpty())throw new IllegalArgumentException("Повреждённые строки ABT: "+String.join(", ",errors.subList(0,Math.min(8,errors.size())))+(errors.size()>8?" …":""));
+    return parse(content,modules);
+  }
   public static List<Row> parse(String content,Map<String,String> modules){
     ArrayList<Row> out=new ArrayList<>();int current=-1;
     for(String source:content.split("\\r\\n|\\n|\\r")){

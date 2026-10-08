@@ -83,6 +83,17 @@ public final class AbtCodec {
     }
     return out;
   }
+  /** Fail closed: an ABT file must contain only rows from the selected module. */
+  public static ArrayList<Row> requireModule(List<Row> parsed,String module){
+    if(parsed==null||parsed.isEmpty())throw new IllegalArgumentException("Формат ABT не распознан");
+    ArrayList<Row> result=new ArrayList<>();
+    for(Row row:parsed){
+      if(!module.equals(row.module))throw new IllegalArgumentException(
+        "Файл содержит блок "+row.module+", а открыта вкладка "+module+". Импорт отменён.");
+      result.add(row);
+    }
+    return result;
+  }
   public static String write(List<Row> rows,String module){
     TreeMap<Integer,List<Row>> grouped=new TreeMap<>();
     for(Row row:rows)if(row.module.equals(module))grouped.computeIfAbsent(row.block,k->new ArrayList<>()).add(row);

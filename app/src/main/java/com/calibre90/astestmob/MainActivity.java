@@ -210,6 +210,24 @@ public class MainActivity extends Activity {
     Intent intent=new Intent(save?Intent.ACTION_CREATE_DOCUMENT:Intent.ACTION_OPEN_DOCUMENT);
     intent.setType("*/*");intent.addCategory(Intent.CATEGORY_OPENABLE);
     if(save)intent.putExtra(Intent.EXTRA_TITLE,id+".abt");
+    if(save){
+      try{
+        org.json.JSONArray entries=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]"));
+        int invalid=0;
+        for(int j=0;j<entries.length();j++){
+          org.json.JSONObject row=entries.optJSONObject(j);
+          if(row!=null&&!AbtCodec.checksumValid(row.optString("address"),row.optString("value")))invalid++;
+        }
+        if(invalid>0){
+          final int count=invalid;
+          new AlertDialog.Builder(this).setTitle("Проверка ABT перед сохранением")
+            .setMessage("Найдены несовпадающие контрольные суммы: "+count+". Исходные HEX-значения будут сохранены без исправления. Продолжить?")
+            .setNegativeButton("Отмена",(d,w)->pendingCustomId="")
+            .setPositiveButton("Продолжить",(d,w)->startActivityForResult(intent,13)).show();
+          return;
+        }
+      }catch(Exception ex){Toast.makeText(this,"Ошибка проверки ABT: "+ex.getMessage(),Toast.LENGTH_LONG).show();pendingCustomId="";return;}
+    }
     startActivityForResult(intent,save?13:12);
   }
   void handleCustomAbt(int request,Uri uri)throws Exception{

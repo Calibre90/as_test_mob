@@ -116,6 +116,15 @@ public class MainActivity extends Activity {
     }).setNegativeButton("Закрыть",null).show();
   }
 
+  boolean knownFeatureModule(String id){
+    for(String factory:modules)if(factory.equals(id))return true;
+    org.json.JSONArray catalog=customModuleCatalog();
+    for(int i=0;i<catalog.length();i++){
+      org.json.JSONObject item=catalog.optJSONObject(i);
+      if(item!=null&&id.equalsIgnoreCase(item.optString("id")))return true;
+    }
+    return false;
+  }
   void showCustomRows(org.json.JSONObject module){
     final String id=module.optString("id"), address=module.optString("address");
     android.content.SharedPreferences prefs=getSharedPreferences("studio_custom_rows",MODE_PRIVATE);
@@ -960,7 +969,7 @@ public class MainActivity extends Activity {
               for(int j=0;j<values.length;j++)vls[j]=values[j].getText().toString().trim();
               String id=vls[0],module=vls[1].toUpperCase(java.util.Locale.ROOT),address=vls[3].toUpperCase(java.util.Locale.ROOT);
               String mode=vls[4].toUpperCase(java.util.Locale.ROOT);
-              if(id.isEmpty()||address.isEmpty()||!(module.equals("IC")||module.equals("BCM")||module.equals("RKE")||module.equals("ABS"))||!(mode.equals("HEX")||mode.equals("BITS")))
+              if(id.isEmpty()||address.isEmpty()||!knownFeatureModule(module)||!(mode.equals("HEX")||mode.equals("BITS")))
                 throw new IllegalArgumentException("Укажите ID, модуль, строку и режим HEX/BITS");
               if(!address.matches("[0-9A-F]{3}-[0-9]{2}-[0-9]{2}"))
                 throw new IllegalArgumentException("Адрес строки должен иметь вид 720-01-01");

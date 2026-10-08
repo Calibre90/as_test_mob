@@ -21,7 +21,7 @@ public class MainActivity extends Activity {
   boolean[][] checks=new boolean[4][3];
   int active=0;
   @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(Color.BLACK);getWindow().setNavigationBarColor(Color.BLACK);getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
-    for(int i=0;i<4;i++){rows[i]=new ArrayList<>();for(String s:defaults)rows[i].add(s);}
+    for(int i=0;i<4;i++)rows[i]=new ArrayList<>();
     features.addAll(StudioSettings.load(this));view=new StudioView();setContentView(view);
   }
   class StudioView extends View {
@@ -95,6 +95,7 @@ public class MainActivity extends Activity {
       }
       card(c,10,376,380,337,13,true);
       int count=Math.min(Math.max(0,rows[active].size()-scrollOffset[active]),9);
+      if(rows[active].isEmpty())txt(c,"Нет данных — откройте ABT блока "+modules[active],22,420,12,Color.DKGRAY,false);
       for(int i=0;i<count;i++){
         int rowIndex=i+scrollOffset[active];float y=380+i*36.5f;card(c,15,y,370,35,8,false);
         p.setColor(Color.rgb(202,209,219));p.setStrokeWidth(1);c.drawLine(165,y+4,165,y+31,p);

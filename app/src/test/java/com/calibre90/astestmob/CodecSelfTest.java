@@ -162,6 +162,18 @@ public final class CodecSelfTest {
     check(!icEngine.state(icCheckbox,icCheckboxRow.value),"IC checkbox can be turned off");
     check(AbtCodec.norm(bcmCheckboxRow.value).equals("000EF255E766"),"IC toggle cannot alter BCM row");
     check(!bcmEngine.state(bcmCheckbox,bcmCheckboxRow.value),"BCM checkbox unchanged after IC toggle");
+    FeatureEngine sharedIdEngine=new FeatureEngine();
+    FeatureEngine.Feature sameIdFirst=new FeatureEngine.Feature("same-id","IC","720-01-01","HEX","0","A","0",0);
+    FeatureEngine.Feature sameIdSecond=new FeatureEngine.Feature("same-id","IC","720-01-02","HEX","0","B","0",0);
+    AbtCodec.Row firstAddress=new AbtCodec.Row("IC","720-01-01","00112233",720);
+    AbtCodec.Row secondAddress=new AbtCodec.Row("IC","720-01-02","00112233",720);
+    sharedIdEngine.apply(firstAddress,sameIdFirst,true,Arrays.asList(sameIdFirst,sameIdSecond));
+    check(AbtCodec.norm(firstAddress.value).startsWith("A"),"same feature ID first address enabled");
+    sharedIdEngine.apply(secondAddress,sameIdSecond,true,Arrays.asList(sameIdFirst,sameIdSecond));
+    check(AbtCodec.norm(secondAddress.value).startsWith("B"),"same feature ID second address enabled independently");
+    sharedIdEngine.apply(firstAddress,sameIdFirst,false,Arrays.asList(sameIdFirst,sameIdSecond));
+    check(AbtCodec.norm(firstAddress.value).startsWith("0"),"first address disabled without affecting second");
+    check(AbtCodec.norm(secondAddress.value).startsWith("B"),"second address remains enabled with same feature ID");
     System.out.println("PASS: ABT parse, roundtrip, checksum, index, HEX toggle, restore");
   }
 }

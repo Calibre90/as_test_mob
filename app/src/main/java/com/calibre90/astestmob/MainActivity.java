@@ -106,20 +106,13 @@ public class MainActivity extends Activity {
     }catch(IllegalArgumentException ex){return fallback;}
   }
   int featureColumns(){
-    try{return Math.max(1,Math.min(4,Integer.parseInt(StudioSettings.appearance(this,"feature_columns","3").trim())));}
+    try{return Math.max(1,Math.min(10,Integer.parseInt(StudioSettings.appearance(this,"feature_columns","3").trim())));}
     catch(Exception ignored){return 3;}
   }
-  int featureSlots(){return featureColumns()==1?3:featureColumns();}
-  float featureX(int index){
-    int columns=featureColumns();
-    if(columns==3)return index==2?213:20;
-    return 20+(index%columns)*(360f/columns);
-  }
-  float featureY(int index){
-    int columns=featureColumns();
-    if(columns==3)return index==1?333:288;
-    return columns==1?285+index*28:288;
-  }
+  int featureSlots(){return Math.max(1,featureColumns()*2-1);}
+  float featureCellWidth(){return 370f/featureColumns();}
+  float featureX(int index){return 15+(index%featureColumns())*featureCellWidth()+5;}
+  float featureY(int index){return 285+(index/featureColumns())*40;}
   class StudioView extends View {
     Paint p=new Paint(3); HashMap<String,Bitmap> bitmaps=new HashMap<>();
     float sx=1,sy=1,offX=0,offY=0;
@@ -184,20 +177,27 @@ public class MainActivity extends Activity {
       String configuredVersion=StudioSettings.moduleVersion(MainActivity.this,modules[active]);
       txt(c,"ID: "+ids[active]+"  |  Ver: "+(!configuredVersion.isEmpty()?configuredVersion:(loaded[active]?"ABT загружен":"Образец")),25,252,12,Color.rgb(91,103,119),false);
       card(c,10,279,380,91,12,true);
-      p.setColor(Color.rgb(207,213,221));p.setStrokeWidth(1);c.drawLine(203,284,203,365,p);c.drawLine(15,325,203,325,p);
       ArrayList<FeatureEngine.Feature> shown=moduleFeatures(active);
       int page=featurePage[active],slots=featureSlots(),columns=featureColumns();
-      if(shown.size()>slots){rect(c,Color.rgb(250,235,236),286,343,96,24,6);txt(c,(page+1)+"–"+Math.min(page+slots,shown.size())+"/"+shown.size()+"  ›",294,359,11,Color.rgb(150,0,0),true);}
+      float cellW=featureCellWidth();
+      p.setColor(Color.rgb(190,199,211));p.setStrokeWidth(1);
+      for(int col=1;col<columns;col++){float xx=15+col*cellW;c.drawLine(xx,284,xx,365,p);}
+      c.drawLine(15,324,385,324,p);
       for(int i=0;i<slots&&page+i<shown.size();i++){
-        float x=featureX(i),y=featureY(i);
-        card(c,x,y,22,22,5,false);
+        float x=featureX(i),y=featureY(i),maxLabel=Math.max(3,cellW-31);
+        card(c,x,y+5,18,18,4,false);
         if(isChecked(shown.get(page+i))){
-          rect(c,Color.rgb(210,28,37),x+4,y+4,14,14,3);
+          rect(c,Color.rgb(210,28,37),x+3,y+8,12,12,2);
           p.setColor(Color.WHITE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);
-          Path mark=new Path();mark.moveTo(x+4,y+11);mark.lineTo(x+8,y+15);mark.lineTo(x+17,y+5);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
+          Path mark=new Path();mark.moveTo(x+3,y+14);mark.lineTo(x+7,y+18);mark.lineTo(x+15,y+9);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
         }
-        float available=columns==3?(i==2?135:140):(340f/columns-27);
-        txtFit(c,shown.get(page+i).label,x+26,y+15,columns==4?9:11,Color.BLACK,available);
+        String label=shown.get(page+i).label;
+        float font=columns>=8?8:columns>=5?9:11;
+        txtFit(c,label,x+22,y+17,font,Color.BLACK,maxLabel);
+      }
+      if(shown.size()>slots){
+        float bx=featureX(slots),by=featureY(slots);
+        txt(c,"›",bx+Math.max(8,cellW/2-5),by+24,19,Color.rgb(155,0,0),true);
       }
       card(c,10,376,380,337,13,true);
       int hexPanelColor=appearanceColor("panel",Color.TRANSPARENT);
@@ -255,7 +255,7 @@ public class MainActivity extends Activity {
       if(startY>=376&&startY<=713&&y>=376&&y<=713&&Math.abs(y-startY)>18){int delta=Math.round((startY-y)/36.5f);scrollOffset[active]=Math.max(0,Math.min(Math.max(0,rowCount(active)-9),scrollOffset[active]+delta));invalidate();return true;}
       if(y>=127&&y<=183){if(x<12||x>=392)return true;int selected=(int)((x-12)/95);if(selected>=0&&selected<modules.length){active=selected;invalidate();}return true;}
       if(x>=346&&y>=8&&y<=70){admin();return true;}
-      if(y>=277&&y<=367){int slots=featureSlots();if(y>=343&&x>=286&&moduleFeatures(active).size()>slots){featurePage[active]=(featurePage[active]+slots>=moduleFeatures(active).size())?0:featurePage[active]+slots;invalidate();return true;}for(int i=0;i<slots;i++){float fx=featureX(i),fy=featureY(i);float width=featureColumns()==3?(i==2?175:180):(360f/featureColumns());if(x>=fx&&x<fx+width&&y>=fy-2&&y<fy+25){if(featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}}return true;}
+      if(y>=279&&y<=370){int slots=featureSlots(),col=(int)((x-15)/featureCellWidth()),row=(int)((y-284)/40);if(col<0||col>=featureColumns()||row<0||row>=2)return true;int i=row*featureColumns()+col;if(i==slots&&moduleFeatures(active).size()>slots){featurePage[active]=(featurePage[active]+slots>=moduleFeatures(active).size())?0:featurePage[active]+slots;invalidate();return true;}if(i<slots&&featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}
       // HEX rows on the main screen are read-only; edit via features or admin panel.
       if(y>=380&&y<=713&&Math.abs(y-startY)<=18)return true;
       if(y>=717&&y<=777){if(x<200)open();else save();return true;}
@@ -1002,7 +1002,7 @@ public class MainActivity extends Activity {
           input.setBackgroundColor(Color.WHITE);input.setTextColor(Color.BLACK);input.setPadding(dp(8),0,dp(6),0);
           appearanceFields.addView(input,new LinearLayout.LayoutParams(-1,dp(42)));appearanceInputs[k]=input;
         }
-        TextView note=new TextView(this);note.setText("Цвета: #RRGGBB, пустое поле — стандартный цвет. Количество колонок функций: 1–4. Название, кнопки, админка, автор и статус применяются после сохранения.");
+        TextView note=new TextView(this);note.setText("Цвета: #RRGGBB, пустое поле — стандартный цвет. Количество колонок функций: 1–10. Название, кнопки, админка, автор и статус применяются после сохранения.");
         note.setTextColor(Color.LTGRAY);appearanceFields.addView(note);
         Button saveAppearance=new Button(this);saveAppearance.setText("Сохранить оформление");saveAppearance.setAllCaps(false);
         saveAppearance.setTextSize(12);saveAppearance.setMinWidth(0);saveAppearance.setPadding(dp(4),0,dp(4),0);
@@ -1012,7 +1012,7 @@ public class MainActivity extends Activity {
             java.util.HashMap<String,String> changes=new java.util.HashMap<>();
             for(int k=0;k<keys.length;k++)changes.put(keys[k],appearanceInputs[k].getText().toString());
             int columns=Integer.parseInt(changes.get("feature_columns").trim());
-            if(columns<1||columns>4)throw new IllegalArgumentException("Колонки функций: от 1 до 4");
+            if(columns<1||columns>10)throw new IllegalArgumentException("Колонки функций: от 1 до 10");
             StudioSettings.saveAppearance(this,changes);
             setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));
             view.invalidate();

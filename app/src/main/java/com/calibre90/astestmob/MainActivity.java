@@ -154,6 +154,7 @@ public class MainActivity extends Activity {
       org.json.JSONArray updated=new org.json.JSONArray();
       for(int i=0;i<entries.length();i++)if(i!=index)updated.put(entries.optJSONObject(i));
       prefs.edit().putString(id,updated.toString()).apply();
+      if(view!=null)view.invalidate();
       while(entries.length()>0)entries.remove(0);
       for(int i=0;i<updated.length();i++)entries.put(updated.optJSONObject(i));
       refresh.run();
@@ -168,7 +169,7 @@ public class MainActivity extends Activity {
         for(int i=0;i<entries.length();i++)if(i!=index&&addr.equals(entries.optJSONObject(i).optString("address")))throw new IllegalArgumentException("Строка уже существует");
         org.json.JSONObject row=new org.json.JSONObject();row.put("address",addr);row.put("value",AbtCodec.recalc(addr,hex));
         if(index<0)entries.put(row);else entries.put(index,row);
-        prefs.edit().putString(id,entries.toString()).apply();refresh.run();dialog.dismiss();
+        prefs.edit().putString(id,entries.toString()).apply();refresh.run();if(view!=null)view.invalidate();dialog.dismiss();
       }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
     }));dialog.show();
   }
@@ -265,6 +266,7 @@ public class MainActivity extends Activity {
         try{customRows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]"));}
         catch(Exception ex){customRows=new org.json.JSONArray();}
         if(customRows.length()==0)txt(c,"Нет строк. Добавьте их через админку.",24,320,13,Color.DKGRAY,false);
+        txt(c,"Строк: "+customRows.length(),278,286,11,Color.DKGRAY,false);
         for(int i=0;i<Math.min(10,customRows.length());i++){
           org.json.JSONObject item=customRows.optJSONObject(i);if(item==null)continue;
           float yy=296+i*39;

@@ -573,7 +573,8 @@ public class MainActivity extends Activity {
       panel.addView(heading,new LinearLayout.LayoutParams(-1,-2));
       if(selected[0]==0){
         final String[] labels={"ID функции","Модуль","Надпись / функция","Строка","Режим HEX/BITS","HEX индексы","Byte (BITS)","Биты","ВКЛ","ВЫКЛ"};
-        final TextView[] values=new TextView[labels.length];
+        final EditText[] values=new EditText[labels.length];
+        final int[] chosen={-1};
         android.widget.ScrollView featureScroll=new android.widget.ScrollView(this);
         LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);
         featureScroll.addView(content);panel.addView(featureScroll,new LinearLayout.LayoutParams(-1,0,1));
@@ -582,7 +583,7 @@ public class MainActivity extends Activity {
           LinearLayout lineRow=new LinearLayout(this);lineRow.setOrientation(LinearLayout.HORIZONTAL);
           TextView label=new TextView(this);label.setText(labels[j]);label.setTextSize(12);label.setTextColor(Color.WHITE);
           label.setGravity(Gravity.CENTER_VERTICAL);lineRow.addView(label,new LinearLayout.LayoutParams(0,dp(42),1));
-          TextView value=new TextView(this);value.setTextColor(Color.BLACK);value.setTextSize(13);
+          EditText value=new EditText(this);value.setSingleLine(true);value.setTextColor(Color.BLACK);value.setTextSize(13);
           value.setGravity(Gravity.CENTER_VERTICAL);value.setPadding(dp(6),0,dp(5),0);
           value.setBackgroundColor(Color.WHITE);lineRow.addView(value,new LinearLayout.LayoutParams(0,dp(42),1));
           values[j]=value;fields.addView(lineRow);
@@ -596,10 +597,51 @@ public class MainActivity extends Activity {
           Button entry=new Button(this);entry.setAllCaps(false);entry.setText((n+1)+" · "+f.id);entry.setTextSize(15);
           content.addView(entry,new LinearLayout.LayoutParams(-1,dp(46)));
           entry.setOnClickListener(v->{
-            heading.setText((features.indexOf(f)+1)+" · "+f.id);
+            chosen[0]=features.indexOf(f);heading.setText((chosen[0]+1)+" · "+f.id);
             String[] info={f.id,f.module,f.id,f.address,f.mode,"HEX".equalsIgnoreCase(f.mode)?f.indices:"",
               String.valueOf(f.byteIndex),"BITS".equalsIgnoreCase(f.mode)?f.indices:"",f.on,f.off};
             for(int j=0;j<values.length;j++)values[j].setText(info[j]);
+          });
+        }
+        LinearLayout actions=new LinearLayout(this);panel.addView(actions);
+        final String[] actionNames={"Добавить","Изменить","Удалить"};
+        for(int action=0;action<3;action++){
+          final int kind=action;Button actionButton=new Button(this);actionButton.setAllCaps(false);
+          actionButton.setText(actionNames[action]);actionButton.setTextSize(12);
+          actions.addView(actionButton,new LinearLayout.LayoutParams(0,dp(55),1));
+          actionButton.setOnClickListener(v->{
+            if(kind==2){
+              if(chosen[0]<0||chosen[0]>=features.size()){Toast.makeText(this,"Выберите запись",Toast.LENGTH_SHORT).show();return;}
+              final int index=chosen[0];
+              new AlertDialog.Builder(this).setTitle("Удалить функцию?")
+                .setMessage(features.get(index).id)
+                .setNegativeButton("Отмена",null)
+                .setPositiveButton("Удалить",(d,w)->{
+                  features.remove(index);StudioSettings.save(this,features);resetAllEngines();view.invalidate();redraw.run();
+                }).show();return;
+            }
+            if(kind==1&&(chosen[0]<0||chosen[0]>=features.size())){
+              Toast.makeText(this,"Выберите запись для изменения",Toast.LENGTH_SHORT).show();return;
+            }
+            try{
+              String[] vls=new String[values.length];
+              for(int j=0;j<values.length;j++)vls[j]=values[j].getText().toString().trim();
+              String id=vls[0],module=vls[1].toUpperCase(java.util.Locale.ROOT),address=vls[3].toUpperCase(java.util.Locale.ROOT);
+              String mode=vls[4].toUpperCase(java.util.Locale.ROOT);
+              if(id.isEmpty()||address.isEmpty()||!(module.equals("IC")||module.equals("BCM")||module.equals("RKE")||module.equals("ABS"))||!(mode.equals("HEX")||mode.equals("BITS")))
+                throw new IllegalArgumentException("Укажите ID, модуль, строку и режим HEX/BITS");
+              String indices=mode.equals("BITS")?vls[7]:vls[5];
+              int byteIndex=mode.equals("BITS")?Integer.parseInt(vls[6]):0;
+              if(byteIndex<0||FeatureEngine.indices(indices).isEmpty())throw new IllegalArgumentException("Проверьте индексы и номер байта");
+              if(mode.equals("HEX")&&FeatureEngine.indices(indices).size()!=AbtCodec.norm(vls[8]).length())
+                throw new IllegalArgumentException("Количество HEX индексов должно совпадать с длиной ВКЛ");
+              for(int j=0;j<features.size();j++)if((kind==0||j!=chosen[0])&&features.get(j).id.equals(id)&&features.get(j).module.equals(module)&&features.get(j).address.equals(address))
+                throw new IllegalArgumentException("Функция с таким ID и адресом уже есть");
+              FeatureEngine.Feature updated=new FeatureEngine.Feature(id,module,address,mode,indices,vls[8],vls[9],byteIndex);
+              if(kind==0)features.add(updated);else features.set(chosen[0],updated);
+              StudioSettings.save(this,features);resetAllEngines();view.invalidate();redraw.run();
+              Toast.makeText(this,"Настройки функции сохранены",Toast.LENGTH_SHORT).show();
+            }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
           });
         }
       }

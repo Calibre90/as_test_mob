@@ -48,22 +48,22 @@ public class MainActivity extends Activity {
       // No full-screen screenshot as a background: only isolated component assets.
       // Black backing matches the reference shell; do not paint a white background behind the header.
       // Separate production PNGs: clean header and independently positioned admin lock.
-      img(c,"header_mazda_no_lock",8,8,384,113);
-      img(c,"admin_lock_button",341,46,30,31);
+      img(c,"header_mazda_no_lock",8,4,384,106);
+      img(c,"admin_lock_button",356,13,25,26);
       // System status icons are intentionally not painted into the application.
       String[] tabs={"IC","BCM","RKE","ABS"};
-      for(int i=0;i<4;i++){float x=12+i*95;img(c,i==active?"active_red":"inactive_1",x,143,92,48);txt(c,tabs[i],x+30,174,16,i==active?Color.WHITE:Color.BLACK,true);}
-      img(c,"module_info",11,201,378,79);
-      txt(c,modules[active]+": "+names[active],23,231,17,Color.BLACK,true);
-      txt(c,"ID: "+ids[active]+"  |  Ver: "+(loaded[active]?"ABT загружен":"Загрузите файл ABT"),23,257,12,Color.DKGRAY,false);
+      for(int i=0;i<4;i++){float x=12+i*95;img(c,i==active?"active_red":"inactive_1",x,130,92,48);txt(c,tabs[i],x+30,161,16,i==active?Color.WHITE:Color.BLACK,true);}
+      img(c,"module_info",11,188,378,79);
+      txt(c,modules[active]+": "+names[active],23,218,17,Color.BLACK,true);
+      txt(c,"ID: "+ids[active]+"  |  Ver: "+(loaded[active]?"ABT загружен":"Загрузите файл ABT"),23,244,12,Color.DKGRAY,false);
       // Build clean feature rows, rather than layering checkboxes on baked-in screenshots.
-      rect(c,Color.rgb(218,222,228),11,288,378,94,11);
-      rect(c,Color.WHITE,13,290,374,90,10);
+      rect(c,Color.rgb(218,222,228),11,275,378,94,11);
+      rect(c,Color.WHITE,13,277,374,90,10);
       p.setColor(Color.rgb(215,219,224));p.setStrokeWidth(1);
-      c.drawLine(203,291,203,379,p);c.drawLine(13,335,203,335,p);
+      c.drawLine(203,278,203,366,p);c.drawLine(13,322,203,322,p);
       String[] labels={"RVM / контроль слепых зон","Новая функция","Keyless ON/OFF"};
       for(int i=0;i<3;i++){
-        float x=i==2?214:22,y=i==0?300:i==1?346:300;
+        float x=i==2?214:22,y=i==0?287:i==1?333:287;
         p.setColor(Color.rgb(90,102,116));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.8f);
         c.drawRoundRect(x,y,x+24,y+24,4,4,p);p.setStyle(Paint.Style.FILL);
         if(checks[active][i]){
@@ -74,23 +74,23 @@ public class MainActivity extends Activity {
         txt(c,labels[i],x+29,y+17,i==0?10.5f:11.5f,Color.BLACK,false);
       }
       int count=Math.min(rows[active].size(),9);
-      for(int i=0;i<count;i++){float y=389+i*37;img(c,"row_01",11,y,378,36);
+      for(int i=0;i<count;i++){float y=376+i*37;img(c,"row_01",11,y,378,36);
         String index=ids[active]+"-"+(i==8?"02-01":String.format(java.util.Locale.US,"01-%02d",i+1));
         txt(c,index,29,y+24,15,Color.BLACK,false);
         txt(c,rows[active].get(i),174,y+24,15,Color.BLACK,false);
       }
       // Icon-free buttons: the previous PNGs had folder/disk glyphs baked in.
-      cleanButton(c,12,730,181,55,"Открыть ABT");
-      cleanButton(c,205,730,183,55,"Сохранить ABT");
-      img(c,"creator_link",11,792,378,61);
+      cleanButton(c,12,717,181,55,"Открыть ABT");
+      cleanButton(c,205,717,183,55,"Сохранить ABT");
+      img(c,"creator_link",11,779,378,61);
       actual.restore();
     }
     @Override public boolean onTouchEvent(MotionEvent e){if(e.getAction()!=MotionEvent.ACTION_UP)return true;float x=e.getX()/sx,y=e.getY()/sy;
-      if(y>=140&&y<=196){active=Math.min(3,Math.max(0,(int)((x-12)/95)));invalidate();return true;}
-      if(x>330&&y<135){admin();return true;}
-      if(y>=290&&y<=380){int i=x>200?2:y>337?1:0;checks[active][i]=!checks[active][i];invalidate();return true;}
-      if(y>=730&&y<=790){if(x<200)open();else save();return true;}
-      if(y>=790){about();return true;}
+      if(y>=127&&y<=183){active=Math.min(3,Math.max(0,(int)((x-12)/95)));invalidate();return true;}
+      if(x>=346&&y>=8&&y<=70){admin();return true;}
+      if(y>=277&&y<=367){int i=x>200?2:y>324?1:0;checks[active][i]=!checks[active][i];invalidate();return true;}
+      if(y>=717&&y<=777){if(x<200)open();else save();return true;}
+      if(y>=779){about();return true;}
       return true;
     }
   }

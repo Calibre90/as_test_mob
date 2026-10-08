@@ -161,10 +161,12 @@ public class MainActivity extends Activity {
     HashMap<String,String> byPrefix=new HashMap<>();for(int i=0;i<4;i++)byPrefix.put(ids[i],modules[i]);
     List<AbtCodec.Row> parsed=AbtCodec.parse(content,byPrefix);
     if(parsed.isEmpty())throw new IllegalArgumentException("Формат ABT не распознан");
-    for(AbtCodec.Row row:parsed)if(!row.module.equals(modules[active]))throw new IllegalArgumentException("Файл другого блока: "+row.module);
-    abtRows[active].clear();abtRows[active].addAll(parsed);scrollOffset[active]=0;engine.reset();
-    for(AbtCodec.Row old:parsed)original.remove(key(old));
-    for(AbtCodec.Row row:parsed)original.put(key(row),AbtCodec.norm(row.value));
+    ArrayList<AbtCodec.Row> selected=new ArrayList<>();
+    for(AbtCodec.Row row:parsed)if(row.module.equals(modules[active]))selected.add(row);
+    if(selected.isEmpty())throw new IllegalArgumentException("В файле нет строк блока "+modules[active]);
+    for(AbtCodec.Row old:abtRows[active])original.remove(key(old));
+    abtRows[active].clear();abtRows[active].addAll(selected);scrollOffset[active]=0;engine.reset();checkedFeatures.clear();
+    for(AbtCodec.Row row:selected)original.put(key(row),AbtCodec.norm(row.value));
     ArrayList<FeatureEngine.Feature> available=moduleFeatures(active);
     featurePage[active]=0;syncFeatureChecks(active);
     refreshRows(active);loaded[active]=true;view.invalidate();

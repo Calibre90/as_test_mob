@@ -124,7 +124,7 @@ public class MainActivity extends Activity {
       if(startY>=376&&startY<=713&&y>=376&&y<=713&&Math.abs(y-startY)>18){int delta=Math.round((startY-y)/36.5f);scrollOffset[active]=Math.max(0,Math.min(Math.max(0,rowCount(active)-9),scrollOffset[active]+delta));invalidate();return true;}
       if(y>=127&&y<=183){active=Math.min(3,Math.max(0,(int)((x-12)/95)));invalidate();return true;}
       if(x>=346&&y>=8&&y<=70){admin();return true;}
-      if(y>=277&&y<=367){if(y>351&&x>280&&moduleFeatures(active).size()>3){featurePage[active]=(featurePage[active]+3)%moduleFeatures(active).size();invalidate();return true;}int i=x>200?2:y>324?1:0;toggleFeature(featurePage[active]+i);return true;}
+      if(y>=277&&y<=367){if(y>351&&x>280&&moduleFeatures(active).size()>3){featurePage[active]=(featurePage[active]+3>=moduleFeatures(active).size())?0:featurePage[active]+3;invalidate();return true;}int i=x>200?2:y>324?1:0;toggleFeature(featurePage[active]+i);return true;}
       if(y>=380&&y<=713&&Math.abs(y-startY)<=18){int n=scrollOffset[active]+(int)((y-380)/36.5f);if(n>=0&&n<abtRows[active].size())editHexRow(n);return true;}
       if(y>=717&&y<=777){if(x<200)open();else save();return true;}
       if(y>=779){about();return true;}

@@ -600,6 +600,7 @@ public class MainActivity extends Activity {
       if(selected[0]==0){
         final String[] labels={"ID функции","Модуль","Надпись / функция","Строка","Режим HEX/BITS","HEX индексы","Byte (BITS)","Биты","ВКЛ","ВЫКЛ"};
         final EditText[] values=new EditText[labels.length];
+        final LinearLayout[] fieldRows=new LinearLayout[labels.length];
         final int[] chosen={-1};
         android.widget.Spinner featureSelector=new android.widget.Spinner(this);
         ArrayList<String> featureNames=new ArrayList<>();
@@ -632,8 +633,22 @@ public class MainActivity extends Activity {
           EditText value=new EditText(this);value.setSingleLine(true);value.setTextColor(Color.BLACK);value.setTextSize(13);
           value.setGravity(Gravity.CENTER_VERTICAL);value.setPadding(dp(6),0,dp(5),0);
           value.setBackgroundColor(Color.WHITE);lineRow.addView(value,new LinearLayout.LayoutParams(0,dp(42),1));
-          values[j]=value;fields.addView(lineRow);
+          values[j]=value;fieldRows[j]=lineRow;fields.addView(lineRow);
         }
+        Runnable updateModeFields=()->{
+          boolean bits="BITS".equalsIgnoreCase(values[4].getText().toString().trim());
+          fieldRows[5].setVisibility(bits?View.GONE:View.VISIBLE);
+          fieldRows[6].setVisibility(bits?View.VISIBLE:View.GONE);
+          fieldRows[7].setVisibility(bits?View.VISIBLE:View.GONE);
+          fieldRows[8].setVisibility(bits?View.GONE:View.VISIBLE);
+          fieldRows[9].setVisibility(bits?View.GONE:View.VISIBLE);
+        };
+        values[4].addTextChangedListener(new android.text.TextWatcher(){
+          public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+          public void onTextChanged(CharSequence s,int start,int before,int count){updateModeFields.run();}
+          public void afterTextChanged(android.text.Editable e){}
+        });
+        updateModeFields.run();
         content.addView(fields);
         TextView bitHelp=new TextView(this);
         bitHelp.setText("HEX: индексы символов и значения ВКЛ/ВЫКЛ. BITS: номер байта и номера битов 0–7; поля ВКЛ/ВЫКЛ не используются.");

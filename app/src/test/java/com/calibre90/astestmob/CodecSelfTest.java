@@ -136,6 +136,18 @@ public final class CodecSelfTest {
     List<AbtCodec.Row> cycleRestored=cycleSnapshot.restore();
     check(AbtCodec.norm(cycleRestored.get(0).value).equals("1F407126809F"),"full cycle restores original HEX");
     check(Arrays.equals(cycleSnapshot.differences(cycleRestored),new int[]{0,0,0}),"full cycle restored clean");
+    List<AbtCodec.Row> icOnly=AbtCodec.parseChecked("720G1G11F407126809F\r\n",modules);
+    check(AbtCodec.requireModule(icOnly,"IC").size()==1,"IC file accepted in IC tab");
+    boolean wrongModule=false;
+    try{AbtCodec.requireModule(icOnly,"BCM");}
+    catch(IllegalArgumentException ex){wrongModule=ex.getMessage().contains("IC")&&ex.getMessage().contains("BCM");}
+    check(wrongModule,"IC file rejected in BCM tab");
+    List<AbtCodec.Row> mixedModules=AbtCodec.parseChecked("720G1G11F407126809F\r\n726G1G1000EF255E766\r\n",modules);
+    boolean mixedRejected=false;
+    try{AbtCodec.requireModule(mixedModules,"IC");}
+    catch(IllegalArgumentException ex){mixedRejected=ex.getMessage().contains("BCM");}
+    check(mixedRejected,"mixed IC BCM file rejected");
+    check(AbtCodec.requireModule(AbtCodec.parseChecked("726G1G1000EF255E766\r\n",modules),"BCM").size()==1,"BCM file accepted in BCM tab");
     System.out.println("PASS: ABT parse, roundtrip, checksum, index, HEX toggle, restore");
   }
 }

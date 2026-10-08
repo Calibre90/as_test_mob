@@ -34,6 +34,17 @@ public class MainActivity extends Activity {
     void img(Canvas c,String key,float x,float y,float w,float h){Bitmap b=bitmaps.get(key);if(b!=null){p.setColor(Color.WHITE);p.setAlpha(255);c.drawBitmap(b,null,new RectF(x,y,x+w,y+h),p);}}
     void rect(Canvas c,int color,float x,float y,float w,float h,float r){p.setColor(color);p.setStyle(Paint.Style.FILL);c.drawRoundRect(x,y,x+w,y+h,r,r,p);}
     void txt(Canvas c,String s,float x,float y,float size,int color,boolean bold){p.setColor(color);p.setTypeface(bold?Typeface.create("sans-serif",Typeface.BOLD):Typeface.create("sans-serif",Typeface.NORMAL));p.setTextSize(size);p.setStyle(Paint.Style.FILL);c.drawText(s,x,y,p);}
+    void txtFit(Canvas c,String value,float x,float y,float size,int color,float maxWidth){
+      String display=value==null?"":value;
+      p.setTypeface(Typeface.create("sans-serif",Typeface.NORMAL));
+      p.setTextSize(size);
+      if(p.measureText(display)>maxWidth){
+        String ellipsis="…";
+        while(!display.isEmpty()&&p.measureText(display+ellipsis)>maxWidth)display=display.substring(0,display.length()-1);
+        display+=ellipsis;
+      }
+      txt(c,display,x,y,size,color,false);
+    }
     void cleanButton(Canvas c,float x,float y,float w,float h,String label){
       p.setStyle(Paint.Style.FILL);p.setShader(new LinearGradient(x,y,x,y+h,new int[]{Color.WHITE,Color.rgb(247,248,250),Color.rgb(218,223,229)},null,Shader.TileMode.CLAMP));
       c.drawRoundRect(x,y,x+w,y+h,9,9,p);p.setShader(null);
@@ -91,7 +102,7 @@ public class MainActivity extends Activity {
           p.setColor(Color.WHITE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2.3f);
           Path mark=new Path();mark.moveTo(x+5,y+12);mark.lineTo(x+10,y+17);mark.lineTo(x+20,y+6);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
         }
-        txt(c,labels[i],x+30,y+17,i==0?10.5f:11.5f,Color.BLACK,false);
+        txtFit(c,labels[i],x+30,y+17,i==0?10.5f:11.5f,Color.BLACK,i==2?140:145);
       }
       card(c,10,376,380,337,13,true);
       int count=Math.min(Math.max(0,rows[active].size()-scrollOffset[active]),9);

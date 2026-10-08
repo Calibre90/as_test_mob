@@ -48,14 +48,16 @@ public class MainActivity extends Activity {
       // No full-screen screenshot as a background: only isolated component assets.
       // Black backing matches the reference shell; do not paint a white background behind the header.
       img(c,"header_logo",8,8,384,113);
-      // Compact white lock control, replacing the baked-in gear.
-      rect(c,Color.rgb(248,249,251),326,42,51,57,9);
-      p.setColor(Color.rgb(207,213,220));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.1f);
-      c.drawRoundRect(327,43,376,98,9,9,p);
-      p.setColor(Color.rgb(32,36,43));p.setStrokeWidth(2.8f);
-      c.drawRoundRect(345,56,358,76,7,7,p);p.setStyle(Paint.Style.FILL);
-      rect(c,Color.rgb(32,36,43),341,69,21,21,3);
-      rect(c,Color.WHITE,350,76,3,8,1);
+      // Hide the large icon baked into the header and draw a small, clean lock.
+      // The lock is deliberately much smaller than the previous 51x57 badge.
+      rect(c,Color.rgb(249,249,250),326,43,51,57,7);
+      rect(c,Color.rgb(253,253,254),336,53,32,37,7);
+      p.setColor(Color.rgb(180,187,196));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.0f);
+      c.drawRoundRect(336,53,368,90,7,7,p);
+      p.setColor(Color.rgb(35,39,47));p.setStrokeWidth(2.4f);
+      c.drawRoundRect(346,60,358,76,6,6,p);p.setStyle(Paint.Style.FILL);
+      rect(c,Color.rgb(35,39,47),343,71,18,14,3);
+      rect(c,Color.WHITE,351,75,2,6,1);
       // System status icons are intentionally not painted into the application.
       String[] tabs={"IC","BCM","RKE","ABS"};
       for(int i=0;i<4;i++){float x=12+i*95;img(c,i==active?"active_red":"inactive_1",x,143,92,48);txt(c,tabs[i],x+30,174,16,i==active?Color.WHITE:Color.BLACK,true);}

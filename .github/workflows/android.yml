@@ -12,8 +12,8 @@ jobs:
         run: |
           mkdir -p app/src/main/res/drawable-nodpi
           rm -rf /tmp/mazda_assets
-          unzip -q Mazda6GH_UI_NoLabels_Full_Assets.zip -d /tmp/mazda_assets
-          find /tmp/mazda_assets/Mazda6GH_UI_NoLabels_Full_Assets -name '*.png' -exec cp {} app/src/main/res/drawable-nodpi/ \;
+          unzip -q Mazda6GH_WhiteRed_Complete_UI_Assets.zip -d /tmp/mazda_assets
+          find /tmp/mazda_assets/Mazda6GH_WhiteRed_Production_Assets -name '*.png' -exec cp {} app/src/main/res/drawable-nodpi/ \;
           echo "Installed $(find app/src/main/res/drawable-nodpi -name '*.png' | wc -l) PNG assets"
       - uses: actions/setup-java@v4
         with:

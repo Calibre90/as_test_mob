@@ -89,12 +89,12 @@ public class MainActivity extends Activity {
     Dialog d=new Dialog(this); d.getWindow();
     FrameLayout f=new FrameLayout(this); f.addView(image("admin_modal_full"),new FrameLayout.LayoutParams(-1,-1));
     View close=new View(this); FrameLayout.LayoutParams cp=new FrameLayout.LayoutParams(90,80,Gravity.RIGHT|Gravity.TOP); f.addView(close,cp); close.setOnClickListener(v->d.dismiss());
-    d.setContentView(f); Window w=d.getWindow(); if(w!=null){w.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));w.setDimAmount(.72f);w.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);w.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.88f),WindowManager.LayoutParams.WRAP_CONTENT);} d.show();
+    d.setContentView(f); Window w=d.getWindow(); if(w!=null){w.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));w.setDimAmount(.58f);w.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);w.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.88f),WindowManager.LayoutParams.WRAP_CONTENT);} d.show();
     if(w!=null)w.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.88f),(int)(getResources().getDisplayMetrics().heightPixels*.34f));
   }
   void showAbout(){
     Dialog d=new Dialog(this); FrameLayout f=new FrameLayout(this); f.addView(image("about_modal_full"),new FrameLayout.LayoutParams(-1,-1));
     View close=new View(this); FrameLayout.LayoutParams cp=new FrameLayout.LayoutParams(90,80,Gravity.RIGHT|Gravity.TOP); f.addView(close,cp); close.setOnClickListener(v->d.dismiss());
-    d.setContentView(f); Window w=d.getWindow(); d.show(); if(w!=null){w.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));w.setDimAmount(.72f);w.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);w.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.88f),(int)(getResources().getDisplayMetrics().heightPixels*.39f));}
+    d.setContentView(f); Window w=d.getWindow(); d.show(); if(w!=null){w.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));w.setDimAmount(.58f);w.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);w.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.88f),(int)(getResources().getDisplayMetrics().heightPixels*.39f));}
   }
 }

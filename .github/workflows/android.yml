@@ -14,6 +14,7 @@ jobs:
           rm -rf /tmp/mazda_assets
           unzip -q Mazda6GH_WhiteRed_Complete_UI_Assets.zip -d /tmp/mazda_assets
           find /tmp/mazda_assets/Mazda6GH_WhiteRed_Production_Assets -name '*.png' -exec cp {} app/src/main/res/drawable-nodpi/ \;
+          unzip -q -j Mazda6GH_Header_and_Lock_Assets.zip '*.png' -d app/src/main/res/drawable-nodpi/
           echo "Installed $(find app/src/main/res/drawable-nodpi -name '*.png' | wc -l) PNG assets"
       - uses: actions/setup-java@v4
         with:

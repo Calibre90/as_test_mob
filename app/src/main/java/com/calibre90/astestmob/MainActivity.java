@@ -42,47 +42,61 @@ public class MainActivity extends Activity {
       p.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));p.setTextSize(15);p.setColor(Color.BLACK);
       c.drawText(label,x+(w-p.measureText(label))/2f,y+h/2f-(p.ascent()+p.descent())/2f,p);
     }
+    void card(Canvas c,float x,float y,float w,float h,float radius,boolean red){
+      p.setStyle(Paint.Style.FILL);p.setShader(null);p.setColor(Color.rgb(85,87,92));c.drawRoundRect(x+1,y+3,x+w+1,y+h+3,radius,radius,p);
+      p.setShader(new LinearGradient(x,y,x,y+h,Color.WHITE,Color.rgb(231,235,242),Shader.TileMode.CLAMP));
+      c.drawRoundRect(x,y,x+w,y+h,radius,radius,p);p.setShader(null);
+      p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(red?1.25f:1.15f);p.setColor(red?Color.rgb(225,40,48):Color.rgb(195,202,211));
+      c.drawRoundRect(x+1,y+1,x+w-1,y+h-1,radius,radius,p);p.setStyle(Paint.Style.FILL);
+    }
+    void centered(Canvas c,String s,float x,float y,float w,float h,float size,int color){
+      p.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));p.setTextSize(size);p.setColor(color);p.setStyle(Paint.Style.FILL);
+      c.drawText(s,x+(w-p.measureText(s))/2,y+h/2-(p.ascent()+p.descent())/2,p);
+    }
     @Override protected void onDraw(Canvas actual){super.onDraw(actual);
-      float w=getWidth(),h=getHeight();sx=w/400f;sy=h/860f;actual.save();actual.scale(sx,sy);
-      Canvas c=actual; c.drawColor(Color.BLACK);
-      // No full-screen screenshot as a background: only isolated component assets.
-      // Black backing matches the reference shell; do not paint a white background behind the header.
-      // Separate production PNGs: clean header and independently positioned admin lock.
+      sx=getWidth()/400f;sy=getHeight()/860f;actual.save();actual.scale(sx,sy);
+      Canvas c=actual;c.drawColor(Color.BLACK);
       img(c,"header_mazda_no_lock",8,4,384,106);
       img(c,"admin_lock_button",356,13,25,26);
-      // System status icons are intentionally not painted into the application.
       String[] tabs={"IC","BCM","RKE","ABS"};
-      for(int i=0;i<4;i++){float x=12+i*95;img(c,i==active?"active_red":"inactive_1",x,130,92,48);txt(c,tabs[i],x+30,161,16,i==active?Color.WHITE:Color.BLACK,true);}
-      img(c,"module_info",11,188,378,79);
-      txt(c,modules[active]+": "+names[active],23,218,17,Color.BLACK,true);
-      txt(c,"ID: "+ids[active]+"  |  Ver: "+(loaded[active]?"ABT загружен":"Загрузите файл ABT"),23,244,12,Color.DKGRAY,false);
-      // Build clean feature rows, rather than layering checkboxes on baked-in screenshots.
-      rect(c,Color.rgb(218,222,228),11,275,378,94,11);
-      rect(c,Color.WHITE,13,277,374,90,10);
-      p.setColor(Color.rgb(215,219,224));p.setStrokeWidth(1);
-      c.drawLine(203,278,203,366,p);c.drawLine(13,322,203,322,p);
+      card(c,10,125,380,57,13,false);
+      for(int i=0;i<4;i++){
+        float x=15+i*94;
+        if(i==active){p.setShader(new LinearGradient(x,132,x,175,Color.rgb(255,74,79),Color.rgb(176,0,10),Shader.TileMode.CLAMP));p.setStyle(Paint.Style.FILL);c.drawRoundRect(x,131,x+89,175,9,9,p);p.setShader(null);}
+        else card(c,x,131,89,44,9,false);
+        centered(c,tabs[i],x,131,89,44,16,i==active?Color.WHITE:Color.BLACK);
+      }
+      card(c,10,190,380,82,13,true);
+      txt(c,modules[active]+": "+names[active],25,222,18,Color.BLACK,true);
+      p.setColor(Color.rgb(224,57,64));p.setStrokeWidth(1);c.drawLine(25,232,316,232,p);
+      txt(c,"ID: "+ids[active]+"  |  Ver: "+(loaded[active]?"ABT загружен":"Загрузите файл ABT"),25,252,12,Color.rgb(91,103,119),false);
+      card(c,10,279,380,91,12,true);
+      p.setColor(Color.rgb(207,213,221));p.setStrokeWidth(1);c.drawLine(203,284,203,365,p);c.drawLine(15,325,203,325,p);
       String[] labels={"RVM / контроль слепых зон","Новая функция","Keyless ON/OFF"};
       for(int i=0;i<3;i++){
-        float x=i==2?214:22,y=i==0?287:i==1?333:287;
-        p.setColor(Color.rgb(90,102,116));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.8f);
-        c.drawRoundRect(x,y,x+24,y+24,4,4,p);p.setStyle(Paint.Style.FILL);
+        float x=i==2?213:20,y=i==0?288:i==1?333:288;
+        card(c,x,y,25,25,5,false);
         if(checks[active][i]){
-          rect(c,Color.rgb(44,55,67),x+3,y+3,18,18,3);
-          p.setColor(Color.WHITE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2.4f);
+          rect(c,Color.rgb(210,28,37),x+4,y+4,17,17,3);
+          p.setColor(Color.WHITE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2.3f);
           Path mark=new Path();mark.moveTo(x+5,y+12);mark.lineTo(x+10,y+17);mark.lineTo(x+20,y+6);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
         }
-        txt(c,labels[i],x+29,y+17,i==0?10.5f:11.5f,Color.BLACK,false);
+        txt(c,labels[i],x+30,y+17,i==0?10.5f:11.5f,Color.BLACK,false);
       }
+      card(c,10,376,380,337,13,true);
       int count=Math.min(rows[active].size(),9);
-      for(int i=0;i<count;i++){float y=376+i*37;img(c,"row_01",11,y,378,36);
+      for(int i=0;i<count;i++){
+        float y=380+i*36.5f;card(c,15,y,370,35,8,false);
+        p.setColor(Color.rgb(202,209,219));p.setStrokeWidth(1);c.drawLine(165,y+4,165,y+31,p);
         String index=ids[active]+"-"+(i==8?"02-01":String.format(java.util.Locale.US,"01-%02d",i+1));
-        txt(c,index,29,y+24,15,Color.BLACK,false);
-        txt(c,rows[active].get(i),174,y+24,15,Color.BLACK,false);
+        txt(c,index,28,y+23,14,Color.BLACK,false);
+        txt(c,rows[active].get(i),180,y+23,14,Color.BLACK,false);
       }
-      // Icon-free buttons: the previous PNGs had folder/disk glyphs baked in.
-      cleanButton(c,12,717,181,55,"Открыть ABT");
-      cleanButton(c,205,717,183,55,"Сохранить ABT");
-      img(c,"creator_link",11,779,378,61);
+      card(c,10,720,185,52,12,true);centered(c,"Открыть ABT",10,720,185,52,15,Color.BLACK);
+      card(c,205,720,185,52,12,true);centered(c,"Сохранить ABT",205,720,185,52,15,Color.BLACK);
+      card(c,10,782,380,57,12,true);
+      txt(c,"↗",27,818,25,Color.BLACK,true);
+      txt(c,"›",355,821,34,Color.BLACK,true);
       actual.restore();
     }
     @Override public boolean onTouchEvent(MotionEvent e){if(e.getAction()!=MotionEvent.ACTION_UP)return true;float x=e.getX()/sx,y=e.getY()/sy;

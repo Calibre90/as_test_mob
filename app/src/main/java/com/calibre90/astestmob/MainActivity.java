@@ -767,10 +767,10 @@ public class MainActivity extends Activity {
         for(int k=0;k<3;k++){
           LinearLayout field=new LinearLayout(this);field.setOrientation(LinearLayout.HORIZONTAL);
           TextView label=new TextView(this);label.setText(labels[k]);label.setTextColor(Color.WHITE);
-          label.setGravity(Gravity.CENTER_VERTICAL);field.addView(label,new LinearLayout.LayoutParams(0,dp(52),1));
+          label.setGravity(Gravity.CENTER_VERTICAL);label.setTextSize(12);field.addView(label,new LinearLayout.LayoutParams(0,dp(44),1));
           EditText input=new EditText(this);input.setSingleLine(true);input.setTextSize(14);input.setTextColor(Color.BLACK);
           input.setBackgroundColor(Color.WHITE);input.setPadding(dp(7),0,dp(5),0);
-          field.addView(input,new LinearLayout.LayoutParams(0,dp(52),1));form.addView(field);inputs[k]=input;
+          field.addView(input,new LinearLayout.LayoutParams(0,dp(44),1));field.setPadding(dp(4),dp(3),dp(4),dp(3));form.addView(field);inputs[k]=input;
         }
         inputs[0].setText(modules[rowsModule]);inputs[0].setEnabled(false);
         android.widget.ScrollView listScroll=new android.widget.ScrollView(this);
@@ -792,7 +792,7 @@ public class MainActivity extends Activity {
         String[] labelsActions={"Добавить","Изменить","Удалить"};
         for(int action=0;action<3;action++){
           final int kind=action;Button button=new Button(this);button.setText(labelsActions[action]);button.setAllCaps(false);
-          button.setTextSize(12);actions.addView(button,new LinearLayout.LayoutParams(0,dp(52),1));
+          button.setTextSize(12);button.setMinWidth(0);button.setPadding(dp(3),0,dp(3),0);actions.addView(button,new LinearLayout.LayoutParams(0,dp(48),1));
           button.setOnClickListener(v->{
             if(!loaded[rowsModule]||active!=rowsModule){
               Toast.makeText(this,"Откройте ABT нужного блока",Toast.LENGTH_LONG).show();return;

@@ -15,16 +15,28 @@ public class MainActivity extends Activity {
     super.onCreate(b);
     getWindow().setStatusBarColor(Color.BLACK);
     getWindow().setNavigationBarColor(Color.BLACK);
-    getWindow().setDecorFitsSystemWindows(true);
-    setContentView(new StudioView(this));
+    if (Build.VERSION.SDK_INT >= 30) getWindow().setDecorFitsSystemWindows(false);
+    StudioView studio = new StudioView(this);
+    setContentView(studio);
   }
 
   class StudioView extends View {
     final float DW=400f,DH=919f;
     final HashMap<String,Bitmap> bm=new HashMap<>();
     int active=0; boolean left=false,right=true;
+    int safeLeft=0,safeTop=0,safeRight=0,safeBottom=0;
     Paint p=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
     StudioView(Context c){ super(c); setBackgroundColor(Color.BLACK);
+      setOnApplyWindowInsetsListener((v,insets)->{
+        if(Build.VERSION.SDK_INT>=30){
+          android.graphics.Insets bars=insets.getInsets(WindowInsets.Type.systemBars());
+          safeLeft=bars.left; safeTop=bars.top; safeRight=bars.right; safeBottom=bars.bottom;
+        } else {
+          safeLeft=insets.getSystemWindowInsetLeft(); safeTop=insets.getSystemWindowInsetTop();
+          safeRight=insets.getSystemWindowInsetRight(); safeBottom=insets.getSystemWindowInsetBottom();
+        }
+        invalidate(); return insets;
+      });
       String[] names={"header_mazda6gh_asbuilt_speedometer","tab_active_red","tab_inactive_gray_1",
       "module_info_panel_with_gauge","option_row_left","option_row_right","checkbox_empty","checkbox_checked_red",
       "table_header_red","table_row_gray","open_file_button","save_file_button","creator_link_panel"};
@@ -35,9 +47,9 @@ public class MainActivity extends Activity {
     }
     @Override protected void onDraw(Canvas raw){
       super.onDraw(raw);
-      float top=getPaddingTop(), aw=getWidth(), ah=getHeight()-top-getPaddingBottom();
-      float s=Math.min(aw/DW,ah/DH), ox=(aw-DW*s)/2f, oy=top+(ah-DH*s)/2f;
-      raw.save(); raw.translate(ox,oy); raw.scale(s,s);
+      float aw=getWidth()-safeLeft-safeRight, ah=getHeight()-safeTop-safeBottom;
+      float sx=aw/DW, sy=ah/DH;
+      raw.save(); raw.translate(safeLeft,safeTop); raw.scale(sx,sy);
       draw(raw,"header_mazda6gh_asbuilt_speedometer",10,0,397,132);
       float[] xs={21,112,202,291,381};
       for(int i=0;i<4;i++) draw(raw,i==active?"tab_active_red":"tab_inactive_gray_1",xs[i],135,xs[i+1]-2,174);
@@ -54,8 +66,9 @@ public class MainActivity extends Activity {
     boolean hit(float x,float y,float l,float t,float r,float b){return x>=l&&x<=r&&y>=t&&y<=b;}
     @Override public boolean onTouchEvent(android.view.MotionEvent e){
       if(e.getAction()!=MotionEvent.ACTION_UP)return true;
-      float aw=getWidth(), ah=getHeight()-getPaddingTop()-getPaddingBottom(), s=Math.min(aw/DW,ah/DH);
-      float x=(e.getX()-(aw-DW*s)/2f)/s, y=(e.getY()-(getPaddingTop()+(ah-DH*s)/2f))/s;
+      float aw=getWidth()-safeLeft-safeRight, ah=getHeight()-safeTop-safeBottom;
+      float sx=aw/DW, sy=ah/DH;
+      float x=(e.getX()-safeLeft)/sx, y=(e.getY()-safeTop)/sy;
       if(y>=135&&y<=174){ if(x>=21&&x<112)active=0; else if(x<202)active=1; else if(x<291)active=2; else if(x<=381)active=3; invalidate(); return true;}
       if(hit(x,y,330,20,397,125)){ showAdmin(); return true;}
       if(hit(x,y,22,235,202,315)){left=!left;invalidate();return true;}

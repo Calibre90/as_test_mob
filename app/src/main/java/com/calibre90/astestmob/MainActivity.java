@@ -673,10 +673,8 @@ public class MainActivity extends Activity {
                 throw new IllegalArgumentException("Проверьте индексы: повторы недопустимы");
               if(mode.equals("BITS")){
                 for(int bit:positions)if(bit<0||bit>7)throw new IllegalArgumentException("Биты должны быть от 0 до 7");
-                if(!vls[8].isEmpty()&&!vls[8].matches("(?i)(?:[0-9a-f]{2}|1|0)"))
-                  throw new IllegalArgumentException("BITS ВКЛ: укажите байт HEX (00–FF), 1 или оставьте поле пустым");
-                if(!vls[9].isEmpty()&&!vls[9].matches("(?i)(?:[0-9a-f]{2}|1|0)"))
-                  throw new IllegalArgumentException("BITS ВЫКЛ: укажите байт HEX (00–FF), 0 или оставьте поле пустым");
+                if(!vls[8].isEmpty()||!vls[9].isEmpty())
+                  throw new IllegalArgumentException("В режиме BITS поля ВКЛ/ВЫКЛ оставьте пустыми: приложение устанавливает/снимает указанные биты");
               }else{
                 for(int position:positions)if(position<0)throw new IllegalArgumentException("HEX индекс не может быть отрицательным");
                 String on=AbtCodec.norm(vls[8]),off=AbtCodec.norm(vls[9]);

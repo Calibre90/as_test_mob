@@ -1075,10 +1075,44 @@ public class MainActivity extends Activity {
             entry.setText((factoryEntryCount+i+1)+" · "+id+" · "+name);
             entry.setMinWidth(0);entry.setPadding(dp(5),0,dp(5),0);
             choices.addView(entry,new LinearLayout.LayoutParams(-1,dp(42)));
-            entry.setOnClickListener(v->new AlertDialog.Builder(this)
-              .setTitle("Блок "+id)
-              .setMessage("Название: "+name+"\\nАдрес: "+item.optString("address")+"\\nВерсия: "+item.optString("version"))
-              .setPositiveButton("Закрыть",null).show());
+            entry.setOnClickListener(v->{
+              LinearLayout editForm=new LinearLayout(this);
+              editForm.setOrientation(LinearLayout.VERTICAL);
+              editForm.setPadding(dp(18),dp(8),dp(18),dp(8));
+              TextView fixed=new TextView(this);
+              fixed.setText("ID: "+id+"    Адрес: "+item.optString("address")+"\\nID и адрес защищены для распознавания ABT.");
+              editForm.addView(fixed);
+              EditText editName=new EditText(this);
+              editName.setSingleLine(true);editName.setHint("Название блока");editName.setText(name);
+              editForm.addView(editName);
+              EditText editVersion=new EditText(this);
+              editVersion.setSingleLine(true);editVersion.setHint("Версия");
+              editVersion.setText(item.optString("version"));editForm.addView(editVersion);
+              new AlertDialog.Builder(this).setTitle("Изменить блок "+id).setView(editForm)
+                .setNegativeButton("Отмена",null)
+                .setPositiveButton("Сохранить",(d,w)->{
+                  String updatedName=editName.getText().toString().trim();
+                  if(updatedName.isEmpty()){
+                    Toast.makeText(this,"Название блока не может быть пустым",Toast.LENGTH_LONG).show();return;
+                  }
+                  try{
+                    org.json.JSONArray latest=customModuleCatalog();
+                    boolean found=false;
+                    for(int k=0;k<latest.length();k++){
+                      org.json.JSONObject target=latest.optJSONObject(k);
+                      if(target!=null&&id.equalsIgnoreCase(target.optString("id"))){
+                        target.put("name",updatedName);
+                        target.put("version",editVersion.getText().toString().trim());
+                        found=true;break;
+                      }
+                    }
+                    if(!found){Toast.makeText(this,"Блок уже удалён",Toast.LENGTH_LONG).show();return;}
+                    customPrefs.edit().putString("catalog",latest.toString()).apply();
+                    updateCatalog[0].run();view.invalidate();
+                    Toast.makeText(this,"Настройки блока сохранены",Toast.LENGTH_SHORT).show();
+                  }catch(Exception ex){Toast.makeText(this,"Ошибка сохранения блока",Toast.LENGTH_LONG).show();}
+                }).show();
+            });
           }
         };
         updateCatalog[0].run();

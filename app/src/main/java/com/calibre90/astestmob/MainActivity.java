@@ -47,15 +47,15 @@ public class MainActivity extends Activity {
       Canvas c=actual; c.drawColor(Color.BLACK);
       // No full-screen screenshot as a background: only isolated component assets.
       // Black backing matches the reference shell; do not paint a white background behind the header.
-      img(c,"header_logo",8,8,384,125);
-      // Cover the baked-in gear with a matching lock control.
-      rect(c,Color.rgb(249,250,251),327,43,49,63,8);
-      p.setColor(Color.rgb(190,196,203));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.3f);
-      c.drawRoundRect(327,43,376,106,8,8,p);
-      p.setColor(Color.rgb(32,36,43));p.setStrokeWidth(3.5f);
-      c.drawRoundRect(342,59,361,81,9,9,p);p.setStyle(Paint.Style.FILL);
-      rect(c,Color.rgb(32,36,43),338,72,27,23,4);
-      rect(c,Color.WHITE,350,79,3,10,1);
+      img(c,"header_logo",8,8,384,113);
+      // Compact white lock control, replacing the baked-in gear.
+      rect(c,Color.rgb(248,249,251),326,42,51,57,9);
+      p.setColor(Color.rgb(207,213,220));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.1f);
+      c.drawRoundRect(327,43,376,98,9,9,p);
+      p.setColor(Color.rgb(32,36,43));p.setStrokeWidth(2.8f);
+      c.drawRoundRect(345,56,358,76,7,7,p);p.setStyle(Paint.Style.FILL);
+      rect(c,Color.rgb(32,36,43),341,69,21,21,3);
+      rect(c,Color.WHITE,350,76,3,8,1);
       // System status icons are intentionally not painted into the application.
       String[] tabs={"IC","BCM","RKE","ABS"};
       for(int i=0;i<4;i++){float x=12+i*95;img(c,i==active?"active_red":"inactive_1",x,143,92,48);txt(c,tabs[i],x+30,174,16,i==active?Color.WHITE:Color.BLACK,true);}
@@ -141,7 +141,7 @@ public class MainActivity extends Activity {
   void modal(boolean isAdmin){
     final Dialog dialog=new Dialog(this);
     final int width=Math.round(getResources().getDisplayMetrics().widthPixels*.87f);
-    final int height=Math.round(width*(isAdmin?1.24f:1.35f));
+    final int height=Math.round(width*(isAdmin?1.24f:.94f));
     final FrameLayout root=new FrameLayout(this);
     root.setBackground(panel(Color.rgb(252,253,254),Color.rgb(234,239,244),14,Color.rgb(225,50,51)));
     root.setClipToOutline(true);
@@ -176,25 +176,18 @@ public class MainActivity extends Activity {
       place(root,enter,.53f,.75f,.39f,.13f,width,height);
       enter.setOnClickListener(v->{Toast.makeText(this,"Функции админки ещё не перенесены",Toast.LENGTH_LONG).show();dialog.dismiss();});
     }else{
-      ImageView brand=new ImageView(this);
-      int logoId=getResources().getIdentifier("header_logo","drawable",getPackageName());
-      if(logoId!=0){
-        Bitmap b=BitmapFactory.decodeResource(getResources(),logoId);
-        if(b!=null){Bitmap cropped=Bitmap.createBitmap(b,0,0,Math.round(b.getWidth()*.78f),b.getHeight());brand.setImageBitmap(cropped);}
-      }
-      brand.setScaleType(ImageView.ScaleType.FIT_CENTER);
-      place(root,brand,.055f,.205f,.89f,.255f,width,height);
-      View divider=new View(this);divider.setBackgroundColor(Color.rgb(220,50,55));
-      place(root,divider,.075f,.475f,.85f,.004f,width,height);
+      // Information-only layout without duplicated Mazda logo/banner.
       TextView version=caption("Версия: тестовая сборка",15,Color.DKGRAY,false);
-      place(root,version,.09f,.51f,.82f,.075f,width,height);
+      place(root,version,.09f,.245f,.82f,.11f,width,height);
+      View divider=new View(this);divider.setBackgroundColor(Color.rgb(220,50,55));
+      place(root,divider,.09f,.375f,.82f,.004f,width,height);
       TextView description=caption("Редактор As-Built для Mazda 6 GH",15,Color.BLACK,false);
-      place(root,description,.09f,.595f,.84f,.075f,width,height);
+      place(root,description,.09f,.42f,.84f,.12f,width,height);
       TextView author=caption("Разработчик: Dim304",15,Color.BLACK,true);
-      place(root,author,.09f,.68f,.84f,.075f,width,height);
+      place(root,author,.09f,.555f,.84f,.12f,width,height);
       TextView ok=caption("Закрыть",16,Color.WHITE,true);ok.setGravity(Gravity.CENTER);
       ok.setBackground(panel(Color.rgb(245,69,69),Color.rgb(170,0,10),9,Color.rgb(255,103,109)));
-      place(root,ok,.09f,.81f,.82f,.12f,width,height);ok.setOnClickListener(v->dialog.dismiss());
+      place(root,ok,.09f,.765f,.82f,.14f,width,height);ok.setOnClickListener(v->dialog.dismiss());
     }
     dialog.setContentView(root);dialog.show();
     Window window=dialog.getWindow();if(window!=null){

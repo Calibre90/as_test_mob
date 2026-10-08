@@ -22,7 +22,17 @@ public class MainActivity extends Activity {
   int active=0;
   @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(Color.BLACK);getWindow().setNavigationBarColor(Color.BLACK);getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
     for(int i=0;i<4;i++)rows[i]=new ArrayList<>();
-    features.addAll(StudioSettings.load(this));setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));view=new StudioView();setContentView(view);
+    features.addAll(StudioSettings.load(this));seedBuiltInRows();
+    setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));view=new StudioView();setContentView(view);
+  }
+  /** Built-in sample configuration: available before importing any vehicle ABT. */
+  void seedBuiltInRows(){
+    for(int n=0;n<defaults.length;n++){
+      String address="720-"+(n<8?"01-"+String.format(Locale.US,"%02d",n+1):"02-01");
+      AbtCodec.Row row=new AbtCodec.Row("IC",address,defaults[n],n<8?1:2);
+      abtRows[0].add(row);original.put(key(row),AbtCodec.norm(row.value));
+    }
+    refreshRows(0);syncFeatureChecks(0);
   }
   int appearanceColor(String key,int fallback){
     String value=StudioSettings.appearance(this,key,"").trim();
@@ -109,7 +119,7 @@ public class MainActivity extends Activity {
       txt(c,modules[active]+": "+StudioSettings.moduleName(MainActivity.this,modules[active],names[active]),25,222,18,Color.BLACK,true);
       p.setColor(Color.rgb(224,57,64));p.setStrokeWidth(1);c.drawLine(25,232,316,232,p);
       String configuredVersion=StudioSettings.moduleVersion(MainActivity.this,modules[active]);
-      txt(c,"ID: "+ids[active]+"  |  Ver: "+(!configuredVersion.isEmpty()?configuredVersion:(loaded[active]?"ABT загружен":"Загрузите файл ABT")),25,252,12,Color.rgb(91,103,119),false);
+      txt(c,"ID: "+ids[active]+"  |  Ver: "+(!configuredVersion.isEmpty()?configuredVersion:(loaded[active]?"ABT загружен":"Образец")),25,252,12,Color.rgb(91,103,119),false);
       card(c,10,279,380,91,12,true);
       p.setColor(Color.rgb(207,213,221));p.setStrokeWidth(1);c.drawLine(203,284,203,365,p);c.drawLine(15,325,203,325,p);
       ArrayList<FeatureEngine.Feature> shown=moduleFeatures(active);

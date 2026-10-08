@@ -189,12 +189,7 @@ public class MainActivity extends Activity {
     HashMap<String,String> byPrefix=new HashMap<>();for(int i=0;i<4;i++)byPrefix.put(ids[i],modules[i]);
     List<AbtCodec.Row> parsed=AbtCodec.parseChecked(content,byPrefix);
     if(parsed.isEmpty())throw new IllegalArgumentException("Формат ABT не распознан");
-    ArrayList<AbtCodec.Row> selected=new ArrayList<>();
-    for(AbtCodec.Row row:parsed){
-      if(!row.module.equals(modules[active]))throw new IllegalArgumentException("Файл содержит блок "+row.module+", а открыта вкладка "+modules[active]+". Импорт отменён.");
-      selected.add(row);
-    }
-    if(selected.isEmpty())throw new IllegalArgumentException("В файле нет строк блока "+modules[active]);
+    ArrayList<AbtCodec.Row> selected=AbtCodec.requireModule(parsed,modules[active]);
     HashSet<String> addresses=new HashSet<>();
     for(AbtCodec.Row row:selected){
       if(!addresses.add(row.address))throw new IllegalArgumentException("Повтор адреса "+row.address+" в ABT");

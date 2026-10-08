@@ -43,6 +43,37 @@ public class MainActivity extends Activity {
     }
     getSharedPreferences("studio_admin_rows",MODE_PRIVATE).edit().putString(modules[module],array.toString()).apply();
   }
+  /** On an imported ABT, persist only the administrator's explicit change,
+      never the rest of the vehicle file as the built-in catalog. */
+  void saveAdminRowChange(int module,String address,boolean deleted){
+    if(!loaded[module]){saveAdminRows(module);return;}
+    android.content.SharedPreferences prefs=getSharedPreferences("studio_admin_rows",MODE_PRIVATE);
+    String saved=prefs.getString(modules[module],null);
+    try{
+      org.json.JSONArray source=new org.json.JSONArray(saved==null?"[]":saved);
+      org.json.JSONArray result=new org.json.JSONArray();
+      if(saved==null&&module==0){
+        for(int n=0;n<defaults.length;n++){
+          String a="720-"+(n<8?"01-"+String.format(Locale.US,"%02d",n+1):"02-01");
+          org.json.JSONObject item=new org.json.JSONObject();
+          item.put("address",a);item.put("value",defaults[n]);result.put(item);
+        }
+        source=result;result=new org.json.JSONArray();
+      }
+      for(int i=0;i<source.length();i++){
+        org.json.JSONObject item=source.getJSONObject(i);
+        if(!address.equals(item.getString("address")))result.put(item);
+      }
+      if(!deleted){
+        AbtCodec.Row row=findRow(module,address);
+        if(row!=null){
+          org.json.JSONObject item=new org.json.JSONObject();
+          item.put("address",row.address);item.put("value",row.value);result.put(item);
+        }
+      }
+      prefs.edit().putString(modules[module],result.toString()).apply();
+    }catch(org.json.JSONException ex){throw new IllegalStateException("Cannot persist admin row",ex);}
+  }
   void restoreAdminRows(){
     android.content.SharedPreferences prefs=getSharedPreferences("studio_admin_rows",MODE_PRIVATE);
     for(int m=0;m<modules.length;m++){
@@ -837,7 +868,7 @@ public class MainActivity extends Activity {
               final int index=chosen[0];
               new AlertDialog.Builder(this).setTitle("Удалить строку "+rows.get(index).address+"?")
                 .setNegativeButton("Отмена",null).setPositiveButton("Удалить",(d,w)->{
-                  AbtCodec.Row removed=rows.remove(index);original.remove(key(removed));saveAdminRows(rowsModule);resetEngineForModule(rowsModule);syncFeatureChecks(rowsModule);refreshRows(rowsModule);view.invalidate();redrawRef[0].run();
+                  AbtCodec.Row removed=rows.remove(index);original.remove(key(removed));saveAdminRowChange(rowsModule,removed.address,true);resetEngineForModule(rowsModule);syncFeatureChecks(rowsModule);refreshRows(rowsModule);view.invalidate();redrawRef[0].run();
                 }).show();return;
             }
             try{
@@ -857,7 +888,7 @@ public class MainActivity extends Activity {
                 existing.value=updated;
               }
               for(AbtCodec.Row current:rows)original.put(key(current),AbtCodec.norm(current.value));
-              saveAdminRows(rowsModule);resetEngineForModule(rowsModule);syncFeatureChecks(rowsModule);refreshRows(rowsModule);view.invalidate();redrawRef[0].run();
+              saveAdminRowChange(rowsModule,addr,false);resetEngineForModule(rowsModule);syncFeatureChecks(rowsModule);refreshRows(rowsModule);view.invalidate();redrawRef[0].run();
               Toast.makeText(this,"Строки сохранены в приложении",Toast.LENGTH_LONG).show();
             }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
           });

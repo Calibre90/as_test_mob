@@ -717,6 +717,49 @@ public class MainActivity extends Activity {
           });
         }
       }
+      if(selected[0]==2){
+        final int[] moduleSelection={active};
+        LinearLayout fields=new LinearLayout(this);fields.setOrientation(LinearLayout.VERTICAL);
+        panel.addView(fields);
+        final EditText[] inputs=new EditText[4];
+        String[] labels={"ID","Название блока","Адрес","Версия"};
+        for(int k=0;k<4;k++){
+          LinearLayout field=new LinearLayout(this);field.setOrientation(LinearLayout.HORIZONTAL);
+          TextView label=new TextView(this);label.setText(labels[k]);label.setTextColor(Color.WHITE);
+          label.setGravity(Gravity.CENTER_VERTICAL);field.addView(label,new LinearLayout.LayoutParams(0,dp(55),1));
+          EditText input=new EditText(this);input.setSingleLine(true);input.setTextColor(Color.BLACK);
+          input.setTextSize(14);input.setPadding(dp(8),0,dp(5),0);input.setBackgroundColor(Color.WHITE);
+          field.addView(input,new LinearLayout.LayoutParams(0,dp(55),1));fields.addView(field);inputs[k]=input;
+        }
+        inputs[0].setEnabled(false);inputs[2].setEnabled(false);
+        Runnable fill=()->{
+          int m=moduleSelection[0];inputs[0].setText(modules[m]);
+          inputs[1].setText(StudioSettings.moduleName(this,modules[m],names[m]));
+          inputs[2].setText(ids[m]);inputs[3].setText(StudioSettings.moduleVersion(this,modules[m]));
+          heading.setText("Блок "+modules[m]);
+        };
+        fill.run();
+        LinearLayout choices=new LinearLayout(this);choices.setOrientation(LinearLayout.VERTICAL);
+        panel.addView(choices,new LinearLayout.LayoutParams(-1,0,1));
+        for(int m=0;m<modules.length;m++){
+          final int index=m;Button choose=new Button(this);choose.setAllCaps(false);
+          choose.setText((m+1)+" · "+modules[m]+" · "+names[m]);
+          choices.addView(choose,new LinearLayout.LayoutParams(-1,dp(56)));
+          choose.setOnClickListener(v->{moduleSelection[0]=index;fill.run();});
+        }
+        TextView warning=new TextView(this);
+        warning.setText("ID и адрес блока защищены: они используются для распознавания файлов ABT.");
+        warning.setTextColor(Color.LTGRAY);warning.setTextSize(12);panel.addView(warning);
+        Button saveModule=new Button(this);saveModule.setAllCaps(false);saveModule.setText("Сохранить настройки блока");
+        panel.addView(saveModule,new LinearLayout.LayoutParams(-1,dp(60)));
+        saveModule.setOnClickListener(v->{
+          String newName=inputs[1].getText().toString().trim();
+          if(newName.isEmpty()){inputs[1].setError("Название не может быть пустым");return;}
+          int m=moduleSelection[0];
+          StudioSettings.saveModule(this,modules[m],newName,inputs[3].getText().toString().trim());
+          view.invalidate();Toast.makeText(this,"Блок "+modules[m]+" сохранён",Toast.LENGTH_SHORT).show();
+        });
+      }
       Button edit=new Button(this);edit.setAllCaps(false);
       String[] captions={"Открыть редактор функций и битов","Открыть редактор строк As-Built","Редактировать блок IC / BCM / ABS / RKE","Настроить оформление"};
       edit.setText(captions[selected[0]]);

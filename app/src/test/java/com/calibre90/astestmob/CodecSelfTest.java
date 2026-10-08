@@ -100,6 +100,20 @@ public final class CodecSelfTest {
     if(corrupted.equals(AbtCodec.norm(validChecksum)))corrupted=corrupted.substring(0,corrupted.length()-2)+"FF";
     check(!AbtCodec.checksumValid("720-01-01",corrupted),"checksum mismatch detected");
     check(AbtCodec.norm(corrupted).endsWith(corrupted.substring(corrupted.length()-2)),"original corrupt value preserved");
+    ArrayList<AbtCodec.Row> initial=new ArrayList<>();
+    initial.add(new AbtCodec.Row("IC","720-01-01","1F40 7126 809F",1));
+    initial.add(new AbtCodec.Row("IC","720-01-02","000E F255 E766",1));
+    AbtSnapshot snapshot=new AbtSnapshot(initial);
+    initial.get(0).value="FFFF FFFF FFFF";
+    initial.remove(1);
+    initial.add(new AbtCodec.Row("IC","720-01-03","1234 5678 90AB",1));
+    check(Arrays.equals(snapshot.differences(initial),new int[]{1,1,1}),"snapshot counts edited added removed");
+    ArrayList<AbtCodec.Row> restored=snapshot.restore();
+    check(restored.size()==2&&restored.get(0).address.equals("720-01-01")&&restored.get(1).address.equals("720-01-02"),"snapshot restores original row order and membership");
+    check(restored.get(0).value.equals("1F40 7126 809F"),"snapshot restores original HEX");
+    restored.get(0).value="0000";
+    check(snapshot.restore().get(0).value.equals("1F40 7126 809F"),"snapshot remains immutable across restores");
+    check(Arrays.equals(snapshot.differences(snapshot.restore()),new int[]{0,0,0}),"snapshot clean after restore");
     System.out.println("PASS: ABT parse, roundtrip, checksum, index, HEX toggle, restore");
   }
 }

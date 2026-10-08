@@ -1000,6 +1000,7 @@ public class MainActivity extends Activity {
         }
         commitCurrent[0]=()->rowActions[chosen[0]>=0?1:0].performClick();
       }
+      LinearLayout choices=new LinearLayout(this);choices.setOrientation(LinearLayout.VERTICAL);
       if(selected[0]==2){
         final int[] moduleSelection={active};
         LinearLayout fields=new LinearLayout(this);fields.setOrientation(LinearLayout.VERTICAL);
@@ -1022,11 +1023,7 @@ public class MainActivity extends Activity {
           heading.setText("Блок "+modules[m]);
         };
         fill.run();
-        LinearLayout choices=new LinearLayout(this);choices.setOrientation(LinearLayout.VERTICAL);
-        android.widget.ScrollView moduleListScroll=new android.widget.ScrollView(this);
-        moduleListScroll.setFillViewport(false);
-        moduleListScroll.addView(choices);
-        panel.addView(moduleListScroll,new LinearLayout.LayoutParams(-1,0,1));
+        panel.addView(choices,new LinearLayout.LayoutParams(-1,-2));
         for(int m=0;m<modules.length;m++){
           final int index=m;Button choose=new Button(this);choose.setAllCaps(false);
           choose.setText((m+1)+" · "+modules[m]+" · "+names[m]);

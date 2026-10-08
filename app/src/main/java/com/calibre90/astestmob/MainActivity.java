@@ -184,16 +184,20 @@ public class MainActivity extends Activity {
       c.drawRoundRect(361.5f,18.5f,373.5f,34.5f,6,6,p);
       p.setStyle(Paint.Style.FILL);c.drawRoundRect(359.5f,27,375.5f,40,2.5f,2.5f,p);
       p.setColor(Color.WHITE);c.drawCircle(367.5f,32,1.3f,p);c.drawRect(366.8f,32,368.2f,36,p);
-      boolean hasCustom=customModuleCatalog().length()>0;
-      String[] tabs=hasCustom?new String[]{"IC","BCM","RKE","ABS","Ещё"}:new String[]{"IC","BCM","RKE","ABS"};
+      org.json.JSONArray customTabs=customModuleCatalog();
+      int tabCount=4+customTabs.length();
+      float tabWidth=tabCount<=4?93.75f:90f;
       card(c,10,125,380,57,13,false);
-      for(int i=0;i<tabs.length;i++){
-        float tabWidth=375f/tabs.length;
-        float x=15+i*tabWidth;
+      c.save();c.clipRect(15,129,385,179);
+      for(int i=0;i<tabCount;i++){
+        float x=15+i*tabWidth-moduleTabOffset;
+        if(x+tabWidth<15||x>385)continue;
+        String tab=i<4?modules[i]:customTabs.optJSONObject(i-4)==null?"?":customTabs.optJSONObject(i-4).optString("id","?");
         if(i==active){p.setShader(new LinearGradient(x,132,x,175,Color.rgb(255,74,79),Color.rgb(176,0,10),Shader.TileMode.CLAMP));p.setStyle(Paint.Style.FILL);c.drawRoundRect(x,131,x+tabWidth-5,175,9,9,p);p.setShader(null);}
         else card(c,x,131,tabWidth-5,44,9,false);
-        centered(c,tabs[i],x,131,tabWidth-5,44,hasCustom?13:16,i==active?Color.WHITE:Color.BLACK);
+        centered(c,tab,x,131,tabWidth-5,44,13,i==active?Color.WHITE:Color.BLACK);
       }
+      c.restore();
       card(c,10,190,380,82,13,true);
       txt(c,modules[active]+": "+StudioSettings.moduleName(MainActivity.this,modules[active],names[active]),25,222,18,Color.BLACK,true);
       p.setColor(Color.rgb(224,57,64));p.setStrokeWidth(1);c.drawLine(25,232,316,232,p);
@@ -260,10 +264,27 @@ public class MainActivity extends Activity {
       txt(c,"♙",350,821,32,Color.BLACK,true);
       actual.restore();
     }
-    float startY;
-    @Override public boolean onTouchEvent(MotionEvent e){if(e.getAction()==MotionEvent.ACTION_DOWN){startY=e.getY()/sy;return true;}if(e.getAction()!=MotionEvent.ACTION_UP)return true;float x=e.getX()/sx,y=e.getY()/sy;
+    float startY,startX,moduleTabOffset=0;
+    @Override public boolean onTouchEvent(MotionEvent e){if(e.getAction()==MotionEvent.ACTION_DOWN){startY=e.getY()/sy;startX=e.getX()/sx;return true;}if(e.getAction()!=MotionEvent.ACTION_UP)return true;float x=e.getX()/sx,y=e.getY()/sy;
       if(startY>=376&&startY<=713&&y>=376&&y<=713&&Math.abs(y-startY)>18){int delta=Math.round((startY-y)/36.5f);scrollOffset[active]=Math.max(0,Math.min(Math.max(0,rowCount(active)-9),scrollOffset[active]+delta));invalidate();return true;}
-      if(y>=127&&y<=183){if(x<12||x>=392)return true;int tabCount=customModuleCatalog().length()>0?5:4;int selected=(int)((x-15)/(375f/tabCount));if(selected==4&&tabCount==5){showCustomModulePicker();return true;}if(selected>=0&&selected<modules.length){active=selected;invalidate();}return true;}
+      if(y>=127&&y<=183){
+        int count=4+customModuleCatalog().length();
+        float width=count<=4?93.75f:90f;
+        float maxOffset=Math.max(0,count*width-370f);
+        if(Math.abs(x-startX)>12){moduleTabOffset=Math.max(0,Math.min(maxOffset,moduleTabOffset+startX-x));invalidate();return true;}
+        if(x<15||x>385)return true;
+        int selected=(int)((x-15+moduleTabOffset)/width);
+        if(selected>=4&&selected<count){
+          org.json.JSONObject item=customModuleCatalog().optJSONObject(selected-4);
+          if(item!=null)new AlertDialog.Builder(MainActivity.this)
+            .setTitle(item.optString("id")+" · "+item.optString("name"))
+            .setMessage("Адрес: "+item.optString("address")+"\\nВерсия: "+item.optString("version")+"\\n\\nРедактор As-Built для дополнительных блоков пока не подключён.")
+            .setPositiveButton("Закрыть",null).show();
+          return true;
+        }
+        if(selected>=0&&selected<modules.length){active=selected;invalidate();}
+        return true;
+      }
       if(x>=346&&y>=8&&y<=70){admin();return true;}
       if(y>=279&&y<=370){int slots=featureSlots();if(x>=345&&moduleFeatures(active).size()>slots){featurePage[active]=(featurePage[active]+slots>=moduleFeatures(active).size())?0:featurePage[active]+slots;invalidate();return true;}int i=(int)((y-284)/27);if(i>=0&&i<slots&&featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}
       // HEX rows on the main screen are read-only; edit via features or admin panel.

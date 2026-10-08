@@ -112,9 +112,7 @@ public class MainActivity extends Activity {
     new AlertDialog.Builder(this).setTitle("Дополнительные блоки").setItems(removeChoices,(d,index)->{
       org.json.JSONObject item=catalog.optJSONObject(index);
       if(item==null)return;
-      new AlertDialog.Builder(this).setTitle(item.optString("id")+" · "+item.optString("name"))
-        .setMessage("Адрес: "+item.optString("address")+"\\nВерсия: "+item.optString("version")+"\\n\\nБлок сохранён в каталоге. Редактор As-Built для дополнительных блоков пока не подключён.")
-        .setPositiveButton("Закрыть",null).show();
+      showCustomRows(item);
     }).setNegativeButton("Закрыть",null).show();
   }
 
@@ -1001,8 +999,19 @@ public class MainActivity extends Activity {
           input.setBackgroundColor(Color.WHITE);input.setPadding(dp(7),0,dp(5),0);
           field.addView(input,new LinearLayout.LayoutParams(0,dp(44),1));field.setPadding(dp(4),dp(3),dp(4),dp(3));form.addView(field);inputs[k]=input;
         }
-        heading.setOnClickListener(v->new AlertDialog.Builder(this).setTitle("Выберите блок")
-          .setItems(modules,(d,which)->{adminRowsModule=which;redrawRef[0].run();}).show());
+        heading.setOnClickListener(v->{
+          org.json.JSONArray custom=customModuleCatalog();
+          String[] options=new String[modules.length+custom.length()];
+          for(int i=0;i<modules.length;i++)options[i]=modules[i];
+          for(int i=0;i<custom.length();i++){
+            org.json.JSONObject item=custom.optJSONObject(i);
+            options[modules.length+i]=item==null?"?":item.optString("id")+" · "+item.optString("name");
+          }
+          new AlertDialog.Builder(this).setTitle("Выберите блок").setItems(options,(d,which)->{
+            if(which<modules.length){adminRowsModule=which;redrawRef[0].run();}
+            else{org.json.JSONObject item=custom.optJSONObject(which-modules.length);if(item!=null)showCustomRows(item);}
+          }).show();
+        });
         android.widget.ScrollView listScroll=new android.widget.ScrollView(this);
         LinearLayout entries=new LinearLayout(this);entries.setOrientation(LinearLayout.VERTICAL);
         listScroll.addView(entries);panel.addView(listScroll,new LinearLayout.LayoutParams(-1,0,1));

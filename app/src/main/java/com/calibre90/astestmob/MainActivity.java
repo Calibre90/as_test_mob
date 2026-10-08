@@ -635,6 +635,10 @@ public class MainActivity extends Activity {
           values[j]=value;fields.addView(lineRow);
         }
         content.addView(fields);
+        TextView bitHelp=new TextView(this);
+        bitHelp.setText("HEX: индексы символов и значения ВКЛ/ВЫКЛ. BITS: номер байта и номера битов 0–7; поля ВКЛ/ВЫКЛ не используются.");
+        bitHelp.setTextColor(Color.rgb(190,218,228));bitHelp.setTextSize(12);
+        bitHelp.setPadding(dp(6),dp(10),dp(6),dp(10));content.addView(bitHelp);
         LinearLayout actions=new LinearLayout(this);panel.addView(actions);
         final String[] actionNames={"Добавить","Изменить","Удалить"};
         for(int action=0;action<3;action++){

@@ -622,7 +622,7 @@ public class MainActivity extends Activity {
           public void onNothingSelected(android.widget.AdapterView<?> parent){}
           public void onItemSelected(android.widget.AdapterView<?> parent,View view,int position,long id){
             chosen[0]=position-1;
-            if(chosen[0]<0||chosen[0]>=features.size()){heading.setText("Выберите запись");return;}
+            if(chosen[0]<0||chosen[0]>=features.size()){heading.setText("Выберите запись");for(EditText field:values)if(field!=null)field.setText("");return;}
             FeatureEngine.Feature f=features.get(chosen[0]);
             heading.setText((chosen[0]+1)+" · "+f.label);
             String[] info={f.id,f.module,f.label,f.address,f.mode,"HEX".equalsIgnoreCase(f.mode)?f.indices:"",

@@ -82,6 +82,12 @@ public final class CodecSelfTest {
       check(selected.size()==1,"filter only selected module "+moduleName);
       check(AbtCodec.parse(AbtCodec.write(selected,moduleName),allModules).size()==1,"save only selected module "+moduleName);
     }
+    String crOnly=";Block 1\r720G1G11F407126809F\r";
+    check(AbtCodec.parse(crOnly,modules).size()==1,"classic Mac CR line endings");
+    String mixed=";Block 1\n720-G1-G1: 1F40 7126 809F\r726-G1-G1 = 000E F255 E766\r\n";
+    check(AbtCodec.parse(mixed,allModules).size()==2,"mixed delimiters and line endings");
+    check(AbtCodec.parse("720G1G1A0\n",modules).isEmpty(),"reject one-byte rows");
+    check(AbtCodec.parse("; comment\n# comment\ninvalid\n",modules).isEmpty(),"ignore comments and invalid lines");
     System.out.println("PASS: ABT parse, roundtrip, checksum, index, HEX toggle, restore");
   }
 }

@@ -643,6 +643,11 @@ public class MainActivity extends Activity {
           fieldRows[8].setVisibility(bits?View.GONE:View.VISIBLE);
           fieldRows[9].setVisibility(bits?View.GONE:View.VISIBLE);
         };
+        values[5].setHint("Например: 0,1 или 2-4");
+        values[6].setHint("Номер байта с 0");
+        values[7].setHint("Например: 0,2,7");
+        values[8].setHint("HEX, например 8F");
+        values[9].setHint("HEX, например 0F");
         values[1].setFocusable(false);
         values[1].setClickable(true);
         values[1].setHint("Выберите модуль");

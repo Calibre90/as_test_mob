@@ -8,6 +8,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install UI assets
+        run: |
+          mkdir -p app/src/main/res/drawable-nodpi
+          rm -rf /tmp/mazda_assets
+          unzip -q Mazda6GH_UI_ASSETS_pack_v1.zip -d /tmp/mazda_assets
+          find /tmp/mazda_assets/Mazda6GH_UI_assets/01_Main_UI -name '*.png' -exec cp {} app/src/main/res/drawable-nodpi/ \;
+          find /tmp/mazda_assets/Mazda6GH_UI_assets/02_Admin_Panel -name '*.png' -exec cp {} app/src/main/res/drawable-nodpi/ \;
+          find /tmp/mazda_assets/Mazda6GH_UI_assets/03_About_Window -name '*.png' -exec cp {} app/src/main/res/drawable-nodpi/ \;
+          echo "Installed $(find app/src/main/res/drawable-nodpi -name '*.png' | wc -l) PNG assets"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

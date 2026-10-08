@@ -1516,8 +1516,26 @@ public class MainActivity extends Activity {
                 org.json.JSONArray current=new org.json.JSONArray(customPrefs.getString("catalog","[]"));
                 org.json.JSONArray updated=new org.json.JSONArray();
                 for(int j=0;j<current.length();j++)if(j!=index)updated.put(current.get(j));
+                String removedId=current.getJSONObject(index).optString("id");
+                String activeId="";
+                if(active>=4){
+                  org.json.JSONObject selectedModule=current.optJSONObject(active-4);
+                  if(selectedModule!=null)activeId=selectedModule.optString("id");
+                }
                 customPrefs.edit().putString("catalog",updated.toString()).apply();
+                if(active>=4){
+                  active=0;
+                  for(int j=0;j<updated.length();j++){
+                    org.json.JSONObject remaining=updated.optJSONObject(j);
+                    if(remaining!=null&&activeId.equals(remaining.optString("id")))active=j+4;
+                  }
+                  saveSelectedModule();
+                }
+                customScroll.remove(removedId);
+                customFeaturePage.remove(removedId);
+                resetCustomFeatureState(removedId);
                 view.moduleTabOffset=Math.min(view.moduleTabOffset,Math.max(0f,(4+updated.length())*90f-370f));
+                view.revealActiveTab();
                 updateCatalog[0].run();view.invalidate();
                 Toast.makeText(this,"Блок удалён из каталога и вкладок",Toast.LENGTH_SHORT).show();
               }catch(Exception ex){Toast.makeText(this,"Ошибка удаления",Toast.LENGTH_SHORT).show();}

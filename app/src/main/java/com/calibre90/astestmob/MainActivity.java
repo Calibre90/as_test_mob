@@ -294,6 +294,11 @@ public class MainActivity extends Activity {
       java.util.ArrayList<AbtCodec.Row> rows=AbtCodec.requireModule(parsed,id);
       java.util.HashSet<String> importedAddresses=new java.util.HashSet<>();
       for(AbtCodec.Row row:rows){
+        if(!row.address.toUpperCase(java.util.Locale.US).matches(java.util.regex.Pattern.quote(prefix)+"-[0-9]{2}-[0-9]{2}"))
+          throw new IllegalArgumentException("Адрес "+row.address+" не принадлежит блоку "+id);
+        String hex=AbtCodec.norm(row.value);
+        if(hex.length()<4||hex.length()%2!=0||!hex.matches("[0-9A-F]+"))
+          throw new IllegalArgumentException("Повреждённое HEX-значение строки "+row.address);
         if(!importedAddresses.add(row.address.toUpperCase(java.util.Locale.US)))
           throw new IllegalArgumentException("Повтор адреса "+row.address+" в ABT. Импорт отменён.");
       }

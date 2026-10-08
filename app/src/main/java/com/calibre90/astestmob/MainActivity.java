@@ -200,13 +200,15 @@ public class MainActivity extends Activity {
         FeatureEngine engine=customEngines.get(id);
         if(engine==null){
           engine=new FeatureEngine();
-          for(FeatureEngine.Feature sibling:available){
-            if(!sibling.address.equalsIgnoreCase(feature.address))continue;
-            boolean enabled=new FeatureEngine().state(sibling,row.value);
-            engine.seed(sibling,enabled);
-            customChecks.put(featureKey(sibling),enabled);
-          }
           customEngines.put(id,engine);
+        }
+        // Seed every feature from the current HEX row before applying an edit.
+        // In particular, a second feature on the same row must retain the
+        // first feature's state when the engine was created earlier.
+        for(FeatureEngine.Feature sibling:available){
+          if(!sibling.address.equalsIgnoreCase(feature.address))continue;
+          boolean enabled=customChecked(sibling);
+          engine.seed(sibling,enabled);
         }
         boolean next=!customChecked(feature);
         rememberCustomBaseline(id,feature.address,row.value);

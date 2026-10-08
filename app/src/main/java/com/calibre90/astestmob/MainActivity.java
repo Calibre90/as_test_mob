@@ -239,7 +239,12 @@ public class MainActivity extends Activity {
       }
       prefs.edit().putString(id,entries.toString()).apply();
       resetCustomFeatureState(id);view.invalidate();
-      Toast.makeText(this,"Импортировано строк: "+rows.size(),Toast.LENGTH_LONG).show();
+      int invalid=0;
+      for(AbtCodec.Row row:rows)if(!AbtCodec.checksumValid(row.address,row.value))invalid++;
+      if(invalid>0)new AlertDialog.Builder(this).setTitle("Проверка контрольных сумм")
+        .setMessage("Импортировано строк: "+rows.size()+". У "+invalid+" строк контрольная сумма не совпадает. Исходные значения сохранены без исправления.")
+        .setPositiveButton("Понятно",null).show();
+      else Toast.makeText(this,"Импортировано строк: "+rows.size()+". Контрольные суммы верны.",Toast.LENGTH_LONG).show();
     }else{
       org.json.JSONArray entries=new org.json.JSONArray(prefs.getString(id,"[]"));
       java.util.ArrayList<AbtCodec.Row> rows=new java.util.ArrayList<>();

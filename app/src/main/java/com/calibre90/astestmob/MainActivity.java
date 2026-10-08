@@ -200,6 +200,7 @@ public class MainActivity extends Activity {
           String input=edit.getText().toString().replaceAll("\\s+","");
           if(input.isEmpty()||input.length()%2!=0||!input.matches("[0-9A-Fa-f]+"))throw new IllegalArgumentException("Допустимы только полные HEX-байты");
           if(input.length()!=AbtCodec.norm(row.value).length())throw new IllegalArgumentException("Длина строки должна остаться прежней");
+          if(input.equalsIgnoreCase(AbtCodec.norm(row.value))){Toast.makeText(this,"Изменений нет",Toast.LENGTH_SHORT).show();return;}
           String updated=AbtCodec.recalc(row.address,input);
           row.value=updated;resetCurrentEngine();syncFeatureChecks(active);
           refreshRows(active);view.invalidate();

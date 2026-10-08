@@ -97,6 +97,26 @@ public class MainActivity extends Activity {
       }catch(Exception ex){android.util.Log.e("ASBuilt","Cannot restore admin rows for "+modules[m],ex);}
     }
   }
+  org.json.JSONArray customModuleCatalog(){
+    try{return new org.json.JSONArray(getSharedPreferences("studio_custom_modules",MODE_PRIVATE).getString("catalog","[]"));}
+    catch(Exception ex){return new org.json.JSONArray();}
+  }
+  void showCustomModulePicker(){
+    org.json.JSONArray catalog=customModuleCatalog();
+    if(catalog.length()==0)return;
+    String[] choices=new String[catalog.length()];
+    for(int i=0;i<catalog.length();i++){
+      org.json.JSONObject item=catalog.optJSONObject(i);
+      choices[i]=item==null?"":item.optString("id")+" · "+item.optString("name");
+    }
+    new AlertDialog.Builder(this).setTitle("Дополнительные блоки").setItems(choices,(d,index)->{
+      org.json.JSONObject item=catalog.optJSONObject(index);
+      if(item==null)return;
+      new AlertDialog.Builder(this).setTitle(item.optString("id")+" · "+item.optString("name"))
+        .setMessage("Адрес: "+item.optString("address")+"\\nВерсия: "+item.optString("version")+"\\n\\nБлок сохранён в каталоге. Редактор As-Built для дополнительных блоков пока не подключён.")
+        .setPositiveButton("Закрыть",null).show();
+    }).setNegativeButton("Закрыть",null).show();
+  }
   int appearanceColor(String key,int fallback){
     String value=StudioSettings.appearance(this,key,"").trim();
     if(value.isEmpty())return fallback;
@@ -164,13 +184,15 @@ public class MainActivity extends Activity {
       c.drawRoundRect(361.5f,18.5f,373.5f,34.5f,6,6,p);
       p.setStyle(Paint.Style.FILL);c.drawRoundRect(359.5f,27,375.5f,40,2.5f,2.5f,p);
       p.setColor(Color.WHITE);c.drawCircle(367.5f,32,1.3f,p);c.drawRect(366.8f,32,368.2f,36,p);
-      String[] tabs={"IC","BCM","RKE","ABS"};
+      boolean hasCustom=customModuleCatalog().length()>0;
+      String[] tabs=hasCustom?new String[]{"IC","BCM","RKE","ABS","Ещё"}:new String[]{"IC","BCM","RKE","ABS"};
       card(c,10,125,380,57,13,false);
-      for(int i=0;i<4;i++){
-        float x=15+i*94;
-        if(i==active){p.setShader(new LinearGradient(x,132,x,175,Color.rgb(255,74,79),Color.rgb(176,0,10),Shader.TileMode.CLAMP));p.setStyle(Paint.Style.FILL);c.drawRoundRect(x,131,x+89,175,9,9,p);p.setShader(null);}
-        else card(c,x,131,89,44,9,false);
-        centered(c,tabs[i],x,131,89,44,16,i==active?Color.WHITE:Color.BLACK);
+      for(int i=0;i<tabs.length;i++){
+        float tabWidth=375f/tabs.length;
+        float x=15+i*tabWidth;
+        if(i==active){p.setShader(new LinearGradient(x,132,x,175,Color.rgb(255,74,79),Color.rgb(176,0,10),Shader.TileMode.CLAMP));p.setStyle(Paint.Style.FILL);c.drawRoundRect(x,131,x+tabWidth-5,175,9,9,p);p.setShader(null);}
+        else card(c,x,131,tabWidth-5,44,9,false);
+        centered(c,tabs[i],x,131,tabWidth-5,44,hasCustom?13:16,i==active?Color.WHITE:Color.BLACK);
       }
       card(c,10,190,380,82,13,true);
       txt(c,modules[active]+": "+StudioSettings.moduleName(MainActivity.this,modules[active],names[active]),25,222,18,Color.BLACK,true);
@@ -241,7 +263,7 @@ public class MainActivity extends Activity {
     float startY;
     @Override public boolean onTouchEvent(MotionEvent e){if(e.getAction()==MotionEvent.ACTION_DOWN){startY=e.getY()/sy;return true;}if(e.getAction()!=MotionEvent.ACTION_UP)return true;float x=e.getX()/sx,y=e.getY()/sy;
       if(startY>=376&&startY<=713&&y>=376&&y<=713&&Math.abs(y-startY)>18){int delta=Math.round((startY-y)/36.5f);scrollOffset[active]=Math.max(0,Math.min(Math.max(0,rowCount(active)-9),scrollOffset[active]+delta));invalidate();return true;}
-      if(y>=127&&y<=183){if(x<12||x>=392)return true;int selected=(int)((x-12)/95);if(selected>=0&&selected<modules.length){active=selected;invalidate();}return true;}
+      if(y>=127&&y<=183){if(x<12||x>=392)return true;int tabCount=customModuleCatalog().length()>0?5:4;int selected=(int)((x-15)/(375f/tabCount));if(selected==4&&tabCount==5){showCustomModulePicker();return true;}if(selected>=0&&selected<modules.length){active=selected;invalidate();}return true;}
       if(x>=346&&y>=8&&y<=70){admin();return true;}
       if(y>=279&&y<=370){int slots=featureSlots();if(x>=345&&moduleFeatures(active).size()>slots){featurePage[active]=(featurePage[active]+slots>=moduleFeatures(active).size())?0:featurePage[active]+slots;invalidate();return true;}int i=(int)((y-284)/27);if(i>=0&&i<slots&&featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}
       // HEX rows on the main screen are read-only; edit via features or admin panel.

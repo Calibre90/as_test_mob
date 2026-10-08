@@ -136,7 +136,7 @@ public class MainActivity extends Activity {
   final HashMap<String,Boolean> checkedFeatures=new HashMap<>();
   String featureKey(FeatureEngine.Feature f){return f.module+"|"+f.id;}
   boolean isChecked(FeatureEngine.Feature f){Boolean b=checkedFeatures.get(featureKey(f));return b!=null&&b;}
-  void syncFeatureChecks(int module){for(FeatureEngine.Feature f:moduleFeatures(module))checkedFeatures.put(featureKey(f),engine.state(f,findRowValueFor(module,f.address)));}
+  void syncFeatureChecks(int module){for(FeatureEngine.Feature f:moduleFeatures(module)){boolean on=engine.state(f,findRowValueFor(module,f.address));checkedFeatures.put(featureKey(f),on);engine.seed(f,on);}}
   String findRowValueFor(int module,String address){AbtCodec.Row r=findRow(module,address);return r==null?"":r.value;}
   ArrayList<FeatureEngine.Feature> moduleFeatures(int module){ArrayList<FeatureEngine.Feature> result=new ArrayList<>();for(FeatureEngine.Feature f:features)if(f.module.equals(modules[module]))result.add(f);return result;}
   int rowCount(int module){return abtRows[module].size();}
@@ -265,7 +265,7 @@ public class MainActivity extends Activity {
   void showFeatureAdmin(){
     LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(14),dp(8),dp(14),dp(8));
     ScrollView scroll=new ScrollView(this);scroll.addView(root);
-    final String[] fields={"ID","Блок IC/BCM/RKE/ABS","Адрес строки","Режим HEX/BITS","Индексы HEX или биты","Значение ON","Номер байта BITS"};
+    final String[] fields={"ID","Блок IC/BCM/RKE/ABS","Адрес строки","Режим HEX/BITS","Индексы HEX или биты","Значение ON","Значение OFF","Номер байта BITS"};
     final EditText[] edits=new EditText[fields.length];
     Spinner selector=new Spinner(this);ArrayList<String> labels=new ArrayList<>();
     for(FeatureEngine.Feature f:features)labels.add(f.id+" · "+f.module+" · "+f.address);
@@ -273,7 +273,7 @@ public class MainActivity extends Activity {
     selector.setAdapter(adapter);root.addView(selector);
     for(int i=0;i<fields.length;i++){EditText ed=new EditText(this);ed.setSingleLine(true);ed.setHint(fields[i]);root.addView(ed);edits[i]=ed;}
     Runnable fill=()->{int n=selector.getSelectedItemPosition();if(n<0||n>=features.size())return;
-      FeatureEngine.Feature f=features.get(n);String[] v={f.id,f.module,f.address,f.mode,f.indices,f.on,String.valueOf(f.byteIndex)};
+      FeatureEngine.Feature f=features.get(n);String[] v={f.id,f.module,f.address,f.mode,f.indices,f.on,f.off,String.valueOf(f.byteIndex)};
       for(int i=0;i<v.length;i++)edits[i].setText(v[i]);
     };
     selector.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
@@ -287,8 +287,8 @@ public class MainActivity extends Activity {
         String id=edits[0].getText().toString().trim(),module=edits[1].getText().toString().trim().toUpperCase(Locale.US);
         String address=edits[2].getText().toString().trim().toUpperCase(Locale.US),mode=edits[3].getText().toString().trim().toUpperCase(Locale.US);
         if(id.isEmpty()||!Arrays.asList(modules).contains(module)||!address.matches("[0-9A-F]{3}-[0-9]{2}-[0-9]{2}")||!Arrays.asList("HEX","BITS").contains(mode))throw new IllegalArgumentException("Проверьте ID, блок, адрес и режим");
-        int bi=Integer.parseInt(edits[6].getText().toString().trim());
-        FeatureEngine.Feature f=new FeatureEngine.Feature(id,module,address,mode,edits[4].getText().toString(),edits[5].getText().toString(),bi);
+        int bi=Integer.parseInt(edits[7].getText().toString().trim());
+        FeatureEngine.Feature f=new FeatureEngine.Feature(id,module,address,mode,edits[4].getText().toString(),edits[5].getText().toString(),edits[6].getText().toString(),bi);
         int n=selector.getSelectedItemPosition();if(!creating[0]&&n>=0&&n<features.size())features.set(n,f);else {features.add(f);creating[0]=false;}
         StudioSettings.save(this,features);engine.reset();checkedFeatures.clear();
         labels.clear();for(FeatureEngine.Feature item:features)labels.add(item.id+" · "+item.module+" · "+item.address);adapter.notifyDataSetChanged();Toast.makeText(this,"Функция сохранена",Toast.LENGTH_SHORT).show();view.invalidate();
@@ -297,7 +297,7 @@ public class MainActivity extends Activity {
     LinearLayout actions=new LinearLayout(this);
     Button save=new Button(this);save.setText("Изменить");actions.addView(save);save.setOnClickListener(v->saveEntry[0].run());
     Button add=new Button(this);add.setText("Добавить");actions.addView(add);add.setOnClickListener(v->{
-      creating[0]=true;for(EditText ed:edits)ed.setText("");edits[6].setText("0");
+      creating[0]=true;for(EditText ed:edits)ed.setText("");edits[7].setText("0");
       new AlertDialog.Builder(this).setTitle("Новая функция").setMessage("Заполните поля и нажмите Изменить для сохранения.").setPositiveButton("OK",null).show();
     });
     Button remove=new Button(this);remove.setText("Удалить");actions.addView(remove);remove.setOnClickListener(v->{

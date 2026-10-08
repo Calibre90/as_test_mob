@@ -127,6 +127,26 @@ public class MainActivity extends Activity {
   }
   final HashMap<String,FeatureEngine> customEngines=new HashMap<>();
   final HashMap<String,String> customRowBaseline=new HashMap<>();
+  String customBaseline(String id,String address){
+    String key=id+"|"+address;
+    if(customRowBaseline.containsKey(key))return customRowBaseline.get(key);
+    String saved=getSharedPreferences("studio_custom_baselines",MODE_PRIVATE).getString(key,null);
+    if(saved!=null)customRowBaseline.put(key,saved);
+    return saved;
+  }
+  void rememberCustomBaseline(String id,String address,String value){
+    String key=id+"|"+address;
+    if(customBaseline(id,address)!=null)return;
+    customRowBaseline.put(key,value);
+    getSharedPreferences("studio_custom_baselines",MODE_PRIVATE).edit().putString(key,value).apply();
+  }
+  void clearCustomBaselines(String id){
+    android.content.SharedPreferences prefs=getSharedPreferences("studio_custom_baselines",MODE_PRIVATE);
+    android.content.SharedPreferences.Editor editor=prefs.edit();
+    for(String key:prefs.getAll().keySet())if(key.startsWith(id+"|"))editor.remove(key);
+    editor.apply();
+    clearCustomBaselines(id);
+  }
   final HashMap<String,Boolean> customChecks=new HashMap<>();
   boolean customChecked(FeatureEngine.Feature feature){
     Boolean cached=customChecks.get(featureKey(feature));
@@ -186,7 +206,7 @@ public class MainActivity extends Activity {
         }
         boolean next=!customChecked(feature);
         String baselineKey=id+"|"+feature.address;
-        if(!customRowBaseline.containsKey(baselineKey))customRowBaseline.put(baselineKey,row.value);
+        rememberCustomBaseline(id,feature.address,row.value);
         if(next){
           for(FeatureEngine.Feature sibling:available){
             if(sibling==feature||!customChecked(sibling))continue;
@@ -513,7 +533,7 @@ public class MainActivity extends Activity {
           txtFit(c,item.optString("address"),24,yy+19,12,Color.BLACK,138);
           String hex=item.optString("value");
           java.util.HashSet<Integer> marked=new java.util.HashSet<>();
-          String baseline=customRowBaseline.get(id+"|"+item.optString("address"));
+          String baseline=customBaseline(id,item.optString("address"));
           if(baseline!=null){
             String oldHex=AbtCodec.norm(baseline),currentHex=AbtCodec.norm(hex);
             for(int k=0;k<currentHex.length();k++)

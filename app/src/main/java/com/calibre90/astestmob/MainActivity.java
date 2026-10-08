@@ -507,7 +507,7 @@ public class MainActivity extends Activity {
     final String[] fields={"ID","Блок IC/BCM/RKE/ABS","Адрес строки","Режим HEX/BITS","Индексы HEX или биты","Значение ON","Значение OFF","Номер байта BITS"};
     final EditText[] edits=new EditText[fields.length];
     Spinner selector=new Spinner(this);ArrayList<String> labels=new ArrayList<>();
-    for(FeatureEngine.Feature f:features)labels.add(f.id+" · "+f.module+" · "+f.address);
+    for(FeatureEngine.Feature f:features)labels.add(f.label+" · "+f.module+" · "+f.address);
     ArrayAdapter<String> adapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,labels);
     selector.setAdapter(adapter);root.addView(selector);
     for(int i=0;i<fields.length;i++){EditText ed=new EditText(this);ed.setSingleLine(true);ed.setHint(fields[i]);root.addView(ed);edits[i]=ed;}
@@ -542,7 +542,7 @@ public class MainActivity extends Activity {
     Button remove=new Button(this);remove.setText("Удалить");actions.addView(remove);remove.setOnClickListener(v->{
       int n=selector.getSelectedItemPosition();if(n<0||n>=features.size())return;
       features.remove(n);StudioSettings.save(this,features);resetAllEngines();
-      labels.clear();for(FeatureEngine.Feature f:features)labels.add(f.id+" · "+f.module+" · "+f.address);adapter.notifyDataSetChanged();view.invalidate();
+      labels.clear();for(FeatureEngine.Feature f:features)labels.add(f.label+" · "+f.module+" · "+f.address);adapter.notifyDataSetChanged();view.invalidate();
     });
     root.addView(actions);
     Button rowsAdmin=new Button(this);rowsAdmin.setText("Редактор строк ABT");root.addView(rowsAdmin);rowsAdmin.setOnClickListener(v->showRowsAdmin());
@@ -605,7 +605,7 @@ public class MainActivity extends Activity {
         android.widget.Spinner featureSelector=new android.widget.Spinner(this);
         ArrayList<String> featureNames=new ArrayList<>();
         featureNames.add("Выберите функцию…");
-        for(int n=0;n<features.size();n++)featureNames.add((n+1)+" · "+features.get(n).id);
+        for(int n=0;n<features.size();n++)featureNames.add((n+1)+" · "+features.get(n).label);
         android.widget.ArrayAdapter<String> featureAdapter=new android.widget.ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,featureNames);
         featureSelector.setAdapter(featureAdapter);
         featureSelector.setBackgroundColor(Color.WHITE);
@@ -616,8 +616,8 @@ public class MainActivity extends Activity {
             chosen[0]=position-1;
             if(chosen[0]<0||chosen[0]>=features.size()){heading.setText("Выберите запись");return;}
             FeatureEngine.Feature f=features.get(chosen[0]);
-            heading.setText((chosen[0]+1)+" · "+f.id);
-            String[] info={f.id,f.module,f.id,f.address,f.mode,"HEX".equalsIgnoreCase(f.mode)?f.indices:"",
+            heading.setText((chosen[0]+1)+" · "+f.label);
+            String[] info={f.id,f.module,f.label,f.address,f.mode,"HEX".equalsIgnoreCase(f.mode)?f.indices:"",
               String.valueOf(f.byteIndex),"BITS".equalsIgnoreCase(f.mode)?f.indices:"",f.on,f.off};
             for(int j=0;j<values.length;j++)values[j].setText(info[j]);
           }
@@ -738,7 +738,7 @@ public class MainActivity extends Activity {
               }
               for(int j=0;j<features.size();j++)if((kind==0||j!=chosen[0])&&features.get(j).id.equals(id)&&features.get(j).module.equals(module)&&features.get(j).address.equals(address))
                 throw new IllegalArgumentException("Функция с таким ID и адресом уже есть");
-              FeatureEngine.Feature updated=new FeatureEngine.Feature(id,module,address,mode,indices,vls[8],vls[9],byteIndex);
+              FeatureEngine.Feature updated=new FeatureEngine.Feature(id,module,address,mode,indices,vls[8],vls[9],byteIndex,vls[2]);
               if(kind==0)features.add(updated);else features.set(chosen[0],updated);
               StudioSettings.save(this,features);resetAllEngines();view.invalidate();redrawRef[0].run();
               Toast.makeText(this,"Настройки функции сохранены",Toast.LENGTH_SHORT).show();

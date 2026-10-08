@@ -120,7 +120,7 @@ public final class CodecSelfTest {
     check(AbtCodec.write(checksumRows,"IC").contains("720G1G11F4071268000"),"export preserves unedited checksum bytes");
     String expectedChanged=AbtCodec.recalc("720-01-01","2B4071268000");
     checksumRows.get(0).value=expectedChanged;
-    check(AbtCodec.write(untouched,"IC").contains("720G1G1"+AbtCodec.norm(expectedChanged)),"export writes already recalculated edited row");
+    check(AbtCodec.write(checksumRows,"IC").contains("720G1G1"+AbtCodec.norm(expectedChanged)),"export writes already recalculated edited row");
     System.out.println("PASS: ABT parse, roundtrip, checksum, index, HEX toggle, restore");
   }
 }

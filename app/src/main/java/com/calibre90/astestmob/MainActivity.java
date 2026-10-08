@@ -22,7 +22,7 @@ public class MainActivity extends Activity {
   int active=0;
   @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(Color.BLACK);getWindow().setNavigationBarColor(Color.BLACK);getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
     for(int i=0;i<4;i++){rows[i]=new ArrayList<>();for(String s:defaults)rows[i].add(s);}
-    view=new StudioView();setContentView(view);
+    initFeatures();view=new StudioView();setContentView(view);
   }
   class StudioView extends View {
     Paint p=new Paint(3); HashMap<String,Bitmap> bitmaps=new HashMap<>();
@@ -93,7 +93,7 @@ public class MainActivity extends Activity {
       for(int i=0;i<count;i++){
         float y=380+i*36.5f;card(c,15,y,370,35,8,false);
         p.setColor(Color.rgb(202,209,219));p.setStrokeWidth(1);c.drawLine(165,y+4,165,y+31,p);
-        String index=ids[active]+"-"+(i==8?"02-01":String.format(java.util.Locale.US,"01-%02d",i+1));
+        String index=i<abtRows[active].size()?abtRows[active].get(i).address:ids[active]+"-"+String.format(java.util.Locale.US,"01-%02d",i+1);
         txt(c,index,28,y+23,14,Color.BLACK,false);
         txt(c,rows[active].get(i),180,y+23,14,Color.BLACK,false);
       }
@@ -107,32 +107,58 @@ public class MainActivity extends Activity {
     @Override public boolean onTouchEvent(MotionEvent e){if(e.getAction()!=MotionEvent.ACTION_UP)return true;float x=e.getX()/sx,y=e.getY()/sy;
       if(y>=127&&y<=183){active=Math.min(3,Math.max(0,(int)((x-12)/95)));invalidate();return true;}
       if(x>=346&&y>=8&&y<=70){admin();return true;}
-      if(y>=277&&y<=367){int i=x>200?2:y>324?1:0;checks[active][i]=!checks[active][i];invalidate();return true;}
+      if(y>=277&&y<=367){int i=x>200?2:y>324?1:0;toggleFeature(i);return true;}
       if(y>=717&&y<=777){if(x<200)open();else save();return true;}
       if(y>=779){about();return true;}
       return true;
     }
   }
+  final FeatureEngine engine=new FeatureEngine();
+  final ArrayList<AbtCodec.Row>[] abtRows=new ArrayList[]{new ArrayList<>(),new ArrayList<>(),new ArrayList<>(),new ArrayList<>()};
+  final HashMap<String,String> original=new HashMap<>();
+  final ArrayList<FeatureEngine.Feature> features=new ArrayList<>();
+  String key(AbtCodec.Row r){return r.module+"|"+r.address;}
+  AbtCodec.Row findRow(int module,String address){for(AbtCodec.Row r:abtRows[module])if(r.address.equals(address))return r;return null;}
+  void initFeatures(){
+    features.add(new FeatureEngine.Feature("rvm","IC","720-01-02","HEX","0","8",0));
+    features.add(new FeatureEngine.Feature("new_feature","IC","720-01-01","HEX","2,3","40",0));
+    features.add(new FeatureEngine.Feature("keyless","IC","720-01-01","HEX","0,1","2B",0));
+  }
+  void toggleFeature(int index){
+    if(active!=0||index>=features.size()){Toast.makeText(this,"Функция для этого блока ещё не настроена",Toast.LENGTH_SHORT).show();return;}
+    FeatureEngine.Feature f=features.get(index);AbtCodec.Row row=findRow(active,f.address);
+    if(row==null){Toast.makeText(this,"Загрузите ABT со строкой "+f.address,Toast.LENGTH_LONG).show();return;}
+    try{boolean next=!checks[active][index];engine.apply(row,f,next,features);checks[active][index]=next;refreshRows(active);view.invalidate();}
+    catch(Exception ex){Toast.makeText(this,"Ошибка функции: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+  }
+  void refreshRows(int module){rows[module].clear();for(AbtCodec.Row row:abtRows[module])rows[module].add(row.value);}
+  void loadRows(String content){
+    HashMap<String,String> byPrefix=new HashMap<>();for(int i=0;i<4;i++)byPrefix.put(ids[i],modules[i]);
+    List<AbtCodec.Row> parsed=AbtCodec.parse(content,byPrefix);
+    if(parsed.isEmpty())throw new IllegalArgumentException("Формат ABT не распознан");
+    for(AbtCodec.Row row:parsed)if(!row.module.equals(modules[active]))throw new IllegalArgumentException("Файл другого блока: "+row.module);
+    abtRows[active].clear();abtRows[active].addAll(parsed);original.clear();engine.reset();
+    for(AbtCodec.Row row:parsed)original.put(key(row),AbtCodec.norm(row.value));
+    for(int i=0;i<3;i++)checks[active][i]=active==0&&engine.state(features.get(i),findRowValue(features.get(i).address));
+    refreshRows(active);loaded[active]=true;view.invalidate();
+  }
+  String findRowValue(String address){AbtCodec.Row row=findRow(active,address);return row==null?"":row.value;}
   boolean[] loaded=new boolean[4];
   void open(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("*/*");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,10);}
   void save(){Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);i.setType("application/octet-stream");i.putExtra(Intent.EXTRA_TITLE,modules[active]+".abt");startActivityForResult(i,11);}
   @Override protected void onActivityResult(int req,int result,Intent data){super.onActivityResult(req,result,data);if(result!=RESULT_OK||data==null||data.getData()==null)return;
     Uri uri=data.getData();
     try{
-      if(req==10){BufferedReader reader=new BufferedReader(new InputStreamReader(getContentResolver().openInputStream(uri)));
-        ArrayList<String> values=new ArrayList<>();String line;
-        while((line=reader.readLine())!=null){String u=line.toUpperCase(java.util.Locale.US).trim();
-          if(!u.matches(".*[0-9A-F]{3}-[0-9A-F]{2}-[0-9A-F]{2}.*"))continue;
-          if(!u.contains(ids[active]+"-"))continue;
-          int pos=u.indexOf(ids[active]+"-");String rest=u.substring(pos+9).replaceAll("[^0-9A-F]"," ");
-          StringBuilder b=new StringBuilder();for(String tok:rest.trim().split("\\s+"))if(tok.matches("[0-9A-F]{2,4}")){if(b.length()>0)b.append(" ");b.append(tok);}
-          if(b.length()>0)values.add(b.toString());
-        }
-        reader.close();if(values.isEmpty()){Toast.makeText(this,"Нет строк блока "+modules[active]+" в файле",Toast.LENGTH_LONG).show();return;}
-        rows[active]=values;loaded[active]=true;view.invalidate();Toast.makeText(this,"Загружено строк: "+values.size(),Toast.LENGTH_SHORT).show();
-      } else if(req==11){OutputStream os=getContentResolver().openOutputStream(uri);if(os==null)return;
-        for(int n=0;n<rows[active].size();n++){String id=ids[active]+"-"+(n==8?"02-01":String.format(java.util.Locale.US,"01-%02d",n+1));os.write((id+" "+rows[active].get(n)+"\\n").getBytes("UTF-8"));}
-        os.close();Toast.makeText(this,"Файл сохранён",Toast.LENGTH_SHORT).show();
+      if(req==10){
+        ByteArrayOutputStream buf=new ByteArrayOutputStream();byte[] chunk=new byte[4096];int n;
+        try(InputStream in=getContentResolver().openInputStream(uri)){while((n=in.read(chunk))!=-1)buf.write(chunk,0,n);}
+        loadRows(new String(buf.toByteArray(),"UTF-8"));
+        Toast.makeText(this,"Загружено строк: "+abtRows[active].size(),Toast.LENGTH_SHORT).show();
+      }else if(req==11){
+        if(abtRows[active].isEmpty())throw new IllegalArgumentException("Сначала откройте ABT");
+        String text=AbtCodec.write(abtRows[active],modules[active]);
+        try(OutputStream out=getContentResolver().openOutputStream(uri)){out.write(text.getBytes("US-ASCII"));}
+        Toast.makeText(this,"ABT блока "+modules[active]+" сохранён",Toast.LENGTH_SHORT).show();
       }
     }catch(Exception ex){Toast.makeText(this,"Ошибка ABT: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
   }

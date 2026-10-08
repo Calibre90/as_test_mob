@@ -24,6 +24,14 @@ public class MainActivity extends Activity {
     for(int i=0;i<4;i++)rows[i]=new ArrayList<>();
     features.addAll(StudioSettings.load(this));setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));view=new StudioView();setContentView(view);
   }
+  int appearanceColor(String key,int fallback){
+    String value=StudioSettings.appearance(this,key,"").trim();
+    if(value.isEmpty())return fallback;
+    try{
+      if(value.matches("(?i)[0-9a-f]{6}"))value="#"+value;
+      return Color.parseColor(value);
+    }catch(IllegalArgumentException ex){return fallback;}
+  }
   class StudioView extends View {
     Paint p=new Paint(3); HashMap<String,Bitmap> bitmaps=new HashMap<>();
     float sx=1,sy=1,offX=0,offY=0;
@@ -66,7 +74,7 @@ public class MainActivity extends Activity {
     }
     @Override protected void onDraw(Canvas actual){super.onDraw(actual);
       sx=getWidth()/400f;sy=getHeight()/860f;actual.save();actual.scale(sx,sy);
-      Canvas c=actual;c.drawColor(Color.BLACK);
+      Canvas c=actual;c.drawColor(appearanceColor("background",Color.BLACK));
       img(c,"header_mazda_no_lock",8,4,384,106);
       card(c,351,12,33,34,9,false);
       // Centered lock drawn as geometry: no emoji font baseline or glyph offsets.
@@ -105,6 +113,8 @@ public class MainActivity extends Activity {
         txtFit(c,labels[i],x+30,y+17,i==0?10.5f:11.5f,Color.BLACK,i==2?140:145);
       }
       card(c,10,376,380,337,13,true);
+      int hexPanelColor=appearanceColor("panel",Color.TRANSPARENT);
+      if(hexPanelColor!=Color.TRANSPARENT){p.setColor(hexPanelColor);p.setStyle(Paint.Style.FILL);c.drawRoundRect(13,379,387,710,10,10,p);}
       int count=Math.min(Math.max(0,rows[active].size()-scrollOffset[active]),9);
       if(rows[active].isEmpty())txt(c,"Нет данных — откройте ABT блока "+modules[active],22,420,12,Color.DKGRAY,false);
       for(int i=0;i<count;i++){

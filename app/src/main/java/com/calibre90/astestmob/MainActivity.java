@@ -262,6 +262,7 @@ public class MainActivity extends Activity {
       public void onItemSelected(android.widget.AdapterView<?> p,View v,int pos,long id){fill.run();}
       public void onNothingSelected(android.widget.AdapterView<?> p){}
     });
+    final boolean[] creating={false};
     final Runnable[] saveEntry=new Runnable[1];
     saveEntry[0]=()->{
       try{
@@ -270,15 +271,15 @@ public class MainActivity extends Activity {
         if(id.isEmpty()||!Arrays.asList(modules).contains(module)||!address.matches("[0-9A-F]{3}-[0-9]{2}-[0-9]{2}")||!Arrays.asList("HEX","BITS").contains(mode))throw new IllegalArgumentException("Проверьте ID, блок, адрес и режим");
         int bi=Integer.parseInt(edits[6].getText().toString().trim());
         FeatureEngine.Feature f=new FeatureEngine.Feature(id,module,address,mode,edits[4].getText().toString(),edits[5].getText().toString(),bi);
-        int n=selector.getSelectedItemPosition();if(n>=0&&n<features.size())features.set(n,f);else features.add(f);
+        int n=selector.getSelectedItemPosition();if(!creating[0]&&n>=0&&n<features.size())features.set(n,f);else {features.add(f);creating[0]=false;}
         StudioSettings.save(this,features);engine.reset();for(boolean[] c:checks)Arrays.fill(c,false);
-        Toast.makeText(this,"Функция сохранена",Toast.LENGTH_SHORT).show();view.invalidate();
+        labels.clear();for(FeatureEngine.Feature item:features)labels.add(item.id+" · "+item.module+" · "+item.address);adapter.notifyDataSetChanged();Toast.makeText(this,"Функция сохранена",Toast.LENGTH_SHORT).show();view.invalidate();
       }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
     };
     LinearLayout actions=new LinearLayout(this);
     Button save=new Button(this);save.setText("Изменить");actions.addView(save);save.setOnClickListener(v->saveEntry[0].run());
     Button add=new Button(this);add.setText("Добавить");actions.addView(add);add.setOnClickListener(v->{
-      for(EditText ed:edits)ed.setText("");edits[6].setText("0");selector.setSelection(-1);
+      creating[0]=true;for(EditText ed:edits)ed.setText("");edits[6].setText("0");
       new AlertDialog.Builder(this).setTitle("Новая функция").setMessage("Заполните поля и нажмите Изменить для сохранения.").setPositiveButton("OK",null).show();
     });
     Button remove=new Button(this);remove.setText("Удалить");actions.addView(remove);remove.setOnClickListener(v->{

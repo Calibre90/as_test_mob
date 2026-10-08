@@ -220,7 +220,7 @@ public class MainActivity extends Activity {
               refreshRows(editingModule);view.invalidate();
               Toast.makeText(this,"Строка сохранена, checksum пересчитан",Toast.LENGTH_SHORT).show();
             }).show();
-        }catch(Exception ex){Toast.makeText(this,"Ошибка HEX: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+        }catch(Exception ex){edit.setError(ex.getMessage());edit.requestFocus();}
       }));
     dialog.show();
   }

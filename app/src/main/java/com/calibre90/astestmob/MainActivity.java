@@ -571,10 +571,29 @@ public class MainActivity extends Activity {
       heading.setTextSize(20);heading.setTextColor(Color.WHITE);heading.setGravity(Gravity.CENTER);
       heading.setBackgroundColor(Color.rgb(84,84,84));heading.setPadding(0,dp(15),0,dp(15));
       panel.addView(heading,new LinearLayout.LayoutParams(-1,-2));
+      if(selected[0]==0){
+        android.widget.ScrollView featureScroll=new android.widget.ScrollView(this);
+        LinearLayout featureList=new LinearLayout(this);featureList.setOrientation(LinearLayout.VERTICAL);
+        featureScroll.addView(featureList);
+        panel.addView(featureScroll,new LinearLayout.LayoutParams(-1,0,1));
+        for(int n=0;n<features.size();n++){
+          FeatureEngine.Feature f=features.get(n);
+          Button entry=new Button(this);entry.setAllCaps(false);
+          entry.setText((n+1)+" · "+f.id);entry.setTextSize(16);
+          featureList.addView(entry,new LinearLayout.LayoutParams(-1,dp(55)));
+          entry.setOnClickListener(v->{
+            heading.setText(f.id+" · "+f.module+" · "+f.address);
+            new AlertDialog.Builder(this).setTitle("Функция: "+f.id)
+              .setMessage("Модуль: "+f.module+"\\nСтрока: "+f.address+"\\nРежим: "+f.mode+"\\nHEX индексы / биты: "+f.indices+"\\nВКЛ: "+f.on+"\\nВЫКЛ: "+f.off)
+              .setNegativeButton("Закрыть",null)
+              .setPositiveButton("Изменить",(d,w)->{dialog.dismiss();showFeatureAdmin();}).show();
+          });
+        }
+      }
       Button edit=new Button(this);edit.setAllCaps(false);
       String[] captions={"Открыть редактор функций и битов","Открыть редактор строк As-Built","Редактировать блок IC / BCM / ABS / RKE","Настроить оформление"};
       edit.setText(captions[selected[0]]);
-      panel.addView(edit,new LinearLayout.LayoutParams(-1,dp(70)));
+      panel.addView(edit,new LinearLayout.LayoutParams(-1,selected[0]==0?dp(52):dp(70)));
       edit.setOnClickListener(v->{
         dialog.dismiss();
         switch(selected[0]){

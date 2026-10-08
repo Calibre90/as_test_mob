@@ -186,7 +186,7 @@ public class MainActivity extends Activity {
   void refreshRows(int module){rows[module].clear();for(AbtCodec.Row row:abtRows[module])rows[module].add(row.value);}
   void loadRows(String content){
     HashMap<String,String> byPrefix=new HashMap<>();for(int i=0;i<4;i++)byPrefix.put(ids[i],modules[i]);
-    List<AbtCodec.Row> parsed=AbtCodec.parse(content,byPrefix);
+    List<AbtCodec.Row> parsed=AbtCodec.parseChecked(content,byPrefix);
     if(parsed.isEmpty())throw new IllegalArgumentException("Формат ABT не распознан");
     ArrayList<AbtCodec.Row> selected=new ArrayList<>();
     for(AbtCodec.Row row:parsed)if(row.module.equals(modules[active]))selected.add(row);

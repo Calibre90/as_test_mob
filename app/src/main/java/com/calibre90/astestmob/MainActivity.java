@@ -202,9 +202,14 @@ public class MainActivity extends Activity {
           if(input.length()!=AbtCodec.norm(row.value).length())throw new IllegalArgumentException("Длина строки должна остаться прежней");
           if(input.equalsIgnoreCase(AbtCodec.norm(row.value))){Toast.makeText(this,"Изменений нет",Toast.LENGTH_SHORT).show();return;}
           String updated=AbtCodec.recalc(row.address,input);
-          row.value=updated;resetCurrentEngine();syncFeatureChecks(active);
-          refreshRows(active);view.invalidate();
-          Toast.makeText(this,"Строка сохранена, checksum пересчитан",Toast.LENGTH_SHORT).show();
+          new AlertDialog.Builder(this).setTitle("Подтвердите изменение "+row.address)
+            .setMessage("Было: "+row.value+"\nСтанет: "+updated+"\n\nКонтрольная сумма будет пересчитана.")
+            .setNegativeButton("Отмена",null)
+            .setPositiveButton("Применить",(confirm,button)->{
+              row.value=updated;resetCurrentEngine();syncFeatureChecks(active);
+              refreshRows(active);view.invalidate();
+              Toast.makeText(this,"Строка сохранена, checksum пересчитан",Toast.LENGTH_SHORT).show();
+            }).show();
         }catch(Exception ex){Toast.makeText(this,"Ошибка HEX: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
       }).show();
   }

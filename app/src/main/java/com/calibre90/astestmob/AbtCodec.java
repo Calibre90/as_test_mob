@@ -40,15 +40,15 @@ public final class AbtCodec {
   private static final Pattern BLOCK=Pattern.compile("^;\\s*Block\\s+(\\d+)",Pattern.CASE_INSENSITIVE);
   public static List<Row> parse(String content,Map<String,String> modules){
     ArrayList<Row> out=new ArrayList<>();int current=-1;
-    for(String source:content.split("\\r?\\n")){
+    for(String source:content.split("\\r\\n|\\n|\\r")){
       String line=source.trim().replace("\uFEFF","").toUpperCase(Locale.US);
       Matcher bm=BLOCK.matcher(line);if(bm.find()){current=Integer.parseInt(bm.group(1));continue;}
       if(line.isEmpty()||line.startsWith(";")||line.startsWith("#")||line.startsWith("//"))continue;
-      String clean=line.replaceAll("[,:=\\t]+"," ").trim();
+      String clean=line.replaceAll("[,:=\\t]+"," ").replaceAll("\\s+"," ").trim();
       Matcher m=ROW.matcher(clean);if(!m.matches()){m=COMPACT.matcher(clean);if(!m.matches())continue;}
       try {
         int b=decodeIndex(m.group(2)),l=decodeIndex(m.group(3));
-        String raw=norm(m.group(4));if(raw.isEmpty()||raw.length()%2!=0)continue;
+        String raw=norm(m.group(4));if(raw.length()<4||raw.length()%2!=0)continue;
         String prefix=m.group(1);
         out.add(new Row(modules.containsKey(prefix)?modules.get(prefix):"OTHER",String.format(Locale.US,"%s-%02d-%02d",prefix,b,l),raw,current>=0?current:b));
       }catch(RuntimeException ignored){}

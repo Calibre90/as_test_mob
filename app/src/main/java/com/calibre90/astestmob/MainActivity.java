@@ -466,7 +466,7 @@ public class MainActivity extends Activity {
     }
     float startY,startX,moduleTabOffset=0;
     @Override public boolean onTouchEvent(MotionEvent e){if(e.getAction()==MotionEvent.ACTION_DOWN){startY=e.getY()/sy;startX=e.getX()/sx;return true;}if(e.getAction()!=MotionEvent.ACTION_UP)return true;float x=e.getX()/sx,y=e.getY()/sy;
-      if(startY>=376&&startY<=713&&y>=376&&y<=713&&Math.abs(y-startY)>18){int delta=Math.round((startY-y)/36.5f);scrollOffset[active]=Math.max(0,Math.min(Math.max(0,rowCount(active)-9),scrollOffset[active]+delta));invalidate();return true;}
+      if(active<4&&startY>=376&&startY<=713&&y>=376&&y<=713&&Math.abs(y-startY)>18){int delta=Math.round((startY-y)/36.5f);scrollOffset[active]=Math.max(0,Math.min(Math.max(0,rowCount(active)-9),scrollOffset[active]+delta));invalidate();return true;}
       if(y>=127&&y<=183){
         int count=4+customModuleCatalog().length();
         float width=count<=4?93.75f:90f;
@@ -1211,7 +1211,7 @@ public class MainActivity extends Activity {
       }
       LinearLayout choices=new LinearLayout(this);choices.setOrientation(LinearLayout.VERTICAL);
       if(selected[0]==2){
-        final int[] moduleSelection={active};
+        final int[] moduleSelection={Math.min(active,modules.length-1)};
         LinearLayout fields=new LinearLayout(this);fields.setOrientation(LinearLayout.VERTICAL);
         panel.addView(fields);
         final EditText[] inputs=new EditText[4];

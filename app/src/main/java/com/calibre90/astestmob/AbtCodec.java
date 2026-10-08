@@ -30,6 +30,13 @@ public final class AbtCodec {
     for(int i=0;i+1<raw.length();i+=2)sum+=Integer.parseInt(raw.substring(i,i+2),16);
     return String.format(Locale.US,"%02X",sum&255);
   }
+  /** Check a FORScan row without modifying its stored bytes. */
+  public static boolean checksumValid(String address,String value){
+    String raw=norm(value);
+    if(raw.length()<4||raw.length()%2!=0)return false;
+    String payload=raw.substring(0,raw.length()-2);
+    return raw.substring(raw.length()-2).equals(checksum(address,payload));
+  }
   public static String recalc(String address,String value){
     String raw=norm(value);if(raw.length()<4||raw.length()%2!=0)return spaced(raw);
     String payload=raw.substring(0,raw.length()-2);

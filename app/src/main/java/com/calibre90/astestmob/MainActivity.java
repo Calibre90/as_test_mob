@@ -687,10 +687,11 @@ public class MainActivity extends Activity {
                 for(AbtCodec.Row candidate:abtRows[moduleIndex])if(candidate.address.equalsIgnoreCase(address)){matching=candidate;break;}
                 if(matching==null)throw new IllegalArgumentException("Строка "+address+" отсутствует в загруженном ABT блока "+module);
                 int hexLength=AbtCodec.norm(matching.value).length();
+                int payloadLength=hexLength-2; // Последний байт — контрольная сумма FORScan.
                 if(mode.equals("BITS")){
-                  if(byteIndex*2+2>hexLength)throw new IllegalArgumentException("Byte (BITS) выходит за пределы строки "+address);
+                  if(byteIndex*2+2>payloadLength)throw new IllegalArgumentException("Byte (BITS) выходит за данные или затрагивает checksum строки "+address);
                 }else{
-                  for(int position:positions)if(position>=hexLength)throw new IllegalArgumentException("HEX индекс "+position+" выходит за пределы строки "+address);
+                  for(int position:positions)if(position>=payloadLength)throw new IllegalArgumentException("HEX индекс "+position+" выходит за данные или затрагивает checksum строки "+address);
                 }
               }
               for(int j=0;j<features.size();j++)if((kind==0||j!=chosen[0])&&features.get(j).id.equals(id)&&features.get(j).module.equals(module)&&features.get(j).address.equals(address))

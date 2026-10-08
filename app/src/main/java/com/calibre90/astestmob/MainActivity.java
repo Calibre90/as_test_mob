@@ -118,10 +118,13 @@ public class MainActivity extends Activity {
         Set<Integer> changed=FeatureEngine.changedPositions(before==null?"":before,value);
         p.setTypeface(Typeface.create("monospace",Typeface.NORMAL));p.setTextSize(13);p.setStyle(Paint.Style.FILL);
         float px=177;int hexIndex=0;
+        c.save();c.clipRect(175,y+2,381,y+33);
         for(int j=0;j<value.length();j++){
           char ch=value.charAt(j);p.setColor(ch!=' '&&changed.contains(hexIndex)?Color.rgb(210,25,35):Color.BLACK);
+          if(px>381)break;
           c.drawText(String.valueOf(ch),px,y+23,p);px+=p.measureText(String.valueOf(ch));if(ch!=' ')hexIndex++;
         }
+        c.restore();
       }
       card(c,10,720,185,52,12,true);centered(c,"Открыть ABT",10,720,185,52,15,Color.BLACK);
       card(c,205,720,185,52,12,true);centered(c,"Сохранить ABT",205,720,185,52,15,Color.BLACK);

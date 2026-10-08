@@ -562,6 +562,7 @@ public class MainActivity extends Activity {
     final String[] names={"Функции и биты","Строки As-Built","Блоки и доступ","Оформление"};
     final Button[] buttons=new Button[4];
     final int[] selected={0};
+    final Runnable[] redrawRef=new Runnable[1];
     Runnable redraw=()->{
       body.removeAllViews();
       LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);
@@ -617,7 +618,7 @@ public class MainActivity extends Activity {
                 .setMessage(features.get(index).id)
                 .setNegativeButton("Отмена",null)
                 .setPositiveButton("Удалить",(d,w)->{
-                  features.remove(index);StudioSettings.save(this,features);resetAllEngines();view.invalidate();redraw.run();
+                  features.remove(index);StudioSettings.save(this,features);resetAllEngines();view.invalidate();redrawRef[0].run();
                 }).show();return;
             }
             if(kind==1&&(chosen[0]<0||chosen[0]>=features.size())){
@@ -639,7 +640,7 @@ public class MainActivity extends Activity {
                 throw new IllegalArgumentException("Функция с таким ID и адресом уже есть");
               FeatureEngine.Feature updated=new FeatureEngine.Feature(id,module,address,mode,indices,vls[8],vls[9],byteIndex);
               if(kind==0)features.add(updated);else features.set(chosen[0],updated);
-              StudioSettings.save(this,features);resetAllEngines();view.invalidate();redraw.run();
+              StudioSettings.save(this,features);resetAllEngines();view.invalidate();redrawRef[0].run();
               Toast.makeText(this,"Настройки функции сохранены",Toast.LENGTH_SHORT).show();
             }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
           });
@@ -660,10 +661,11 @@ public class MainActivity extends Activity {
       });
       for(int i=0;i<buttons.length;i++)buttons[i].setAlpha(i==selected[0]?1f:.72f);
     };
+    redrawRef[0]=redraw;
     for(int i=0;i<names.length;i++){
       final int tab=i;Button b=new Button(this);b.setAllCaps(false);b.setText(names[i]);
       b.setTextSize(12);tabs.addView(b,new LinearLayout.LayoutParams(dp(150),dp(55)));
-      buttons[i]=b;b.setOnClickListener(v->{selected[0]=tab;redraw.run();});
+      buttons[i]=b;b.setOnClickListener(v->{selected[0]=tab;redrawRef[0].run();});
     }
     LinearLayout footer=new LinearLayout(this);
     Button save=new Button(this);save.setText("Сохранить изменения");save.setAllCaps(false);
@@ -675,7 +677,7 @@ public class MainActivity extends Activity {
     dialog.setContentView(root);
     android.view.Window window=dialog.getWindow();
     if(window!=null){window.setBackgroundDrawableResource(android.R.color.transparent);window.setLayout(-1,-1);}
-    redraw.run();dialog.show();
+    redrawRef[0].run();dialog.show();
     window=dialog.getWindow();if(window!=null)window.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.97f),(int)(getResources().getDisplayMetrics().heightPixels*.87f));
   }
   void showAppearanceAdmin(){

@@ -452,7 +452,7 @@ public class MainActivity extends Activity {
           featureY+=25;featureCount++;
         }
         if(featureCount==0)txt(c,"Функции не настроены",24,302,12,Color.DKGRAY,false);
-        if(featureTotal>3)txt(c,"Далее › "+(featureStart+1)+"-"+Math.min(featureTotal,featureStart+3)+"/"+featureTotal,244,365,11,Color.DKGRAY,false);
+        if(featureTotal>3)txt(c,"Далее › "+(featureStart+1)+"-"+Math.min(featureTotal,featureStart+3)+"/"+featureTotal,244,382,11,Color.DKGRAY,false);
         org.json.JSONArray customRows;
         try{customRows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]"));}
         catch(Exception ex){customRows=new org.json.JSONArray();}
@@ -571,7 +571,7 @@ public class MainActivity extends Activity {
         return true;
       }
       if(x>=346&&y>=8&&y<=70){admin();return true;}
-      if(active>=4){if(y>=345&&y<=374&&x>=230){
+      if(active>=4){if(y>=365&&y<=390&&x>=230){
         org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
         if(module!=null){String id=module.optString("id");int total=0;for(FeatureEngine.Feature f:features)if(id.equalsIgnoreCase(f.module))total++;int current=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;customFeaturePage.put(id,current+3>=total?0:current+3);invalidate();}
         return true;

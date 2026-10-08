@@ -180,8 +180,10 @@ public class MainActivity extends Activity {
     if(index<0||index>=abtRows[active].size())return;
     final int inspectedModule=active;
     AbtCodec.Row row=abtRows[inspectedModule].get(index);
+    boolean checksumMatches=AbtCodec.checksumValid(row.address,row.value);
+    String checksumInfo=checksumMatches?"совпадает":"не совпадает. Это диагностическая проверка редактора, а не доказательство ошибки исходного ABT";
     new AlertDialog.Builder(this).setTitle(modules[inspectedModule]+" · "+row.address)
-      .setMessage("Полное значение HEX:\n"+row.value+"\n\nChecksum (алгоритм редактора): "+(AbtCodec.checksumValid(row.address,row.value)?"совпадает":"не совпадает")+"\n\nДля изменения выберите «Редактировать».")
+      .setMessage("Полное значение HEX:\n"+row.value+"\n\nChecksum (алгоритм редактора): "+checksumInfo+"\n\nДля изменения выберите «Редактировать».")
       .setNegativeButton("Закрыть",null)
       .setPositiveButton("Редактировать",(d,w)->{
         if(active!=inspectedModule||index>=abtRows[inspectedModule].size()||abtRows[inspectedModule].get(index)!=row){

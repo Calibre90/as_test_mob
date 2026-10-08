@@ -58,8 +58,11 @@ public class MainActivity extends Activity {
       Canvas c=actual;c.drawColor(Color.BLACK);
       img(c,"header_mazda_no_lock",8,4,384,106);
       card(c,351,12,33,34,9,false);
-      p.setTypeface(Typeface.DEFAULT);p.setTextSize(23);p.setColor(Color.BLACK);p.setStyle(Paint.Style.FILL);
-      c.drawText("🔒",355,38,p);
+      // Centered lock drawn as geometry: no emoji font baseline or glyph offsets.
+      p.setShader(null);p.setColor(Color.rgb(35,40,48));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2.8f);
+      c.drawRoundRect(361.5f,18.5f,373.5f,34.5f,6,6,p);
+      p.setStyle(Paint.Style.FILL);c.drawRoundRect(359.5f,27,375.5f,40,2.5f,2.5f,p);
+      p.setColor(Color.WHITE);c.drawCircle(367.5f,32,1.3f,p);c.drawRect(366.8f,32,368.2f,36,p);
       String[] tabs={"IC","BCM","RKE","ABS"};
       card(c,10,125,380,57,13,false);
       for(int i=0;i<4;i++){

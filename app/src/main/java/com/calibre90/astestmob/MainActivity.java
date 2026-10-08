@@ -202,6 +202,7 @@ public class MainActivity extends Activity {
           String input=edit.getText().toString().replaceAll("\\s+","");
           if(input.isEmpty()||input.length()%2!=0||!input.matches("[0-9A-Fa-f]+"))throw new IllegalArgumentException("Допустимы только полные HEX-байты");
           if(input.length()!=AbtCodec.norm(row.value).length())throw new IllegalArgumentException("Длина строки должна остаться прежней");
+          if(input.length()<=2)throw new IllegalArgumentException("В строке нет байтов данных для редактирования");
           String originalHex=AbtCodec.norm(row.value);
           if(input.substring(0,input.length()-2).equalsIgnoreCase(originalHex.substring(0,originalHex.length()-2))){
             Toast.makeText(this,"Байты данных не изменились; checksum редактировать не нужно",Toast.LENGTH_LONG).show();return;

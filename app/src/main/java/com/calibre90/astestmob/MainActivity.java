@@ -715,6 +715,8 @@ public class MainActivity extends Activity {
                   throw new IllegalArgumentException("В режиме BITS поля ВКЛ/ВЫКЛ оставьте пустыми: приложение устанавливает/снимает указанные биты");
               }else{
                 for(int position:positions)if(position<0)throw new IllegalArgumentException("HEX индекс не может быть отрицательным");
+                if(!vls[8].matches("(?i)[0-9a-f]+")||(!vls[9].isEmpty()&&!vls[9].matches("(?i)[0-9a-f]+")))
+                  throw new IllegalArgumentException("ВКЛ и ВЫКЛ должны содержать только HEX-символы 0–9 и A–F");
                 String on=AbtCodec.norm(vls[8]),off=AbtCodec.norm(vls[9]);
                 if(!on.matches("[0-9A-F]+")||positions.size()!=on.length())
                   throw new IllegalArgumentException("Количество HEX индексов должно совпадать с длиной ВКЛ");

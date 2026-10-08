@@ -817,7 +817,8 @@ public class MainActivity extends Activity {
         android.widget.ScrollView listScroll=new android.widget.ScrollView(this);
         LinearLayout entries=new LinearLayout(this);entries.setOrientation(LinearLayout.VERTICAL);
         listScroll.addView(entries);panel.addView(listScroll,new LinearLayout.LayoutParams(-1,0,1));
-        {\n          for(int n=0;n<rows.size();n++){
+        {
+          for(int n=0;n<rows.size();n++){
             final int index=n;AbtCodec.Row row=rows.get(n);
             Button entry=new Button(this);entry.setAllCaps(false);entry.setText((n+1)+" · "+row.address);
             entries.addView(entry,new LinearLayout.LayoutParams(-1,dp(48)));

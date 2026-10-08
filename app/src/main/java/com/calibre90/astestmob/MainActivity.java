@@ -572,21 +572,34 @@ public class MainActivity extends Activity {
       heading.setBackgroundColor(Color.rgb(84,84,84));heading.setPadding(0,dp(15),0,dp(15));
       panel.addView(heading,new LinearLayout.LayoutParams(-1,-2));
       if(selected[0]==0){
+        final String[] labels={"ID функции","Модуль","Надпись / функция","Строка","Режим HEX/BITS","HEX индексы","Byte (BITS)","Биты","ВКЛ","ВЫКЛ"};
+        final TextView[] values=new TextView[labels.length];
         android.widget.ScrollView featureScroll=new android.widget.ScrollView(this);
-        LinearLayout featureList=new LinearLayout(this);featureList.setOrientation(LinearLayout.VERTICAL);
-        featureScroll.addView(featureList);
-        panel.addView(featureScroll,new LinearLayout.LayoutParams(-1,0,1));
+        LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);
+        featureScroll.addView(content);panel.addView(featureScroll,new LinearLayout.LayoutParams(-1,0,1));
+        LinearLayout fields=new LinearLayout(this);fields.setOrientation(LinearLayout.VERTICAL);
+        for(int j=0;j<labels.length;j++){
+          LinearLayout lineRow=new LinearLayout(this);lineRow.setOrientation(LinearLayout.HORIZONTAL);
+          TextView label=new TextView(this);label.setText(labels[j]);label.setTextSize(12);label.setTextColor(Color.WHITE);
+          label.setGravity(Gravity.CENTER_VERTICAL);lineRow.addView(label,new LinearLayout.LayoutParams(0,dp(42),1));
+          TextView value=new TextView(this);value.setTextColor(Color.BLACK);value.setTextSize(13);
+          value.setGravity(Gravity.CENTER_VERTICAL);value.setPadding(dp(6),0,dp(5),0);
+          value.setBackgroundColor(Color.WHITE);lineRow.addView(value,new LinearLayout.LayoutParams(0,dp(42),1));
+          values[j]=value;fields.addView(lineRow);
+        }
+        content.addView(fields);
+        TextView listLabel=new TextView(this);listLabel.setText("Выберите запись");listLabel.setTextColor(Color.WHITE);
+        listLabel.setGravity(Gravity.CENTER);listLabel.setTextSize(17);listLabel.setPadding(0,dp(8),0,dp(8));
+        content.addView(listLabel);
         for(int n=0;n<features.size();n++){
           FeatureEngine.Feature f=features.get(n);
-          Button entry=new Button(this);entry.setAllCaps(false);
-          entry.setText((n+1)+" · "+f.id);entry.setTextSize(16);
-          featureList.addView(entry,new LinearLayout.LayoutParams(-1,dp(55)));
+          Button entry=new Button(this);entry.setAllCaps(false);entry.setText((n+1)+" · "+f.id);entry.setTextSize(15);
+          content.addView(entry,new LinearLayout.LayoutParams(-1,dp(46)));
           entry.setOnClickListener(v->{
-            heading.setText(f.id+" · "+f.module+" · "+f.address);
-            new AlertDialog.Builder(this).setTitle("Функция: "+f.id)
-              .setMessage("Модуль: "+f.module+"\\nСтрока: "+f.address+"\\nРежим: "+f.mode+"\\nHEX индексы / биты: "+f.indices+"\\nВКЛ: "+f.on+"\\nВЫКЛ: "+f.off)
-              .setNegativeButton("Закрыть",null)
-              .setPositiveButton("Изменить",(d,w)->{dialog.dismiss();showFeatureAdmin();}).show();
+            heading.setText((features.indexOf(f)+1)+" · "+f.id);
+            String[] info={f.id,f.module,f.id,f.address,f.mode,"HEX".equalsIgnoreCase(f.mode)?f.indices:"",
+              String.valueOf(f.byteIndex),"BITS".equalsIgnoreCase(f.mode)?f.indices:"",f.on,f.off};
+            for(int j=0;j<values.length;j++)values[j].setText(info[j]);
           });
         }
       }

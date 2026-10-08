@@ -361,7 +361,7 @@ public class MainActivity extends Activity {
       TextView enter=caption("Войти",15,Color.WHITE,true);enter.setGravity(Gravity.CENTER);
       enter.setBackground(panel(Color.rgb(240,66,67),Color.rgb(169,0,8),9,Color.rgb(255,108,112)));
       place(root,enter,.53f,.75f,.39f,.13f,width,height);
-      enter.setOnClickListener(v->{if(login.getText().toString().equals("admin")&&password.getText().toString().equals("admin")){dialog.dismiss();showFeatureAdmin();}else Toast.makeText(this,"Неверный логин или пароль",Toast.LENGTH_SHORT).show();});
+      enter.setOnClickListener(v->{if(login.getText().toString().equals("admin")&&password.getText().toString().equals("admin")){dialog.dismiss();showAdminTabs();}else Toast.makeText(this,"Неверный логин или пароль",Toast.LENGTH_SHORT).show();});
     }else{
       // Information-only layout without duplicated Mazda logo/banner.
       TextView version=caption("Версия: тестовая сборка",15,Color.DKGRAY,false);
@@ -543,6 +543,71 @@ public class MainActivity extends Activity {
         Toast.makeText(this,"Добавлено шаблонов: "+added,Toast.LENGTH_LONG).show();
       }).show());
     new AlertDialog.Builder(this).setTitle("Админка · функции и биты").setView(scroll).setPositiveButton("Закрыть",null).show();
+  }
+  void showAdminTabs(){
+    final Dialog dialog=new Dialog(this);
+    LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);
+    root.setPadding(dp(12),dp(12),dp(12),dp(10));root.setBackgroundColor(Color.rgb(44,44,44));
+    TextView title=new TextView(this);title.setText("Администрирование интерфейса");
+    title.setTextSize(18);title.setTextColor(Color.WHITE);title.setPadding(dp(8),dp(8),0,dp(14));root.addView(title);
+    View line=new View(this);line.setBackgroundColor(Color.rgb(40,170,210));
+    root.addView(line,new LinearLayout.LayoutParams(-1,dp(2)));
+    android.widget.HorizontalScrollView horizontal=new android.widget.HorizontalScrollView(this);
+    horizontal.setHorizontalScrollBarEnabled(true);
+    LinearLayout tabs=new LinearLayout(this);tabs.setOrientation(LinearLayout.HORIZONTAL);
+    horizontal.addView(tabs);root.addView(horizontal);
+    FrameLayout body=new FrameLayout(this);
+    LinearLayout.LayoutParams bodyParams=new LinearLayout.LayoutParams(-1,0,1);
+    root.addView(body,bodyParams);
+    final String[] names={"Функции и биты","Строки As-Built","Блоки и доступ","Оформление"};
+    final Button[] buttons=new Button[4];
+    final int[] selected={0};
+    Runnable redraw=()->{
+      body.removeAllViews();
+      LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);
+      panel.setPadding(dp(5),dp(8),dp(5),dp(8));
+      body.addView(panel);
+      TextView heading=new TextView(this);heading.setText("Выберите запись");
+      heading.setTextSize(20);heading.setTextColor(Color.WHITE);heading.setGravity(Gravity.CENTER);
+      heading.setBackgroundColor(Color.rgb(84,84,84));heading.setPadding(0,dp(15),0,dp(15));
+      panel.addView(heading,new LinearLayout.LayoutParams(-1,-2));
+      Button edit=new Button(this);edit.setAllCaps(false);
+      String[] captions={"Открыть редактор функций и битов","Открыть редактор строк As-Built","Редактировать блок IC / BCM / ABS / RKE","Настроить оформление"};
+      edit.setText(captions[selected[0]]);
+      panel.addView(edit,new LinearLayout.LayoutParams(-1,dp(70)));
+      edit.setOnClickListener(v->{
+        dialog.dismiss();
+        switch(selected[0]){
+          case 0:showFeatureAdmin();break;
+          case 1:showRowsAdmin();break;
+          case 2:showModuleAdmin();break;
+          default:showAppearanceAdmin();break;
+        }
+      });
+      for(int i=0;i<buttons.length;i++)buttons[i].setAlpha(i==selected[0]?1f:.72f);
+    };
+    for(int i=0;i<names.length;i++){
+      final int tab=i;Button b=new Button(this);b.setAllCaps(false);b.setText(names[i]);
+      b.setTextSize(12);tabs.addView(b,new LinearLayout.LayoutParams(dp(150),dp(55)));
+      buttons[i]=b;b.setOnClickListener(v->{selected[0]=tab;redraw.run();});
+    }
+    LinearLayout footer=new LinearLayout(this);
+    Button save=new Button(this);save.setText("Сохранить изменения");save.setAllCaps(false);
+    footer.addView(save,new LinearLayout.LayoutParams(0,dp(58),1));
+    save.setOnClickListener(v->{StudioSettings.save(this,features);Toast.makeText(this,"Настройки сохранены",Toast.LENGTH_SHORT).show();});
+    Button close=new Button(this);close.setText("Закрыть");close.setAllCaps(false);
+    footer.addView(close,new LinearLayout.LayoutParams(0,dp(58),1));close.setOnClickListener(v->dialog.dismiss());
+    root.addView(footer);
+    dialog.setContentView(root);
+    android.view.Window window=dialog.getWindow();
+    if(window!=null){window.setBackgroundDrawableResource(android.R.color.transparent);window.setLayout(-1,-1);}
+    redraw.run();dialog.show();
+    window=dialog.getWindow();if(window!=null)window.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.97f),(int)(getResources().getDisplayMetrics().heightPixels*.87f));
+  }
+  void showAppearanceAdmin(){
+    new AlertDialog.Builder(this).setTitle("Оформление")
+      .setMessage("Раздел оформления из Run #89 переносится отдельно. Действующие настройки функций и ABT остаются без изменений.")
+      .setPositiveButton("Назад к вкладкам",(d,w)->showAdminTabs()).show();
   }
   void admin(){modal(true);}
   void about(){modal(false);}

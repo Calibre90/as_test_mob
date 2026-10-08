@@ -135,7 +135,7 @@ public class MainActivity extends Activity {
   void resetCurrentEngine(){engines[active].reset();for(FeatureEngine.Feature f:moduleFeatures(active))checkedFeatures.remove(featureKey(f));}
   final ArrayList<AbtCodec.Row>[] abtRows=new ArrayList[]{new ArrayList<>(),new ArrayList<>(),new ArrayList<>(),new ArrayList<>()};
   final HashMap<String,String> original=new HashMap<>();
-  final ArrayList<AbtCodec.Row>[] importedRows=new ArrayList[]{new ArrayList<>(),new ArrayList<>(),new ArrayList<>(),new ArrayList<>()};
+  final AbtSnapshot[] importedSnapshots=new AbtSnapshot[4];
   final int[] scrollOffset={0,0,0,0};
   final int[] featurePage={0,0,0,0};
   final HashMap<String,Boolean> checkedFeatures=new HashMap<>();
@@ -199,8 +199,7 @@ public class MainActivity extends Activity {
       if(hex.length()<4||hex.length()%2!=0)throw new IllegalArgumentException("Неверная длина строки "+row.address);
     }
     for(AbtCodec.Row old:abtRows[active])original.remove(key(old));
-    importedRows[active].clear();
-    for(AbtCodec.Row row:selected)importedRows[active].add(new AbtCodec.Row(row.module,row.address,row.value,row.block));
+    importedSnapshots[active]=new AbtSnapshot(selected);
     abtRows[active].clear();abtRows[active].addAll(selected);scrollOffset[active]=0;
     for(AbtCodec.Row row:selected)original.put(key(row),AbtCodec.norm(row.value));
     resetCurrentEngine();
@@ -338,22 +337,14 @@ public class MainActivity extends Activity {
   void restoreCurrentModule(){
     if(!loaded[active]){Toast.makeText(this,"Сначала откройте ABT блока "+modules[active],Toast.LENGTH_LONG).show();return;}
     final int module=active;
-    HashMap<String,String> current=new HashMap<>();
-    for(AbtCodec.Row row:abtRows[module])current.put(row.address,AbtCodec.norm(row.value));
-    int changed=0,removed=0;
-    for(AbtCodec.Row row:importedRows[module]){
-      String now=current.remove(row.address);
-      if(now==null)removed++;
-      else if(!now.equals(AbtCodec.norm(row.value)))changed++;
-    }
-    final int added=current.size();
+    final int[] diff=importedSnapshots[module].differences(abtRows[module]);
     new AlertDialog.Builder(this).setTitle("Восстановить исходный ABT?")
-      .setMessage("Блок "+modules[module]+": изменено HEX — "+changed+", добавлено строк — "+added+", удалено строк — "+removed+". Восстановить исходный файл целиком? Остальные блоки не затрагиваются.")
+      .setMessage("Блок "+modules[module]+": изменено HEX — "+diff[0]+", добавлено строк — "+diff[1]+", удалено строк — "+diff[2]+". Восстановить исходный файл целиком? Остальные блоки не затрагиваются.")
       .setNegativeButton("Отмена",null)
       .setPositiveButton("Восстановить",(d,w)->{
         for(AbtCodec.Row row:abtRows[module])original.remove(key(row));
         abtRows[module].clear();
-        for(AbtCodec.Row row:importedRows[module]){
+        for(AbtCodec.Row row:importedSnapshots[module].restore()){
           AbtCodec.Row copy=new AbtCodec.Row(row.module,row.address,row.value,row.block);
           abtRows[module].add(copy);
           original.put(key(copy),AbtCodec.norm(copy.value));

@@ -334,9 +334,18 @@ public class MainActivity extends Activity {
       }
       if(rows.isEmpty())throw new IllegalArgumentException("Нет строк для сохранения");
       String content=AbtCodec.write(rows,id);
+      byte[] payload=content.getBytes("UTF-8");
+      if(payload.length==0)throw new IOException("Сформирован пустой ABT-файл");
+      // Validate the complete payload before opening the destination for writing.
+      java.util.HashMap<String,String> verifyMapping=new java.util.HashMap<>();
+      verifyMapping.put(prefix,id);
+      java.util.List<AbtCodec.Row> verified=AbtCodec.requireModule(
+        AbtCodec.parseChecked(content,verifyMapping),id);
+      if(verified.size()!=rows.size())throw new IOException("Проверка сформированного ABT не пройдена");
       try(java.io.OutputStream out=getContentResolver().openOutputStream(uri)){
         if(out==null)throw new IOException("Файл недоступен");
-        out.write(content.getBytes("UTF-8"));
+        out.write(payload);
+        out.flush();
       }
       Toast.makeText(this,"Сохранено строк: "+rows.size(),Toast.LENGTH_LONG).show();
     }

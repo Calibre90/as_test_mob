@@ -646,6 +646,77 @@ public class MainActivity extends Activity {
           });
         }
       }
+      if(selected[0]==1){
+        final int rowsModule=active;
+        final ArrayList<AbtCodec.Row> rows=abtRows[rowsModule];
+        final int[] chosen={-1};
+        LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);
+        panel.addView(form);
+        final EditText[] inputs=new EditText[3];
+        String[] labels={"Модуль","Строка","Значение"};
+        for(int k=0;k<3;k++){
+          LinearLayout field=new LinearLayout(this);field.setOrientation(LinearLayout.HORIZONTAL);
+          TextView label=new TextView(this);label.setText(labels[k]);label.setTextColor(Color.WHITE);
+          label.setGravity(Gravity.CENTER_VERTICAL);field.addView(label,new LinearLayout.LayoutParams(0,dp(52),1));
+          EditText input=new EditText(this);input.setSingleLine(true);input.setTextSize(14);input.setTextColor(Color.BLACK);
+          input.setBackgroundColor(Color.WHITE);input.setPadding(dp(7),0,dp(5),0);
+          field.addView(input,new LinearLayout.LayoutParams(0,dp(52),1));form.addView(field);inputs[k]=input;
+        }
+        inputs[0].setText(modules[rowsModule]);inputs[0].setEnabled(false);
+        android.widget.ScrollView listScroll=new android.widget.ScrollView(this);
+        LinearLayout entries=new LinearLayout(this);entries.setOrientation(LinearLayout.VERTICAL);
+        listScroll.addView(entries);panel.addView(listScroll,new LinearLayout.LayoutParams(-1,0,1));
+        if(!loaded[rowsModule]){
+          TextView notice=new TextView(this);notice.setText("Откройте ABT блока "+modules[rowsModule]+" для редактирования строк");
+          notice.setTextColor(Color.WHITE);entries.addView(notice);
+        }else{
+          for(int n=0;n<rows.size();n++){
+            final int index=n;AbtCodec.Row row=rows.get(n);
+            Button entry=new Button(this);entry.setAllCaps(false);entry.setText((n+1)+" · "+row.address);
+            entries.addView(entry,new LinearLayout.LayoutParams(-1,dp(48)));
+            entry.setOnClickListener(v->{chosen[0]=index;heading.setText(row.address);
+              inputs[1].setText(row.address);inputs[2].setText(row.value);});
+          }
+        }
+        LinearLayout actions=new LinearLayout(this);panel.addView(actions);
+        String[] labelsActions={"Добавить","Изменить","Удалить"};
+        for(int action=0;action<3;action++){
+          final int kind=action;Button button=new Button(this);button.setText(labelsActions[action]);button.setAllCaps(false);
+          button.setTextSize(12);actions.addView(button,new LinearLayout.LayoutParams(0,dp(52),1));
+          button.setOnClickListener(v->{
+            if(!loaded[rowsModule]||active!=rowsModule){
+              Toast.makeText(this,"Откройте ABT нужного блока",Toast.LENGTH_LONG).show();return;
+            }
+            if(kind==2){
+              if(chosen[0]<0||chosen[0]>=rows.size()){Toast.makeText(this,"Выберите строку",Toast.LENGTH_SHORT).show();return;}
+              final int index=chosen[0];
+              new AlertDialog.Builder(this).setTitle("Удалить строку "+rows.get(index).address+"?")
+                .setNegativeButton("Отмена",null).setPositiveButton("Удалить",(d,w)->{
+                  rows.remove(index);resetCurrentEngine();syncFeatureChecks(rowsModule);refreshRows(rowsModule);view.invalidate();redrawRef[0].run();
+                }).show();return;
+            }
+            try{
+              String addr=inputs[1].getText().toString().trim().toUpperCase(Locale.US);
+              String hex=inputs[2].getText().toString().replaceAll("\\s+","").toUpperCase(Locale.US);
+              if(!addr.matches(ids[rowsModule]+"-[0-9]{2}-[0-9]{2}"))throw new IllegalArgumentException("Адрес не принадлежит текущему блоку");
+              if(hex.length()<4||hex.length()%2!=0||!hex.matches("[0-9A-F]+"))throw new IllegalArgumentException("Неверное значение HEX");
+              String updated=AbtCodec.recalc(addr,hex);
+              if(kind==0){
+                for(AbtCodec.Row existing:rows)if(existing.address.equals(addr))throw new IllegalArgumentException("Строка уже существует");
+                rows.add(new AbtCodec.Row(modules[rowsModule],addr,updated,Integer.parseInt(addr.split("-")[1])));
+              }else{
+                if(chosen[0]<0||chosen[0]>=rows.size())throw new IllegalArgumentException("Выберите строку");
+                AbtCodec.Row existing=rows.get(chosen[0]);
+                if(!existing.address.equals(addr))throw new IllegalArgumentException("Адрес менять нельзя — добавьте новую строку");
+                if(AbtCodec.norm(existing.value).length()!=hex.length())throw new IllegalArgumentException("Длина HEX должна остаться прежней");
+                existing.value=updated;
+              }
+              resetCurrentEngine();syncFeatureChecks(rowsModule);refreshRows(rowsModule);view.invalidate();redrawRef[0].run();
+              Toast.makeText(this,"Изменения в памяти; сохраните ABT в файл",Toast.LENGTH_LONG).show();
+            }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+          });
+        }
+      }
       Button edit=new Button(this);edit.setAllCaps(false);
       String[] captions={"Открыть редактор функций и битов","Открыть редактор строк As-Built","Редактировать блок IC / BCM / ABS / RKE","Настроить оформление"};
       edit.setText(captions[selected[0]]);

@@ -773,7 +773,7 @@ public class MainActivity extends Activity {
                   throw new IllegalArgumentException("Количество HEX индексов должно совпадать с длиной ВЫКЛ");
               }
               int moduleIndex=java.util.Arrays.asList(modules).indexOf(module);
-              if(moduleIndex>=0&&loaded[moduleIndex]){
+              if(moduleIndex>=0&&!abtRows[moduleIndex].isEmpty()){
                 AbtCodec.Row matching=null;
                 for(AbtCodec.Row candidate:abtRows[moduleIndex])if(candidate.address.equalsIgnoreCase(address)){matching=candidate;break;}
                 if(matching==null)throw new IllegalArgumentException("Строка "+address+" отсутствует в загруженном ABT блока "+module);

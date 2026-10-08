@@ -206,6 +206,9 @@ public class MainActivity extends Activity {
       .setPositiveButton("Сохранить",null).create();
     dialog.setOnShowListener(ignored->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(button->{
         try{
+          if(active!=editingModule||!abtRows[editingModule].contains(row)||!row.value.equals(startingValue)){
+            edit.setError("Строка или блок изменились. Откройте редактор повторно.");return;
+          }
           String input=edit.getText().toString().replaceAll("\\s+","");
           if(input.isEmpty()||input.length()%2!=0||!input.matches("[0-9A-Fa-f]+"))throw new IllegalArgumentException("Допустимы только полные HEX-байты");
           if(input.length()!=AbtCodec.norm(row.value).length())throw new IllegalArgumentException("Длина строки должна остаться прежней");

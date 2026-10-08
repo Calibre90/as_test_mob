@@ -20,6 +20,11 @@ public final class StudioSettings {
     out.add(new FeatureEngine.Feature("rvm","IC","720-01-02","HEX","0","8","0",0));
     out.add(new FeatureEngine.Feature("new_feature","IC","720-01-01","HEX","2,3","40","00",0));
     out.add(new FeatureEngine.Feature("keyless","IC","720-01-01","HEX","0,1","2B","1F",0));
+    out.add(new FeatureEngine.Feature("lights","BCM","726-01-01","HEX","4,5","80","00",0));
+    out.add(new FeatureEngine.Feature("turn","BCM","726-02-01","HEX","1","8","0",0));
+    out.add(new FeatureEngine.Feature("freq","RKE","731-01-01","HEX","2,3","40","00",0));
+    out.add(new FeatureEngine.Feature("transmission","RKE","731-01-01","HEX","4,5","38","00",0));
+    out.add(new FeatureEngine.Feature("abs_keyless","ABS","760-01-01","HEX","2","8","0",0));
     return out;
   }
   public static String moduleName(Context ctx,String id,String fallback){

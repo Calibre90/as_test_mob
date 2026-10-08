@@ -121,6 +121,21 @@ public final class CodecSelfTest {
     String expectedChanged=AbtCodec.recalc("720-01-01","2B4071268000");
     checksumRows.get(0).value=expectedChanged;
     check(AbtCodec.write(checksumRows,"IC").contains("720G1G1"+AbtCodec.norm(expectedChanged)),"export writes already recalculated edited row");
+    List<AbtCodec.Row> cycle=AbtCodec.parse("720G1G11F407126809F\r\n720G1G2000EF255E766\r\n",modules);
+    AbtSnapshot cycleSnapshot=new AbtSnapshot(cycle);
+    FeatureEngine cycleEngine=new FeatureEngine();
+    FeatureEngine.Feature cycleFeature=new FeatureEngine.Feature("cycle-keyless","IC","720-01-01","HEX","0,1","2B",0);
+    cycleEngine.apply(cycle.get(0),cycleFeature,true,Arrays.asList(cycleFeature));
+    String modifiedHex=AbtCodec.norm(cycle.get(0).value);
+    check(modifiedHex.startsWith("2B"),"full cycle feature modifies HEX");
+    String cycleExport=AbtCodec.write(cycle,"IC");
+    List<AbtCodec.Row> cycleReopened=AbtCodec.parseChecked(cycleExport,modules);
+    check(cycleReopened.size()==2,"full cycle reimport row count");
+    check(AbtCodec.norm(cycleReopened.get(0).value).equals(modifiedHex),"full cycle reimport retains modified HEX");
+    check(Arrays.equals(cycleSnapshot.differences(cycleReopened),new int[]{1,0,0}),"full cycle snapshot detects modification");
+    List<AbtCodec.Row> cycleRestored=cycleSnapshot.restore();
+    check(AbtCodec.norm(cycleRestored.get(0).value).equals("1F407126809F"),"full cycle restores original HEX");
+    check(Arrays.equals(cycleSnapshot.differences(cycleRestored),new int[]{0,0,0}),"full cycle restored clean");
     System.out.println("PASS: ABT parse, roundtrip, checksum, index, HEX toggle, restore");
   }
 }

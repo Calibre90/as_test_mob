@@ -1183,7 +1183,17 @@ public class MainActivity extends Activity {
             choices[modules.length+i]=entry==null?"":entry.optString("id");
           }
           new AlertDialog.Builder(this).setTitle("Модуль As-Built")
-            .setItems(choices,(d,which)->values[1].setText(choices[which])).show();
+            .setItems(choices,(d,which)->{
+              values[1].setText(choices[which]);
+              if(which>=modules.length){
+                org.json.JSONObject entry=catalog.optJSONObject(which-modules.length);
+                if(entry!=null){
+                  String prefix=entry.optString("address");
+                  String current=values[3].getText().toString().trim().toUpperCase(Locale.US);
+                  if(!current.startsWith(prefix+"-"))values[3].setText(prefix+"-01-01");
+                }
+              }
+            }).show();
         });
         values[4].setFocusable(false);
         values[4].setClickable(true);

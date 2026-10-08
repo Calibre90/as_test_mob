@@ -22,7 +22,7 @@ public class MainActivity extends Activity {
   int active=0;
   @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(Color.BLACK);getWindow().setNavigationBarColor(Color.BLACK);getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
     for(int i=0;i<4;i++){rows[i]=new ArrayList<>();for(String s:defaults)rows[i].add(s);}
-    initFeatures();view=new StudioView();setContentView(view);
+    features.addAll(StudioSettings.load(this));view=new StudioView();setContentView(view);
   }
   class StudioView extends View {
     Paint p=new Paint(3); HashMap<String,Bitmap> bitmaps=new HashMap<>();
@@ -134,7 +134,7 @@ public class MainActivity extends Activity {
     features.add(new FeatureEngine.Feature("keyless","IC","720-01-01","HEX","0,1","2B",0));
   }
   void toggleFeature(int index){
-    if(active!=0||index>=features.size()){Toast.makeText(this,"Функция для этого блока ещё не настроена",Toast.LENGTH_SHORT).show();return;}
+    if(index>=features.size()||!features.get(index).module.equals(modules[active])){Toast.makeText(this,"Функция для этого блока ещё не настроена",Toast.LENGTH_SHORT).show();return;}
     FeatureEngine.Feature f=features.get(index);AbtCodec.Row row=findRow(active,f.address);
     if(row==null){Toast.makeText(this,"Загрузите ABT со строкой "+f.address,Toast.LENGTH_LONG).show();return;}
     try{boolean next=!checks[active][index];engine.apply(row,f,next,features);checks[active][index]=next;refreshRows(active);view.invalidate();}
@@ -148,7 +148,7 @@ public class MainActivity extends Activity {
     for(AbtCodec.Row row:parsed)if(!row.module.equals(modules[active]))throw new IllegalArgumentException("Файл другого блока: "+row.module);
     abtRows[active].clear();abtRows[active].addAll(parsed);original.clear();engine.reset();
     for(AbtCodec.Row row:parsed)original.put(key(row),AbtCodec.norm(row.value));
-    for(int i=0;i<3;i++)checks[active][i]=active==0&&engine.state(features.get(i),findRowValue(features.get(i).address));
+    for(int i=0;i<3;i++)checks[active][i]=i<features.size()&&features.get(i).module.equals(modules[active])&&engine.state(features.get(i),findRowValue(features.get(i).address));
     refreshRows(active);loaded[active]=true;view.invalidate();
   }
   String findRowValue(String address){AbtCodec.Row row=findRow(active,address);return row==null?"":row.value;}
@@ -222,7 +222,7 @@ public class MainActivity extends Activity {
       TextView enter=caption("Войти",15,Color.WHITE,true);enter.setGravity(Gravity.CENTER);
       enter.setBackground(panel(Color.rgb(240,66,67),Color.rgb(169,0,8),9,Color.rgb(255,108,112)));
       place(root,enter,.53f,.75f,.39f,.13f,width,height);
-      enter.setOnClickListener(v->{Toast.makeText(this,"Функции админки ещё не перенесены",Toast.LENGTH_LONG).show();dialog.dismiss();});
+      enter.setOnClickListener(v->{if(login.getText().toString().equals("admin")&&password.getText().toString().equals("admin")){dialog.dismiss();showFeatureAdmin();}else Toast.makeText(this,"Неверный логин или пароль",Toast.LENGTH_SHORT).show();});
     }else{
       // Information-only layout without duplicated Mazda logo/banner.
       TextView version=caption("Версия: тестовая сборка",15,Color.DKGRAY,false);
@@ -243,6 +243,51 @@ public class MainActivity extends Activity {
       window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
       window.setDimAmount(.65f);window.setLayout(width,height);
     }
+  }
+  void showFeatureAdmin(){
+    LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(14),dp(8),dp(14),dp(8));
+    ScrollView scroll=new ScrollView(this);scroll.addView(root);
+    final String[] fields={"ID","Блок IC/BCM/RKE/ABS","Адрес строки","Режим HEX/BITS","Индексы HEX или биты","Значение ON","Номер байта BITS"};
+    final EditText[] edits=new EditText[fields.length];
+    Spinner selector=new Spinner(this);ArrayList<String> labels=new ArrayList<>();
+    for(FeatureEngine.Feature f:features)labels.add(f.id+" · "+f.module+" · "+f.address);
+    ArrayAdapter<String> adapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,labels);
+    selector.setAdapter(adapter);root.addView(selector);
+    for(int i=0;i<fields.length;i++){EditText ed=new EditText(this);ed.setSingleLine(true);ed.setHint(fields[i]);root.addView(ed);edits[i]=ed;}
+    Runnable fill=()->{int n=selector.getSelectedItemPosition();if(n<0||n>=features.size())return;
+      FeatureEngine.Feature f=features.get(n);String[] v={f.id,f.module,f.address,f.mode,f.indices,f.on,String.valueOf(f.byteIndex)};
+      for(int i=0;i<v.length;i++)edits[i].setText(v[i]);
+    };
+    selector.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
+      public void onItemSelected(android.widget.AdapterView<?> p,View v,int pos,long id){fill.run();}
+      public void onNothingSelected(android.widget.AdapterView<?> p){}
+    });
+    final Runnable[] saveEntry=new Runnable[1];
+    saveEntry[0]=()->{
+      try{
+        String id=edits[0].getText().toString().trim(),module=edits[1].getText().toString().trim().toUpperCase(Locale.US);
+        String address=edits[2].getText().toString().trim().toUpperCase(Locale.US),mode=edits[3].getText().toString().trim().toUpperCase(Locale.US);
+        if(id.isEmpty()||!Arrays.asList(modules).contains(module)||!address.matches("[0-9A-F]{3}-[0-9]{2}-[0-9]{2}")||!Arrays.asList("HEX","BITS").contains(mode))throw new IllegalArgumentException("Проверьте ID, блок, адрес и режим");
+        int bi=Integer.parseInt(edits[6].getText().toString().trim());
+        FeatureEngine.Feature f=new FeatureEngine.Feature(id,module,address,mode,edits[4].getText().toString(),edits[5].getText().toString(),bi);
+        int n=selector.getSelectedItemPosition();if(n>=0&&n<features.size())features.set(n,f);else features.add(f);
+        StudioSettings.save(this,features);engine.reset();for(boolean[] c:checks)Arrays.fill(c,false);
+        Toast.makeText(this,"Функция сохранена",Toast.LENGTH_SHORT).show();view.invalidate();
+      }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+    };
+    LinearLayout actions=new LinearLayout(this);
+    Button save=new Button(this);save.setText("Изменить");actions.addView(save);save.setOnClickListener(v->saveEntry[0].run());
+    Button add=new Button(this);add.setText("Добавить");actions.addView(add);add.setOnClickListener(v->{
+      for(EditText ed:edits)ed.setText("");edits[6].setText("0");selector.setSelection(-1);
+      new AlertDialog.Builder(this).setTitle("Новая функция").setMessage("Заполните поля и нажмите Изменить для сохранения.").setPositiveButton("OK",null).show();
+    });
+    Button remove=new Button(this);remove.setText("Удалить");actions.addView(remove);remove.setOnClickListener(v->{
+      int n=selector.getSelectedItemPosition();if(n<0||n>=features.size())return;
+      features.remove(n);StudioSettings.save(this,features);engine.reset();for(boolean[] c:checks)Arrays.fill(c,false);
+      labels.clear();for(FeatureEngine.Feature f:features)labels.add(f.id+" · "+f.module+" · "+f.address);adapter.notifyDataSetChanged();view.invalidate();
+    });
+    root.addView(actions);
+    new AlertDialog.Builder(this).setTitle("Админка · функции и биты").setView(scroll).setPositiveButton("Закрыть",null).show();
   }
   void admin(){modal(true);}
   void about(){modal(false);}

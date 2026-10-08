@@ -1,7 +1,7 @@
 name: Build APK
 on:
   push:
-    branches: [ main, run35-functional-port ]
+    branches: [ main, run35-functional-port, fix-run203-module-picker ]
   workflow_dispatch:
 jobs:
   build:

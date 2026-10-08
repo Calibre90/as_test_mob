@@ -760,6 +760,37 @@ public class MainActivity extends Activity {
           view.invalidate();Toast.makeText(this,"Блок "+modules[m]+" сохранён",Toast.LENGTH_SHORT).show();
         });
       }
+      if(selected[0]==3){
+        final String[] keys={"title","background","panel","feature_columns","open_text","save_text","admin_text","author_text","ready_text"};
+        final String[] labels={"Название окна","Фон приложения","Фон HEX-блока","Колонки функций","Кнопка открытия","Кнопка сохранения","Кнопка Admin","Кто сделал приложение","Текст статуса"};
+        final String[] defaults={"Mazda 6 GH As-Built Studio","","","3","Открыть ABT","Сохранить ABT","Админка","Кто сделал приложение","Готово"};
+        android.widget.ScrollView appearanceScroll=new android.widget.ScrollView(this);
+        LinearLayout appearanceFields=new LinearLayout(this);appearanceFields.setOrientation(LinearLayout.VERTICAL);
+        appearanceScroll.addView(appearanceFields);panel.addView(appearanceScroll,new LinearLayout.LayoutParams(-1,0,1));
+        final EditText[] appearanceInputs=new EditText[keys.length];
+        for(int k=0;k<keys.length;k++){
+          TextView label=new TextView(this);label.setText(labels[k]);label.setTextColor(Color.WHITE);label.setTextSize(13);
+          appearanceFields.addView(label);
+          EditText input=new EditText(this);input.setSingleLine(true);input.setTextSize(14);
+          input.setText(StudioSettings.appearance(this,keys[k],defaults[k]));
+          input.setBackgroundColor(Color.WHITE);input.setTextColor(Color.BLACK);
+          appearanceFields.addView(input,new LinearLayout.LayoutParams(-1,dp(46)));appearanceInputs[k]=input;
+        }
+        TextView note=new TextView(this);note.setText("Настройки сохраняются отдельно. Применение всех полей к оболочке выполняется на следующем этапе.");
+        note.setTextColor(Color.LTGRAY);appearanceFields.addView(note);
+        Button saveAppearance=new Button(this);saveAppearance.setText("Сохранить оформление");saveAppearance.setAllCaps(false);
+        panel.addView(saveAppearance,new LinearLayout.LayoutParams(-1,dp(55)));
+        saveAppearance.setOnClickListener(v->{
+          try{
+            java.util.HashMap<String,String> changes=new java.util.HashMap<>();
+            for(int k=0;k<keys.length;k++)changes.put(keys[k],appearanceInputs[k].getText().toString());
+            int columns=Integer.parseInt(changes.get("feature_columns").trim());
+            if(columns<1||columns>4)throw new IllegalArgumentException("Колонки функций: от 1 до 4");
+            StudioSettings.saveAppearance(this,changes);
+            Toast.makeText(this,"Оформление сохранено",Toast.LENGTH_SHORT).show();
+          }catch(Exception ex){Toast.makeText(this,"Ошибка оформления: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+        });
+      }
       Button edit=new Button(this);edit.setAllCaps(false);
       String[] captions={"Открыть редактор функций и битов","Открыть редактор строк As-Built","Редактировать блок IC / BCM / ABS / RKE","Настроить оформление"};
       edit.setText(captions[selected[0]]);

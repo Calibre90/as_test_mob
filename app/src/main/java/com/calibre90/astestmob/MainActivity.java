@@ -205,7 +205,6 @@ public class MainActivity extends Activity {
           customEngines.put(id,engine);
         }
         boolean next=!customChecked(feature);
-        String baselineKey=id+"|"+feature.address;
         rememberCustomBaseline(id,feature.address,row.value);
         if(next){
           for(FeatureEngine.Feature sibling:available){
@@ -370,7 +369,7 @@ public class MainActivity extends Activity {
   }
   void resetCustomFeatureState(String id){
     customEngines.remove(id);
-    for(String key:new java.util.ArrayList<>(customRowBaseline.keySet()))if(key.startsWith(id+"|"))customRowBaseline.remove(key);
+    clearCustomBaselines(id);
     try{
       org.json.JSONArray rows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]"));
       int offset=customScroll.containsKey(id)?customScroll.get(id):0;

@@ -128,7 +128,17 @@ public class MainActivity extends Activity {
   final HashMap<String,FeatureEngine> customEngines=new HashMap<>();
   final HashMap<String,Boolean> customChecks=new HashMap<>();
   boolean customChecked(FeatureEngine.Feature feature){
-    Boolean state=customChecks.get(featureKey(feature));return state!=null&&state;
+    Boolean cached=customChecks.get(featureKey(feature));
+    if(cached!=null)return cached;
+    try{
+      org.json.JSONArray entries=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(feature.module,"[]"));
+      for(int i=0;i<entries.length();i++){
+        org.json.JSONObject item=entries.optJSONObject(i);
+        if(item!=null&&feature.address.equalsIgnoreCase(item.optString("address")))
+          return new FeatureEngine().state(feature,item.optString("value"));
+      }
+    }catch(Exception ignored){}
+    return false;
   }
   void toggleCustomFeature(int index){
     org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);

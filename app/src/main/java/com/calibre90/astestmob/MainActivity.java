@@ -79,11 +79,13 @@ public class MainActivity extends Activity {
       p.setColor(Color.rgb(207,213,221));p.setStrokeWidth(1);c.drawLine(203,284,203,365,p);c.drawLine(15,325,203,325,p);
       String[] labels={"","",""};
       ArrayList<FeatureEngine.Feature> shown=moduleFeatures(active);
-      for(int i=0;i<3&&i<shown.size();i++)labels[i]=shown.get(i).id;
+      int page=featurePage[active];
+      for(int i=0;i<3&&page+i<shown.size();i++)labels[i]=shown.get(page+i).id;
+      if(shown.size()>3)txt(c,(page+1)+"–"+Math.min(page+3,shown.size())+"/"+shown.size()+"  ›",288,360,10,Color.rgb(150,0,0),true);
       for(int i=0;i<3;i++){
         float x=i==2?213:20,y=i==0?288:i==1?333:288;
         card(c,x,y,25,25,5,false);
-        if(checks[active][i]){
+        if(page+i<shown.size()&&isChecked(shown.get(page+i))){
           rect(c,Color.rgb(210,28,37),x+4,y+4,17,17,3);
           p.setColor(Color.WHITE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2.3f);
           Path mark=new Path();mark.moveTo(x+5,y+12);mark.lineTo(x+10,y+17);mark.lineTo(x+20,y+6);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
@@ -120,7 +122,7 @@ public class MainActivity extends Activity {
       if(startY>=376&&startY<=713&&y>=376&&y<=713&&Math.abs(y-startY)>18){int delta=Math.round((startY-y)/36.5f);scrollOffset[active]=Math.max(0,Math.min(Math.max(0,rowCount(active)-9),scrollOffset[active]+delta));invalidate();return true;}
       if(y>=127&&y<=183){active=Math.min(3,Math.max(0,(int)((x-12)/95)));invalidate();return true;}
       if(x>=346&&y>=8&&y<=70){admin();return true;}
-      if(y>=277&&y<=367){int i=x>200?2:y>324?1:0;toggleFeature(i);return true;}
+      if(y>=277&&y<=367){if(y>351&&x>280&&moduleFeatures(active).size()>3){featurePage[active]=(featurePage[active]+3)%moduleFeatures(active).size();invalidate();return true;}int i=x>200?2:y>324?1:0;toggleFeature(featurePage[active]+i);return true;}
       if(y>=717&&y<=777){if(x<200)open();else save();return true;}
       if(y>=779){about();return true;}
       return true;
@@ -130,7 +132,12 @@ public class MainActivity extends Activity {
   final ArrayList<AbtCodec.Row>[] abtRows=new ArrayList[]{new ArrayList<>(),new ArrayList<>(),new ArrayList<>(),new ArrayList<>()};
   final HashMap<String,String> original=new HashMap<>();
   final int[] scrollOffset={0,0,0,0};
-  final int[] selectedFeature={0,0,0,0};
+  final int[] featurePage={0,0,0,0};
+  final HashMap<String,Boolean> checkedFeatures=new HashMap<>();
+  String featureKey(FeatureEngine.Feature f){return f.module+"|"+f.id;}
+  boolean isChecked(FeatureEngine.Feature f){Boolean b=checkedFeatures.get(featureKey(f));return b!=null&&b;}
+  void syncFeatureChecks(int module){for(FeatureEngine.Feature f:moduleFeatures(module))checkedFeatures.put(featureKey(f),engine.state(f,findRowValueFor(module,f.address)));}
+  String findRowValueFor(int module,String address){AbtCodec.Row r=findRow(module,address);return r==null?"":r.value;}
   ArrayList<FeatureEngine.Feature> moduleFeatures(int module){ArrayList<FeatureEngine.Feature> result=new ArrayList<>();for(FeatureEngine.Feature f:features)if(f.module.equals(modules[module]))result.add(f);return result;}
   int rowCount(int module){return abtRows[module].size();}
   final ArrayList<FeatureEngine.Feature> features=new ArrayList<>();
@@ -146,7 +153,7 @@ public class MainActivity extends Activity {
     if(index>=available.size()){Toast.makeText(this,"Функция для этого блока ещё не настроена",Toast.LENGTH_SHORT).show();return;}
     FeatureEngine.Feature f=available.get(index);AbtCodec.Row row=findRow(active,f.address);
     if(row==null){Toast.makeText(this,"Загрузите ABT со строкой "+f.address,Toast.LENGTH_LONG).show();return;}
-    try{boolean next=!checks[active][index];engine.apply(row,f,next,features);checks[active][index]=next;refreshRows(active);view.invalidate();}
+    try{boolean next=!isChecked(f);engine.apply(row,f,next,features);checkedFeatures.put(featureKey(f),next);refreshRows(active);view.invalidate();}
     catch(Exception ex){Toast.makeText(this,"Ошибка функции: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
   }
   void refreshRows(int module){rows[module].clear();for(AbtCodec.Row row:abtRows[module])rows[module].add(row.value);}
@@ -159,7 +166,7 @@ public class MainActivity extends Activity {
     for(AbtCodec.Row old:parsed)original.remove(key(old));
     for(AbtCodec.Row row:parsed)original.put(key(row),AbtCodec.norm(row.value));
     ArrayList<FeatureEngine.Feature> available=moduleFeatures(active);
-    for(int i=0;i<3;i++)checks[active][i]=i<available.size()&&engine.state(available.get(i),findRowValue(available.get(i).address));
+    featurePage[active]=0;syncFeatureChecks(active);
     refreshRows(active);loaded[active]=true;view.invalidate();
   }
   String findRowValue(String address){AbtCodec.Row row=findRow(active,address);return row==null?"":row.value;}
@@ -283,7 +290,7 @@ public class MainActivity extends Activity {
         int bi=Integer.parseInt(edits[6].getText().toString().trim());
         FeatureEngine.Feature f=new FeatureEngine.Feature(id,module,address,mode,edits[4].getText().toString(),edits[5].getText().toString(),bi);
         int n=selector.getSelectedItemPosition();if(!creating[0]&&n>=0&&n<features.size())features.set(n,f);else {features.add(f);creating[0]=false;}
-        StudioSettings.save(this,features);engine.reset();for(boolean[] c:checks)Arrays.fill(c,false);
+        StudioSettings.save(this,features);engine.reset();checkedFeatures.clear();
         labels.clear();for(FeatureEngine.Feature item:features)labels.add(item.id+" · "+item.module+" · "+item.address);adapter.notifyDataSetChanged();Toast.makeText(this,"Функция сохранена",Toast.LENGTH_SHORT).show();view.invalidate();
       }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
     };

@@ -123,6 +123,7 @@ public class MainActivity extends Activity {
       if(y>=127&&y<=183){active=Math.min(3,Math.max(0,(int)((x-12)/95)));invalidate();return true;}
       if(x>=346&&y>=8&&y<=70){admin();return true;}
       if(y>=277&&y<=367){if(y>351&&x>280&&moduleFeatures(active).size()>3){featurePage[active]=(featurePage[active]+3)%moduleFeatures(active).size();invalidate();return true;}int i=x>200?2:y>324?1:0;toggleFeature(featurePage[active]+i);return true;}
+      if(y>=380&&y<=713&&Math.abs(y-startY)<=18){int n=scrollOffset[active]+(int)((y-380)/36.5f);if(n>=0&&n<abtRows[active].size())editHexRow(n);return true;}
       if(y>=717&&y<=777){if(x<200)open();else save();return true;}
       if(y>=779){about();return true;}
       return true;
@@ -155,6 +156,29 @@ public class MainActivity extends Activity {
     if(row==null){Toast.makeText(this,"Загрузите ABT со строкой "+f.address,Toast.LENGTH_LONG).show();return;}
     try{boolean next=!isChecked(f);engine.apply(row,f,next,features);checkedFeatures.put(featureKey(f),next);refreshRows(active);view.invalidate();}
     catch(Exception ex){Toast.makeText(this,"Ошибка функции: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+  }
+  void editHexRow(int index){
+    if(index<0||index>=abtRows[active].size())return;
+    final AbtCodec.Row row=abtRows[active].get(index);
+    final EditText edit=new EditText(this);edit.setSingleLine(false);edit.setMinLines(2);
+    edit.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+    edit.setTypeface(Typeface.MONOSPACE);edit.setText(row.value);edit.selectAll();
+    LinearLayout container=new LinearLayout(this);container.setOrientation(LinearLayout.VERTICAL);container.setPadding(dp(16),dp(8),dp(16),0);
+    TextView hint=new TextView(this);hint.setText("Введите HEX-байты. Последний байт — контрольная сумма, она пересчитывается автоматически.");
+    container.addView(hint);container.addView(edit);
+    new AlertDialog.Builder(this).setTitle("Редактор "+row.address).setView(container)
+      .setNegativeButton("Отмена",null)
+      .setPositiveButton("Сохранить",(d,w)->{
+        try{
+          String input=edit.getText().toString().replaceAll("\\s+","");
+          if(input.isEmpty()||input.length()%2!=0||!input.matches("[0-9A-Fa-f]+"))throw new IllegalArgumentException("Допустимы только полные HEX-байты");
+          if(input.length()!=AbtCodec.norm(row.value).length())throw new IllegalArgumentException("Длина строки должна остаться прежней");
+          String updated=AbtCodec.recalc(row.address,input);
+          row.value=updated;engine.reset();checkedFeatures.clear();syncFeatureChecks(active);
+          refreshRows(active);view.invalidate();
+          Toast.makeText(this,"Строка сохранена, checksum пересчитан",Toast.LENGTH_SHORT).show();
+        }catch(Exception ex){Toast.makeText(this,"Ошибка HEX: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+      }).show();
   }
   void refreshRows(int module){rows[module].clear();for(AbtCodec.Row row:abtRows[module])rows[module].add(row.value);}
   void loadRows(String content){

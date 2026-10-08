@@ -181,7 +181,7 @@ public class MainActivity extends Activity {
     final int inspectedModule=active;
     AbtCodec.Row row=abtRows[inspectedModule].get(index);
     new AlertDialog.Builder(this).setTitle(modules[inspectedModule]+" · "+row.address)
-      .setMessage("Полное значение HEX:\n"+row.value+"\n\nДля изменения выберите «Редактировать».")
+      .setMessage("Полное значение HEX:\n"+row.value+"\n\nChecksum (алгоритм редактора): "+(AbtCodec.checksumValid(row.address,row.value)?"совпадает":"не совпадает")+"\n\nДля изменения выберите «Редактировать».")
       .setNegativeButton("Закрыть",null)
       .setPositiveButton("Редактировать",(d,w)->{
         if(active!=inspectedModule||index>=abtRows[inspectedModule].size()||abtRows[inspectedModule].get(index)!=row){

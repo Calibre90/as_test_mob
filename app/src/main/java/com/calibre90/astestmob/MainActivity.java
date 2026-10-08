@@ -156,7 +156,16 @@ public class MainActivity extends Activity {
         if(item==null||!feature.address.equalsIgnoreCase(item.optString("address")))continue;
         AbtCodec.Row row=new AbtCodec.Row(id,feature.address,item.optString("value"),Integer.parseInt(feature.address.split("-")[1]));
         FeatureEngine engine=customEngines.get(id);
-        if(engine==null){engine=new FeatureEngine();customEngines.put(id,engine);}
+        if(engine==null){
+          engine=new FeatureEngine();
+          for(FeatureEngine.Feature sibling:available){
+            if(!sibling.address.equalsIgnoreCase(feature.address))continue;
+            boolean enabled=new FeatureEngine().state(sibling,row.value);
+            engine.seed(sibling,enabled);
+            customChecks.put(featureKey(sibling),enabled);
+          }
+          customEngines.put(id,engine);
+        }
         boolean next=!customChecked(feature);
         engine.apply(row,feature,next,features);
         item.put("value",row.value);

@@ -186,7 +186,9 @@ public class MainActivity extends Activity {
   }
   void editHexRow(int index){
     if(index<0||index>=abtRows[active].size())return;
-    final AbtCodec.Row row=abtRows[active].get(index);
+    final int editingModule=active;
+    final AbtCodec.Row row=abtRows[editingModule].get(index);
+    final String startingValue=row.value;
     final EditText edit=new EditText(this);edit.setSingleLine(false);edit.setMinLines(2);
     edit.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
     edit.setTypeface(Typeface.MONOSPACE);edit.setText(row.value);edit.selectAll();
@@ -206,8 +208,11 @@ public class MainActivity extends Activity {
             .setMessage("Было: "+row.value+"\nСтанет: "+updated+"\n\nКонтрольная сумма будет пересчитана.")
             .setNegativeButton("Отмена",null)
             .setPositiveButton("Применить",(confirm,button)->{
-              row.value=updated;resetCurrentEngine();syncFeatureChecks(active);
-              refreshRows(active);view.invalidate();
+              if(active!=editingModule||!abtRows[editingModule].contains(row)||!row.value.equals(startingValue)){
+                Toast.makeText(this,"Данные изменились. Откройте строку повторно.",Toast.LENGTH_LONG).show();return;
+              }
+              row.value=updated;resetCurrentEngine();syncFeatureChecks(editingModule);
+              refreshRows(editingModule);view.invalidate();
               Toast.makeText(this,"Строка сохранена, checksum пересчитан",Toast.LENGTH_SHORT).show();
             }).show();
         }catch(Exception ex){Toast.makeText(this,"Ошибка HEX: "+ex.getMessage(),Toast.LENGTH_LONG).show();}

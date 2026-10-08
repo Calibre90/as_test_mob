@@ -30,6 +30,15 @@ public final class CodecSelfTest {
     seeded.seed(toggle,true);
     seeded.apply(alreadyOn,toggle,false,Arrays.asList(toggle));
     check(AbtCodec.norm(alreadyOn.value).startsWith("1F"),"initially ON -> explicit OFF");
+    FeatureEngine shared=new FeatureEngine();
+    AbtCodec.Row combined=new AbtCodec.Row("IC","720-01-01",AbtCodec.recalc("720-01-01","2B4071268000"),1);
+    FeatureEngine.Feature keyless=new FeatureEngine.Feature("keyless","IC","720-01-01","HEX","0,1","2B","1F",0);
+    FeatureEngine.Feature second=new FeatureEngine.Feature("second","IC","720-01-01","HEX","2,3","40","00",0);
+    shared.seed(keyless,true);shared.seed(second,true);
+    shared.apply(combined,keyless,false,Arrays.asList(keyless,second));
+    check(AbtCodec.norm(combined.value).startsWith("1F40"),"OFF preserves another active feature");
+    shared.apply(combined,keyless,true,Arrays.asList(keyless,second));
+    check(AbtCodec.norm(combined.value).startsWith("2B40"),"ON restores feature without clearing another");
     FeatureEngine invalid=new FeatureEngine();
     FeatureEngine.Feature bad=new FeatureEngine.Feature("bad","IC","720-01-01","HEX","99","A",0);
     String untouched=alreadyOn.value;boolean thrown=false;

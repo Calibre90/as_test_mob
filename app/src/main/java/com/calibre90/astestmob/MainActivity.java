@@ -547,7 +547,8 @@ public class MainActivity extends Activity {
       for(int i=0;i<tabCount;i++){
         float x=15+i*tabWidth-moduleTabOffset;
         if(x+tabWidth<15||x>385)continue;
-        int tabModule=moduleAtTabIndex(i);\n        String tab=tabModule<4?modules[tabModule]:customTabs.optJSONObject(tabModule-4)==null?"?":customTabs.optJSONObject(tabModule-4).optString("id","?");
+        int tabModule=moduleAtTabIndex(i);
+        String tab=tabModule<4?modules[tabModule]:customTabs.optJSONObject(tabModule-4)==null?"?":customTabs.optJSONObject(tabModule-4).optString("id","?");
         if(tabModule==active){p.setShader(new LinearGradient(x,132,x,175,Color.rgb(255,74,79),Color.rgb(176,0,10),Shader.TileMode.CLAMP));p.setStyle(Paint.Style.FILL);c.drawRoundRect(x,131,x+tabWidth-5,175,9,9,p);p.setShader(null);}
         else card(c,x,131,tabWidth-5,44,9,false);
         centered(c,tab,x,131,tabWidth-5,44,13,tabModule==active?Color.WHITE:Color.BLACK);
@@ -690,7 +691,8 @@ public class MainActivity extends Activity {
       int count=visibleTabCount();
       float width=count<=4?93.75f:90f;
       float maxOffset=Math.max(0,count*width-370f);
-      int tabPosition=visibleTabIndex(active);\n      float left=tabPosition*width-moduleTabOffset;
+      int tabPosition=visibleTabIndex(active);
+      float left=tabPosition*width-moduleTabOffset;
       float right=left+width;
       if(left<0)moduleTabOffset=tabPosition*width;
       else if(right>370f)moduleTabOffset=(tabPosition+1)*width-370f;
@@ -718,7 +720,9 @@ public class MainActivity extends Activity {
         float maxOffset=Math.max(0,count*width-370f);
         if(Math.abs(x-startX)>12){moduleTabOffset=Math.max(0,Math.min(maxOffset,moduleTabOffset+startX-x));invalidate();return true;}
         if(x<15||x>385)return true;
-        int selected=(int)((x-15+moduleTabOffset)/width);\n        if(selected<0||selected>=count)return true;\n        selected=moduleAtTabIndex(selected);
+        int selected=(int)((x-15+moduleTabOffset)/width);
+        if(selected<0||selected>=count)return true;
+        selected=moduleAtTabIndex(selected);
         if(selected>=4&&selected<count){
           org.json.JSONObject item=customModuleCatalog().optJSONObject(selected-4);
           active=selected;saveSelectedModule();revealActiveTab();invalidate();

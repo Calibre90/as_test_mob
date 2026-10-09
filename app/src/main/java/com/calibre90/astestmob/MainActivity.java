@@ -498,6 +498,15 @@ public class MainActivity extends Activity {
     void img(Canvas c,String key,float x,float y,float w,float h){Bitmap b=bitmaps.get(key);if(b!=null){p.setColor(Color.WHITE);p.setAlpha(255);c.drawBitmap(b,null,new RectF(x,y,x+w,y+h),p);}}
     void rect(Canvas c,int color,float x,float y,float w,float h,float r){p.setColor(color);p.setStyle(Paint.Style.FILL);c.drawRoundRect(x,y,x+w,y+h,r,r,p);}
     void txt(Canvas c,String s,float x,float y,float size,int color,boolean bold){p.setColor(color);p.setTypeface(bold?Typeface.create("sans-serif",Typeface.BOLD):Typeface.create("sans-serif",Typeface.NORMAL));p.setTextSize(size);p.setStyle(Paint.Style.FILL);c.drawText(s,x,y,p);}
+    void txtFitBold(Canvas c,String value,float x,float y,float size,int color,float maxWidth){
+      String display=value==null?"":value;
+      p.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));p.setTextSize(size);
+      if(p.measureText(display)>maxWidth){
+        while(!display.isEmpty()&&p.measureText(display+"…")>maxWidth)display=display.substring(0,display.length()-1);
+        display+="…";
+      }
+      txt(c,display,x,y,size,color,true);
+    }
     void txtFit(Canvas c,String value,float x,float y,float size,int color,float maxWidth){
       String display=value==null?"":value;
       p.setTypeface(Typeface.create("sans-serif",Typeface.NORMAL));
@@ -558,7 +567,7 @@ public class MainActivity extends Activity {
         if(module==null){active=0;actual.restore();return;}
         String id=module.optString("id"), prefix=module.optString("address");
         card(c,10,190,380,82,13,true);
-        txtFit(c,id+": "+module.optString("name"),25,222,18,Color.BLACK,350);
+        txtFitBold(c,id+": "+module.optString("name"),25,222,18,Color.BLACK,350);
         p.setColor(Color.rgb(224,57,64));p.setStrokeWidth(1);c.drawLine(25,232,316,232,p);
         txt(c,"ID: "+prefix+"  |  Ver: "+(module.optString("version").isEmpty()?"Не указана":module.optString("version")),25,252,12,Color.rgb(91,103,119),false);
         card(c,10,279,380,91,12,true);
@@ -1248,7 +1257,7 @@ public class MainActivity extends Activity {
       body.removeAllViews();
       LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);
       panel.setPadding(dp(3),dp(5),dp(3),dp(5));
-      if(selected[0]==2){
+      if(selected[0]==0||selected[0]==1||selected[0]==2){
         ScrollView moduleScroll=new ScrollView(this);
         moduleScroll.setFillViewport(false);
         moduleScroll.addView(panel,new ScrollView.LayoutParams(-1,-2));
@@ -1512,7 +1521,7 @@ public class MainActivity extends Activity {
           addrInput.setHint(prefix+"-01-01");addrInput.setText(prefix+"-01-01");
           hexInput.setHint("HEX значение");
           ScrollView scroll=new ScrollView(this);LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);
-          scroll.addView(list);panel.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+          scroll.addView(list);panel.addView(scroll,new LinearLayout.LayoutParams(-1,dp(370)));
           Runnable refresh=()->{
             list.removeAllViews();
             for(int j=0;j<entries.length();j++){
@@ -1553,6 +1562,7 @@ public class MainActivity extends Activity {
         }
       }
       if(selected[0]==1&&adminRowsModule<4){
+        heading.setText("Строки "+modules[adminRowsModule]+" · "+StudioSettings.moduleName(this,modules[adminRowsModule],names[adminRowsModule]));
         final int rowsModule=adminRowsModule;
         final ArrayList<AbtCodec.Row> rows=abtRows[rowsModule];
         final int[] chosen={-1};
@@ -1570,7 +1580,7 @@ public class MainActivity extends Activity {
         }
         android.widget.ScrollView listScroll=new android.widget.ScrollView(this);
         LinearLayout entries=new LinearLayout(this);entries.setOrientation(LinearLayout.VERTICAL);
-        listScroll.addView(entries);panel.addView(listScroll,new LinearLayout.LayoutParams(-1,0,1));
+        listScroll.addView(entries);panel.addView(listScroll,new LinearLayout.LayoutParams(-1,dp(370)));
         {
           for(int n=0;n<rows.size();n++){
             final int index=n;AbtCodec.Row row=rows.get(n);
@@ -1746,23 +1756,6 @@ public class MainActivity extends Activity {
           }
         };
         updateCatalog[0].run();
-        Button restoreFactory=new Button(this);
-        restoreFactory.setAllCaps(false);restoreFactory.setText("Восстановить скрытый блок");restoreFactory.setTextSize(12);
-        panel.addView(restoreFactory,new LinearLayout.LayoutParams(-1,dp(42)));
-        restoreFactory.setOnClickListener(v->{
-          java.util.ArrayList<Integer> hidden=new java.util.ArrayList<>();
-          java.util.ArrayList<String> labels=new java.util.ArrayList<>();
-          for(int j=0;j<modules.length;j++)if(isFactoryModuleHidden(j)){hidden.add(j);labels.add(modules[j]);}
-          if(hidden.isEmpty()){Toast.makeText(this,"Скрытых блоков нет",Toast.LENGTH_SHORT).show();return;}
-          new AlertDialog.Builder(this).setTitle("Восстановить блок")
-            .setItems(labels.toArray(new String[0]),(d,which)->{
-              int index=hidden.get(which);
-              getSharedPreferences("studio_hidden_factory_modules",MODE_PRIVATE).edit().putBoolean(modules[index],false).apply();
-              active=index;saveSelectedModule();view.revealActiveTab();view.invalidate();
-              if(refreshModuleFields[0]!=null)refreshModuleFields[0].run();
-              Toast.makeText(this,"Блок "+modules[index]+" восстановлен",Toast.LENGTH_SHORT).show();
-            }).show();
-        });
         addCustom.setOnClickListener(v->{
           LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(16),dp(8),dp(16),dp(8));
           final EditText[] edits=new EditText[4];
@@ -1905,7 +1898,7 @@ public class MainActivity extends Activity {
     save.setVisibility(View.GONE);
     dialog.setContentView(root);
     android.view.Window window=dialog.getWindow();
-    if(window!=null){window.setBackgroundDrawableResource(android.R.color.transparent);window.setLayout(-1,-1);}
+    if(window!=null){window.setBackgroundDrawableResource(android.R.color.transparent);window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);window.setLayout(-1,-1);}
     redrawRef[0].run();dialog.show();
     window=dialog.getWindow();if(window!=null)window.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.97f),(int)(getResources().getDisplayMetrics().heightPixels*.87f));
   }

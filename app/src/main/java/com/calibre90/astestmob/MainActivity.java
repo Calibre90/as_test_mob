@@ -978,7 +978,10 @@ public class MainActivity extends Activity {
   void modal(boolean isAdmin){
     final Dialog dialog=new Dialog(this);
     final int width=Math.round(getResources().getDisplayMetrics().widthPixels*.87f);
-    final int height=Math.round(width*(isAdmin?1.24f:1.14f));
+    final String aboutText=StudioSettings.appearance(this,"about_description","Редактор As-Built для Mazda 6 GH");
+    final int screenHeight=getResources().getDisplayMetrics().heightPixels;
+    final int estimatedLines=Math.max(1,(int)Math.ceil(aboutText.length()/37.0)+aboutText.split("\\n",-1).length-1);
+    final int height=isAdmin?Math.round(width*1.24f):Math.min(Math.round(screenHeight*.89f),Math.max(Math.round(width*1.39f),Math.round(width*1.22f)+Math.max(0,estimatedLines-4)*dp(19)));
     final FrameLayout root=new FrameLayout(this);
     root.setBackground(panel(Color.rgb(252,253,254),Color.rgb(234,239,244),14,Color.rgb(225,50,51)));
     root.setClipToOutline(true);
@@ -1019,17 +1022,17 @@ public class MainActivity extends Activity {
       place(root,version,.09f,.205f,.82f,.10f,width,height);
       View divider=new View(this);divider.setBackgroundColor(Color.rgb(220,50,55));
       place(root,divider,.09f,.32f,.82f,.004f,width,height);
-      // Keep the complete administrator-supplied description accessible, even for long text.
+      // Give the complete description a substantially taller region; scroll only for unusually long text.
       android.widget.ScrollView descriptionScroll=new android.widget.ScrollView(this);
       descriptionScroll.setFillViewport(false);
       descriptionScroll.setVerticalScrollBarEnabled(true);
-      TextView description=caption(StudioSettings.appearance(this,"about_description","Редактор As-Built для Mazda 6 GH"),15,Color.BLACK,false);
+      TextView description=caption(aboutText,15,Color.BLACK,false);
       description.setGravity(Gravity.TOP|Gravity.START);
       description.setSingleLine(false);
       description.setMaxLines(Integer.MAX_VALUE);
       description.setPadding(0,dp(3),dp(5),dp(3));
       descriptionScroll.addView(description,new android.widget.ScrollView.LayoutParams(-1,-2));
-      place(root,descriptionScroll,.09f,.35f,.84f,.17f,width,height);
+      place(root,descriptionScroll,.09f,.35f,.84f,.265f,width,height);
       String[] creatorNames={
         StudioSettings.appearance(this,"creator1_name","Dim304"),
         StudioSettings.appearance(this,"creator2_name","Wolis11")
@@ -1053,7 +1056,7 @@ public class MainActivity extends Activity {
         styled.setSpan(new android.text.style.ForegroundColorSpan(Color.rgb(24,96,191)),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         styled.setSpan(new android.text.style.UnderlineSpan(),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         person.setText(styled);
-        place(root,person,.09f,i==0?.535f:.595f,.84f,.075f,width,height);
+        place(root,person,.09f,i==0?.625f:.680f,.84f,.060f,width,height);
         android.text.style.ClickableSpan onlyLink=new android.text.style.ClickableSpan(){
           @Override public void onClick(android.view.View widget){
             if(!url.isEmpty()&&(url.startsWith("https://")||url.startsWith("http://"))){

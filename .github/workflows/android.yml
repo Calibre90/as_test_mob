@@ -26,7 +26,20 @@ jobs:
           curl --fail --location --retry 3 \
             "https://raw.githubusercontent.com/Calibre90/Mazda6GH-AsBuilt-Studio-Android/main/assets/icon_studio.png" \
             -o app/src/main/res/drawable-nodpi/icon_studio.png
-          file app/src/main/res/drawable-nodpi/{splash_studio,icon_studio}.png
+          python3 - <<'PY'
+          import struct
+          from pathlib import Path
+          for name in ("splash_studio", "icon_studio"):
+              path = Path("app/src/main/res/drawable-nodpi") / (name + ".png")
+              with path.open("rb") as f:
+                  header = f.read(24)
+              if len(header) < 24 or header[:8] != b"\\x89PNG\\r\\n\\x1a\\n" or header[12:16] != b"IHDR":
+                  raise SystemExit(f"Invalid PNG: {path}")
+              width, height = struct.unpack(">II", header[16:24])
+              if width < 512 or height < 512:
+                  raise SystemExit(f"Image too small: {path}: {width}x{height}")
+              print(f"Validated {path}: {width}x{height}")
+          PY
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

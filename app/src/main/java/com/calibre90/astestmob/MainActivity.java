@@ -1518,7 +1518,18 @@ public class MainActivity extends Activity {
         }
         inputs[0].setEnabled(false);inputs[2].setEnabled(false);
         Runnable fill=()->{
-          int m=moduleSelection[0];inputs[0].setText(modules[m]);
+          int m=moduleSelection[0];
+          if(m>=modules.length){
+            org.json.JSONObject item=customModuleCatalog().optJSONObject(m-modules.length);
+            if(item==null)return;
+            inputs[0].setText(item.optString("id"));
+            inputs[1].setText(item.optString("name"));
+            inputs[2].setText(item.optString("address"));
+            inputs[3].setText(item.optString("version"));
+            heading.setText("Блок "+item.optString("id"));
+            return;
+          }
+          inputs[0].setText(modules[m]);
           inputs[1].setText(StudioSettings.moduleName(this,modules[m],names[m]));
           inputs[2].setText(ids[m]);inputs[3].setText(StudioSettings.moduleVersion(this,modules[m]));
           heading.setText("Блок "+modules[m]);
@@ -1542,6 +1553,19 @@ public class MainActivity extends Activity {
           String newName=inputs[1].getText().toString().trim();
           if(newName.isEmpty()){inputs[1].setError("Название не может быть пустым");return;}
           int m=moduleSelection[0];
+          if(m>=modules.length){
+            org.json.JSONArray catalog=customModuleCatalog();
+            org.json.JSONObject item=catalog.optJSONObject(m-modules.length);
+            if(item==null){Toast.makeText(this,"Блок не найден",Toast.LENGTH_LONG).show();return;}
+            try{
+              item.put("name",newName);
+              item.put("version",inputs[3].getText().toString().trim());
+              getSharedPreferences("studio_custom_modules",MODE_PRIVATE).edit().putString("catalog",catalog.toString()).apply();
+              view.invalidate();
+              Toast.makeText(this,"Блок "+item.optString("id")+" сохранён",Toast.LENGTH_SHORT).show();
+            }catch(Exception ex){Toast.makeText(this,"Ошибка сохранения: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+            return;
+          }
           StudioSettings.saveModule(this,modules[m],newName,inputs[3].getText().toString().trim());
           view.invalidate();Toast.makeText(this,"Блок "+modules[m]+" сохранён",Toast.LENGTH_SHORT).show();
         });
@@ -1576,44 +1600,8 @@ public class MainActivity extends Activity {
             entry.setText((factoryEntryCount+i+1)+" · "+id+" · "+name);
             entry.setMinWidth(0);entry.setPadding(dp(5),0,dp(5),0);
             choices.addView(entry,new LinearLayout.LayoutParams(-1,dp(42)));
-            entry.setOnClickListener(v->{
-              LinearLayout editForm=new LinearLayout(this);
-              editForm.setOrientation(LinearLayout.VERTICAL);
-              editForm.setPadding(dp(18),dp(8),dp(18),dp(8));
-              TextView fixed=new TextView(this);
-              fixed.setText("ID: "+id+"    Адрес: "+item.optString("address")+"\\nID и адрес защищены для распознавания ABT.");
-              editForm.addView(fixed);
-              EditText editName=new EditText(this);
-              editName.setSingleLine(true);editName.setHint("Название блока");editName.setText(name);
-              editForm.addView(editName);
-              EditText editVersion=new EditText(this);
-              editVersion.setSingleLine(true);editVersion.setHint("Версия");
-              editVersion.setText(item.optString("version"));editForm.addView(editVersion);
-              new AlertDialog.Builder(this).setTitle("Изменить блок "+id).setView(editForm)
-                .setNegativeButton("Отмена",null)
-                .setPositiveButton("Сохранить",(d,w)->{
-                  String updatedName=editName.getText().toString().trim();
-                  if(updatedName.isEmpty()){
-                    Toast.makeText(this,"Название блока не может быть пустым",Toast.LENGTH_LONG).show();return;
-                  }
-                  try{
-                    org.json.JSONArray latest=customModuleCatalog();
-                    boolean found=false;
-                    for(int k=0;k<latest.length();k++){
-                      org.json.JSONObject target=latest.optJSONObject(k);
-                      if(target!=null&&id.equalsIgnoreCase(target.optString("id"))){
-                        target.put("name",updatedName);
-                        target.put("version",editVersion.getText().toString().trim());
-                        found=true;break;
-                      }
-                    }
-                    if(!found){Toast.makeText(this,"Блок уже удалён",Toast.LENGTH_LONG).show();return;}
-                    customPrefs.edit().putString("catalog",latest.toString()).apply();
-                    updateCatalog[0].run();view.invalidate();
-                    Toast.makeText(this,"Настройки блока сохранены",Toast.LENGTH_SHORT).show();
-                  }catch(Exception ex){Toast.makeText(this,"Ошибка сохранения блока",Toast.LENGTH_LONG).show();}
-                }).show();
-            });
+            entry.setOnClickListener(v->{moduleSelection[0]=modules.length+index;fill.run();});
+
           }
         };
         updateCatalog[0].run();

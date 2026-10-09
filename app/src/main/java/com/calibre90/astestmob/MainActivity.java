@@ -483,10 +483,10 @@ public class MainActivity extends Activity {
     try{return Math.max(1,Math.min(10,Integer.parseInt(StudioSettings.appearance(this,"feature_columns","3").trim())));}
     catch(Exception ignored){return 3;}
   }
-  int featureSlots(){return 3;} // Three readable vertical rows per page
+  int featureSlots(){return 6;} // Show up to six features in the same panel without page arrows
   float featureCellWidth(){return 370f;}
   float featureX(int index){return 25f;}
-  float featureY(int index){return 289f+index*26f;}
+  float featureY(int index){return 283f+index*14.2f;}
   String lastFeatureStatus="Изменений нет";
   class StudioView extends View {
     Paint p=new Paint(3); HashMap<String,Bitmap> bitmaps=new HashMap<>();
@@ -578,24 +578,24 @@ public class MainActivity extends Activity {
         int featureStart=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;
         if(featureStart>=featureTotal)featureStart=0;
         p.setColor(Color.rgb(190,199,211));p.setStrokeWidth(1);
-        for(int line=1;line<3;line++){float fy=284+line*27;c.drawLine(15,fy,385,fy,p);}
+        for(int line=1;line<6;line++){float fy=283+line*14.2f;c.drawLine(15,fy,385,fy,p);}
         int featureSkip=0;
         for(FeatureEngine.Feature feature:features){
           if(!id.equalsIgnoreCase(feature.module))continue;
           if(featureSkip++<featureStart)continue;
-          if(featureCount>=3)break;
-          float fx=25f,fy=289f+featureCount*26f;
-          card(c,fx,fy,17,17,4,false);
+          if(featureCount>=6)break;
+          float fx=25f,fy=284f+featureCount*14.2f;
+          card(c,fx,fy,12,12,3,false);
           if(customChecked(feature)){
-            rect(c,Color.rgb(210,28,37),fx+3,fy+3,11,11,2);
+            rect(c,Color.rgb(210,28,37),fx+2,fy+2,8,8,2);
             p.setColor(Color.WHITE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);
-            Path mark=new Path();mark.moveTo(fx+3,fy+9);mark.lineTo(fx+7,fy+13);mark.lineTo(fx+14,fy+4);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
+            Path mark=new Path();mark.moveTo(fx+2,fy+6);mark.lineTo(fx+5,fy+9);mark.lineTo(fx+10,fy+3);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
           }
-          txtFit(c,feature.label,fx+25,fy+13,12,Color.BLACK,310);
+          txtFit(c,feature.label,fx+20,fy+10,11,Color.BLACK,315);
           featureCount++;
         }
         if(featureCount==0)txt(c,"Функции не настроены",24,315,12,Color.DKGRAY,false);
-        if(featureTotal>3)txt(c,"›",365,346,22,Color.rgb(155,0,0),true);
+        
         org.json.JSONArray customRows;
         try{customRows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]"));}
         catch(Exception ex){customRows=new org.json.JSONArray();}
@@ -646,18 +646,18 @@ public class MainActivity extends Activity {
       ArrayList<FeatureEngine.Feature> shown=moduleFeatures(active);
       int page=featurePage[active],slots=featureSlots();
       p.setColor(Color.rgb(190,199,211));p.setStrokeWidth(1);
-      for(int line=1;line<3;line++){float yy=284+line*27;c.drawLine(15,yy,385,yy,p);}
+      for(int line=1;line<6;line++){float yy=283+line*14.2f;c.drawLine(15,yy,385,yy,p);}
       for(int i=0;i<slots&&page+i<shown.size();i++){
         float x=featureX(i),y=featureY(i);
-        card(c,x,y,17,17,4,false);
+        card(c,x,y,12,12,3,false);
         if(isChecked(shown.get(page+i))){
-          rect(c,Color.rgb(210,28,37),x+3,y+3,11,11,2);
+          rect(c,Color.rgb(210,28,37),x+2,y+2,8,8,2);
           p.setColor(Color.WHITE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);
-          Path mark=new Path();mark.moveTo(x+3,y+9);mark.lineTo(x+7,y+13);mark.lineTo(x+14,y+4);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
+          Path mark=new Path();mark.moveTo(x+2,y+6);mark.lineTo(x+5,y+9);mark.lineTo(x+10,y+3);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
         }
-        txtFit(c,shown.get(page+i).label,x+25,y+13,12,Color.BLACK,310);
+        txtFit(c,shown.get(page+i).label,x+20,y+10,11,Color.BLACK,315);
       }
-      if(shown.size()>slots)txt(c,"›",365,346,22,Color.rgb(155,0,0),true);
+      
       card(c,10,376,380,337,13,true);
       int hexPanelColor=appearanceColor("panel",Color.TRANSPARENT);
       if(hexPanelColor!=Color.TRANSPARENT){p.setColor(hexPanelColor);p.setStyle(Paint.Style.FILL);c.drawRoundRect(13,379,387,710,10,10,p);}
@@ -739,10 +739,10 @@ public class MainActivity extends Activity {
       if(x>=346&&y>=8&&y<=70){admin();return true;}
       if(active>=4){if(y>=357&&y<=373&&x>=230){
         org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
-        if(module!=null){String id=module.optString("id");int total=0;for(FeatureEngine.Feature f:features)if(id.equalsIgnoreCase(f.module))total++;int current=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;customFeaturePage.put(id,current+3>=total?0:current+3);saveCustomTabPosition(id);invalidate();}
+        if(module!=null){String id=module.optString("id");int total=0;for(FeatureEngine.Feature f:features)if(id.equalsIgnoreCase(f.module))total++;int current=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;customFeaturePage.put(id,current+6>=total?0:current+6);saveCustomTabPosition(id);invalidate();}
         return true;
-      }if(y>=282&&y<=355){int slot=(int)((y-283)/25);org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);if(module!=null){String id=module.optString("id");int offset=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;toggleCustomFeature(offset+slot);}return true;}if(y>=717&&y<=777){org.json.JSONObject item=customModuleCatalog().optJSONObject(active-4);if(item!=null)customAbtPicker(x>=200,item.optString("id"));return true;}if(y>=779&&x>=336){about();return true;}return true;}
-      if(y>=279&&y<=370){int slots=featureSlots();if(x>=345&&moduleFeatures(active).size()>slots){featurePage[active]=(featurePage[active]+slots>=moduleFeatures(active).size())?0:featurePage[active]+slots;invalidate();return true;}int i=(int)((y-284)/27);if(i>=0&&i<slots&&featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}
+      }if(y>=282&&y<=355){int slot=(int)((y-283)/14.2f);org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);if(module!=null){String id=module.optString("id");int offset=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;toggleCustomFeature(offset+slot);}return true;}if(y>=717&&y<=777){org.json.JSONObject item=customModuleCatalog().optJSONObject(active-4);if(item!=null)customAbtPicker(x>=200,item.optString("id"));return true;}if(y>=779&&x>=336){about();return true;}return true;}
+      if(y>=279&&y<=370){int slots=featureSlots();int i=(int)((y-283)/14.2f);if(i>=0&&i<slots&&featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}
       // HEX rows on the main screen are read-only; edit via features or admin panel.
       if(y>=380&&y<=713&&Math.abs(y-startY)<=18)return true;
       if(y>=717&&y<=777){if(x<200)open();else save();return true;}

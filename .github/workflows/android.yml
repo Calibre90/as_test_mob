@@ -1,7 +1,7 @@
 name: Build APK
 on:
   push:
-    branches: [ main, run35-functional-port, fix-run203-module-picker ]
+    branches: [ main, run35-functional-port, fix-run203-module-picker, feature/run296-studio-splash ]
   workflow_dispatch:
 jobs:
   build:
@@ -16,6 +16,17 @@ jobs:
           find /tmp/mazda_assets/Mazda6GH_WhiteRed_Production_Assets -name '*.png' -exec cp {} app/src/main/res/drawable-nodpi/ \;
           unzip -q -j Mazda6GH_Header_and_Lock_Assets.zip '*.png' -d app/src/main/res/drawable-nodpi/
           echo "Installed $(find app/src/main/res/drawable-nodpi -name '*.png' | wc -l) PNG assets"
+      - name: Install Studio splash and icon assets
+        run: |
+          set -euo pipefail
+          mkdir -p app/src/main/res/drawable-nodpi
+          curl --fail --location --retry 3 \
+            "https://raw.githubusercontent.com/Calibre90/Mazda6GH-AsBuilt-Studio-Android/main/assets/splash_studio.png" \
+            -o app/src/main/res/drawable-nodpi/splash_studio.png
+          curl --fail --location --retry 3 \
+            "https://raw.githubusercontent.com/Calibre90/Mazda6GH-AsBuilt-Studio-Android/main/assets/icon_studio.png" \
+            -o app/src/main/res/drawable-nodpi/icon_studio.png
+          file app/src/main/res/drawable-nodpi/{splash_studio,icon_studio}.png
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

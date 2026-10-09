@@ -1206,6 +1206,7 @@ public class MainActivity extends Activity {
   }
   int adminRowsModule=0;
   void showAdminTabs(){
+    adminRowsModule=active;
     final Dialog dialog=new Dialog(this);
     final Runnable[] commitCurrent={null};
     LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);
@@ -1443,11 +1444,24 @@ public class MainActivity extends Activity {
         }
         commitCurrent[0]=()->featureActions[chosen[0]>=0?1:0].performClick();
       }
-      if(selected[0]==1&&active>=4){
-        org.json.JSONObject custom=customModuleCatalog().optJSONObject(active-4);
+      if(selected[0]==1&&adminRowsModule>=4){
+        org.json.JSONObject custom=customModuleCatalog().optJSONObject(adminRowsModule-4);
         if(custom!=null){
           final String id=custom.optString("id"),prefix=custom.optString("address");
           heading.setText("Строки "+id+" · "+custom.optString("name"));
+          heading.setOnClickListener(v->{
+            org.json.JSONArray catalog=customModuleCatalog();
+            String[] options=new String[modules.length+catalog.length()];
+            for(int k=0;k<modules.length;k++)options[k]=modules[k];
+            for(int k=0;k<catalog.length();k++){
+              org.json.JSONObject item=catalog.optJSONObject(k);
+              options[modules.length+k]=item==null?"?":item.optString("id")+" · "+item.optString("name");
+            }
+            new AlertDialog.Builder(this).setTitle("Выберите блок").setItems(options,(d,which)->{
+              adminRowsModule=which;
+              redrawRef[0].run();
+            }).show();
+          });
           android.content.SharedPreferences rowPrefs=getSharedPreferences("studio_custom_rows",MODE_PRIVATE);
           org.json.JSONArray storedRows;
           try{storedRows=new org.json.JSONArray(rowPrefs.getString(id,"[]"));}catch(Exception ex){storedRows=new org.json.JSONArray();}
@@ -1499,7 +1513,7 @@ public class MainActivity extends Activity {
           }
         }
       }
-      if(selected[0]==1&&active<4){
+      if(selected[0]==1&&adminRowsModule<4){
         final int rowsModule=adminRowsModule;
         final ArrayList<AbtCodec.Row> rows=abtRows[rowsModule];
         final int[] chosen={-1};
@@ -1525,7 +1539,7 @@ public class MainActivity extends Activity {
           }
           new AlertDialog.Builder(this).setTitle("Выберите блок").setItems(options,(d,which)->{
             if(which<modules.length){adminRowsModule=which;redrawRef[0].run();}
-            else{org.json.JSONObject item=custom.optJSONObject(which-modules.length);if(item!=null)showCustomRows(item);}
+            else{adminRowsModule=which;redrawRef[0].run();}
           }).show();
         });
         android.widget.ScrollView listScroll=new android.widget.ScrollView(this);

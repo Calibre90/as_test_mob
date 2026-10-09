@@ -559,7 +559,8 @@ public class MainActivity extends Activity {
         if(module==null){active=0;actual.restore();return;}
         String id=module.optString("id"), prefix=module.optString("address");
         card(c,10,190,380,82,13,true);
-        txtFit(c,id+": "+module.optString("name"),25,222,18,Color.BLACK,350);\n        p.setColor(Color.rgb(224,57,64));p.setStrokeWidth(1);c.drawLine(25,232,316,232,p);
+        txtFit(c,id+": "+module.optString("name"),25,222,18,Color.BLACK,350);
+        p.setColor(Color.rgb(224,57,64));p.setStrokeWidth(1);c.drawLine(25,232,316,232,p);
         txt(c,"ID: "+prefix+"  |  Ver: "+(module.optString("version").isEmpty()?"Не указана":module.optString("version")),25,252,12,Color.rgb(91,103,119),false);
         card(c,10,279,380,91,12,true);
         card(c,10,376,380,337,13,true);

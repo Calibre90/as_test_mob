@@ -145,7 +145,6 @@ public class MainActivity extends Activity {
     android.content.SharedPreferences.Editor editor=prefs.edit();
     for(String key:prefs.getAll().keySet())if(key.startsWith(id+"|"))editor.remove(key);
     editor.apply();
-    clearCustomBaselines(id);
   }
   final HashMap<String,Boolean> customChecks=new HashMap<>();
   boolean customChecked(FeatureEngine.Feature feature){
@@ -1514,8 +1513,9 @@ public class MainActivity extends Activity {
           refresh.run();
           LinearLayout actions=new LinearLayout(this);panel.addView(actions);
           String[] labels={"Добавить","Изменить","Удалить"};
+          final Button[] customRowActions=new Button[3];
           for(int action=0;action<3;action++){
-            final int kind=action;Button button=new Button(this);button.setAllCaps(false);button.setText(labels[action]);
+            final int kind=action;Button button=new Button(this);customRowActions[action]=button;button.setAllCaps(false);button.setText(labels[action]);
             actions.addView(button,new LinearLayout.LayoutParams(0,dp(48),1));
             button.setOnClickListener(v->{
               try{
@@ -1538,6 +1538,7 @@ public class MainActivity extends Activity {
               }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
             });
           }
+          commitCurrent[0]=()->customRowActions[chosen[0]>=0?1:0].performClick();
         }
       }
       if(selected[0]==1&&adminRowsModule<4){

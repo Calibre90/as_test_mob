@@ -994,7 +994,8 @@ public class MainActivity extends Activity {
       enter.setOnClickListener(v->{if(login.getText().toString().equals("admin")&&password.getText().toString().equals("admin")){dialog.dismiss();showAdminTabs();}else Toast.makeText(this,"Неверный логин или пароль",Toast.LENGTH_SHORT).show();});
     }else{
       // Information-only layout without duplicated Mazda logo/banner.
-      TextView version=caption(StudioSettings.appearance(this,"ready_text","Версия: тестовая сборка"),15,Color.DKGRAY,false);
+      TextView version=caption("Mazda 6 GH AS-Built",22,Color.BLACK,true);
+      version.setGravity(Gravity.CENTER);
       place(root,version,.09f,.245f,.82f,.11f,width,height);
       View divider=new View(this);divider.setBackgroundColor(Color.rgb(220,50,55));
       place(root,divider,.09f,.375f,.82f,.004f,width,height);
@@ -1011,8 +1012,14 @@ public class MainActivity extends Activity {
       for(int i=0;i<2;i++){
         final String url=creatorUrls[i].trim();
         String role=i==0?"Разработчик: ":"Помощник: ";
-        TextView person=caption(role+creatorNames[i]+"   Drive2",13,Color.BLACK,true);
+        TextView person=caption(role+creatorNames[i]+"   D  Drive2",13,Color.BLACK,true);
         android.text.SpannableString styled=new android.text.SpannableString(person.getText());
+        int iconStart=styled.toString().lastIndexOf("D  Drive2");
+        if(iconStart>=0){
+          styled.setSpan(new android.text.style.BackgroundColorSpan(Color.rgb(192,14,47)),iconStart,iconStart+1,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+          styled.setSpan(new android.text.style.ForegroundColorSpan(Color.WHITE),iconStart,iconStart+1,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+          styled.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD),iconStart,iconStart+1,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
         int linkStart=styled.toString().lastIndexOf("Drive2");
         styled.setSpan(new android.text.style.ForegroundColorSpan(Color.rgb(24,96,191)),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         styled.setSpan(new android.text.style.UnderlineSpan(),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1852,9 +1859,9 @@ public class MainActivity extends Activity {
         });
       }
       if(selected[0]==3){
-        final String[] keys={"title","background","panel","feature_columns","open_text","save_text","admin_text","ready_text","author_text","about_description","creator1_name","creator1_url","creator2_name","creator2_url"};
-        final String[] labels={"Название окна","Фон приложения","Фон HEX-блока","Колонки функций","Кнопка открытия","Кнопка сохранения","Кнопка Admin","Текст статуса","Заголовок авторов","Описание программы","Автор 1 — имя","Автор 1 — ссылка","Автор 2 — имя","Автор 2 — ссылка"};
-        final String[] defaults={"Mazda 6 GH As-Built Studio","","","3","Открыть ABT","Сохранить ABT","Админка","Готово","Кто сделал приложение","Редактор As-Built для Mazda 6 GH","Dim304","https://www.drive2.ru/users/dim304/","Wolis11","https://www.drive2.ru/users/wolis11/"};
+        final String[] keys={"title","background","panel","feature_columns","open_text","save_text","about_description","creator1_name","creator1_url","creator2_name","creator2_url"};
+        final String[] labels={"Название окна","Фон приложения","Фон HEX-блока","Колонки функций","Кнопка открытия","Кнопка сохранения","Описание программы","Автор 1 — имя","Автор 1 — ссылка","Автор 2 — имя","Автор 2 — ссылка"};
+        final String[] defaults={"Mazda 6 GH As-Built Studio","","","3","Открыть ABT","Сохранить ABT","Редактор As-Built для Mazda 6 GH","Dim304","https://www.drive2.ru/users/dim304/","Wolis11","https://www.drive2.ru/users/wolis11/"};
         android.widget.ScrollView appearanceScroll=new android.widget.ScrollView(this);
         LinearLayout appearanceFields=new LinearLayout(this);appearanceFields.setOrientation(LinearLayout.VERTICAL);
         appearanceScroll.addView(appearanceFields);panel.addView(appearanceScroll,new LinearLayout.LayoutParams(-1,0,1));
@@ -1867,7 +1874,7 @@ public class MainActivity extends Activity {
           input.setBackgroundColor(Color.WHITE);input.setTextColor(Color.BLACK);input.setPadding(dp(8),0,dp(6),0);
           appearanceFields.addView(input,new LinearLayout.LayoutParams(-1,dp(42)));appearanceInputs[k]=input;
         }
-        TextView note=new TextView(this);note.setText("Цвета: #RRGGBB, пустое поле — стандартный цвет. Количество колонок функций: 1–10. Название, кнопки, админка, автор и статус применяются после сохранения.");
+        TextView note=new TextView(this);note.setText("Цвета: #RRGGBB, пустое поле — стандартный цвет. Количество колонок функций: 1–10. Название, кнопки и данные авторов применяются после сохранения.");
         note.setTextColor(Color.LTGRAY);appearanceFields.addView(note);
         Button saveAppearance=new Button(this);saveAppearance.setText("Сохранить оформление");saveAppearance.setAllCaps(false);
         saveAppearance.setTextSize(12);saveAppearance.setMinWidth(0);saveAppearance.setPadding(dp(4),0,dp(4),0);

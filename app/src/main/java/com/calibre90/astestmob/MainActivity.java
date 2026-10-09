@@ -1421,7 +1421,63 @@ public class MainActivity extends Activity {
         }
         commitCurrent[0]=()->featureActions[chosen[0]>=0?1:0].performClick();
       }
-      if(selected[0]==1){
+      if(selected[0]==1&&active>=4){
+        org.json.JSONObject custom=customModuleCatalog().optJSONObject(active-4);
+        if(custom!=null){
+          final String id=custom.optString("id"),prefix=custom.optString("address");
+          heading.setText("Строки "+id+" · "+custom.optString("name"));
+          android.content.SharedPreferences rowPrefs=getSharedPreferences("studio_custom_rows",MODE_PRIVATE);
+          org.json.JSONArray storedRows;
+          try{storedRows=new org.json.JSONArray(rowPrefs.getString(id,"[]"));}catch(Exception ex){storedRows=new org.json.JSONArray();}
+          final org.json.JSONArray entries=storedRows;
+          final int[] chosen={-1};
+          EditText addrInput=new EditText(this);addrInput.setSingleLine(true);addrInput.setTextColor(Color.BLACK);
+          addrInput.setBackgroundColor(Color.WHITE);addrInput.setHint(prefix+"-01-01");addrInput.setText(prefix+"-01-01");
+          panel.addView(addrInput,new LinearLayout.LayoutParams(-1,dp(44)));
+          EditText hexInput=new EditText(this);hexInput.setSingleLine(true);hexInput.setTextColor(Color.BLACK);
+          hexInput.setBackgroundColor(Color.WHITE);hexInput.setHint("HEX значение с checksum");
+          panel.addView(hexInput,new LinearLayout.LayoutParams(-1,dp(44)));
+          ScrollView scroll=new ScrollView(this);LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);
+          scroll.addView(list);panel.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+          Runnable refresh=()->{
+            list.removeAllViews();
+            for(int j=0;j<entries.length();j++){
+              final int index=j;org.json.JSONObject item=entries.optJSONObject(j);if(item==null)continue;
+              Button entry=new Button(this);entry.setAllCaps(false);entry.setText((j+1)+" · "+item.optString("address"));
+              list.addView(entry,new LinearLayout.LayoutParams(-1,dp(48)));
+              entry.setOnClickListener(v->{chosen[0]=index;addrInput.setText(item.optString("address"));hexInput.setText(item.optString("value"));});
+            }
+          };
+          refresh.run();
+          LinearLayout actions=new LinearLayout(this);panel.addView(actions);
+          String[] labels={"Добавить","Изменить","Удалить"};
+          for(int action=0;action<3;action++){
+            final int kind=action;Button button=new Button(this);button.setAllCaps(false);button.setText(labels[action]);
+            actions.addView(button,new LinearLayout.LayoutParams(0,dp(48),1));
+            button.setOnClickListener(v->{
+              try{
+                if(kind!=0&&(chosen[0]<0||chosen[0]>=entries.length()))throw new IllegalArgumentException("Выберите строку");
+                if(kind==2){
+                  entries.remove(chosen[0]);chosen[0]=-1;
+                }else{
+                  String address=addrInput.getText().toString().trim().toUpperCase(Locale.US);
+                  String hex=hexInput.getText().toString().replaceAll("\\s+","").toUpperCase(Locale.US);
+                  if(!address.matches(java.util.regex.Pattern.quote(prefix)+"-[0-9]{2}-[0-9]{2}"))throw new IllegalArgumentException("Неверный адрес блока");
+                  if(hex.length()<4||hex.length()%2!=0||!hex.matches("[0-9A-F]+"))throw new IllegalArgumentException("Неверное HEX значение");
+                  for(int j=0;j<entries.length();j++)if((kind==0||j!=chosen[0])&&address.equalsIgnoreCase(entries.optJSONObject(j).optString("address")))throw new IllegalArgumentException("Адрес уже существует");
+                  if(kind==1&&!address.equalsIgnoreCase(entries.optJSONObject(chosen[0]).optString("address")))throw new IllegalArgumentException("Адрес изменять нельзя — добавьте новую строку");
+                  org.json.JSONObject row=new org.json.JSONObject();row.put("address",address);row.put("value",AbtCodec.recalc(address,hex));
+                  if(kind==0)entries.put(row);else entries.put(chosen[0],row);
+                }
+                if(!rowPrefs.edit().putString(id,entries.toString()).commit())throw new IllegalStateException("Не удалось сохранить строки");
+                resetCustomFeatureState(id);view.invalidate();refresh.run();
+                Toast.makeText(this,"Строки блока "+id+" сохранены",Toast.LENGTH_SHORT).show();
+              }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+            });
+          }
+        }
+      }
+      if(selected[0]==1&&active<4){
         final int rowsModule=adminRowsModule;
         final ArrayList<AbtCodec.Row> rows=abtRows[rowsModule];
         final int[] chosen={-1};

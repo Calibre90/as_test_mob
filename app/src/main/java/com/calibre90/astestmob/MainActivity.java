@@ -13,6 +13,34 @@ import java.io.*;
 
 public class MainActivity extends Activity {
   StudioView view;
+  boolean adminSession=false;
+  private static final String ADMIN_MAGIC="MAZDA6GH-ADMIN-V1";
+  private static final String ADMIN_PUBLIC_KEY="MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5ZvEA9vU4BHQ35UQKaBqsdZElVfATRC79SjFLRwMN/9g9ezgQk91ziDLaDzc4SuoRtuqiKDBqhRR/HJLfvfOB6+/DNAyc896dfW85seTaN51shqae5Rw/boIO0C9w9rgoJg7N7SHfqDvLAaKBeNYtleBdfhfU5AShumRUZnYRrT1irp0VLGLlTiYF+CMCF+oN2NV2QzA/cENGCCmxjsWpQKionXNPGKx7D36DBzLwmAYOF3M2J/JRuCtEpKO8O9/cMoTNZoB8/R40A4vY4pZBbuPZnhpmHiCXx5uzXXrJatpTTj04dqFw2Mrbo/CQP80FRYnNGipeCbIbGtk/tda8wIDAQAB";
+  boolean tryAdminKey(Uri uri){
+    try{
+      ByteArrayOutputStream buffer=new ByteArrayOutputStream();
+      try(InputStream in=getContentResolver().openInputStream(uri)){
+        if(in==null)return false;
+        byte[] bytes=new byte[1024];int n;
+        while((n=in.read(bytes))!=-1){if(buffer.size()+n>4096)return false;buffer.write(bytes,0,n);}
+      }
+      String[] lines=new String(buffer.toByteArray(),"UTF-8").trim().split("\\r?\\n");
+      if(lines.length!=2||!ADMIN_MAGIC.equals(lines[0]))return false;
+      byte[] encoded=android.util.Base64.decode(ADMIN_PUBLIC_KEY,android.util.Base64.DEFAULT);
+      java.security.PublicKey key=java.security.KeyFactory.getInstance("RSA").generatePublic(new java.security.spec.X509EncodedKeySpec(encoded));
+      java.security.Signature verifier=java.security.Signature.getInstance("SHA256withRSA");
+      verifier.initVerify(key);verifier.update(ADMIN_MAGIC.getBytes("UTF-8"));
+      return verifier.verify(android.util.Base64.decode(lines[1],android.util.Base64.DEFAULT));
+    }catch(Exception ignored){return false;}
+  }
+  boolean handleAdminKey(Uri uri){
+    String name=uri.getLastPathSegment();
+    if(name==null||!name.toLowerCase(java.util.Locale.US).endsWith("mazda6gh-admin.key"))return false;
+    if(tryAdminKey(uri))admin();
+    else Toast.makeText(this,"Неверный ключ администратора",Toast.LENGTH_LONG).show();
+    return true;
+  }
+
   final String[] modules={"IC","BCM","RKE","ABS"};
   final String[] ids={"720","726","731","760"};
   final String[] names={"Instrument Cluster","Body Control Module","Remote Keyless Entry","Anti-lock Brake System"};
@@ -273,6 +301,7 @@ public class MainActivity extends Activity {
   }
   void handleCustomAbt(int request,Uri uri)throws Exception{
     String id=pendingCustomId;pendingCustomId="";
+    if(request==12&&handleAdminKey(uri))return;
     org.json.JSONObject module=null;
     org.json.JSONArray catalog=customModuleCatalog();
     for(int i=0;i<catalog.length();i++){
@@ -541,12 +570,12 @@ public class MainActivity extends Activity {
       sx=getWidth()/400f;sy=getHeight()/860f;actual.save();actual.scale(sx,sy);
       Canvas c=actual;c.drawColor(appearanceColor("background",Color.BLACK));
       img(c,"header_mazda_no_lock",8,4,384,94);
-      card(c,351,12,33,34,9,false);
+      if(adminSession){card(c,351,12,33,34,9,false);
       // Centered lock drawn as geometry: no emoji font baseline or glyph offsets.
       p.setShader(null);p.setColor(Color.rgb(35,40,48));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2.8f);
       c.drawRoundRect(361.5f,18.5f,373.5f,34.5f,6,6,p);
       p.setStyle(Paint.Style.FILL);c.drawRoundRect(359.5f,27,375.5f,40,2.5f,2.5f,p);
-      p.setColor(Color.WHITE);c.drawCircle(367.5f,32,1.3f,p);c.drawRect(366.8f,32,368.2f,36,p);
+      p.setColor(Color.WHITE);c.drawCircle(367.5f,32,1.3f,p);c.drawRect(366.8f,32,368.2f,36,p);}
       org.json.JSONArray customTabs=customModuleCatalog();
       int tabCount=visibleTabCount();
       float tabWidth=370f/Math.max(1,tabCount);
@@ -757,7 +786,7 @@ public class MainActivity extends Activity {
         if(selected>=0&&selected<modules.length){active=selected;saveSelectedModule();invalidate();}
         return true;
       }
-      if(x>=346&&y>=8&&y<=70){admin();return true;}
+      if(adminSession&&x>=346&&y>=8&&y<=70){admin();return true;}
       if(active>=4){if(y>=351&&y<=373&&x>=340){
         org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
         if(module!=null){String id=module.optString("id");int total=0;for(FeatureEngine.Feature f:features)if(id.equalsIgnoreCase(f.module))total++;int current=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;customFeaturePage.put(id,current+featureSlots()>=total?0:current+featureSlots());saveCustomTabPosition(id);invalidate();}
@@ -947,6 +976,7 @@ public class MainActivity extends Activity {
   }
   @Override protected void onActivityResult(int req,int result,Intent data){super.onActivityResult(req,result,data);if(req==12||req==13){if(result==RESULT_OK&&data!=null&&data.getData()!=null){try{handleCustomAbt(req,data.getData());}catch(Exception ex){Toast.makeText(this,"Ошибка ABT: "+ex.getMessage(),Toast.LENGTH_LONG).show();}}else pendingCustomId="";return;}if(req!=10&&req!=11)return;if(result!=RESULT_OK||data==null||data.getData()==null){pendingModule=-1;return;}
     Uri uri=data.getData();
+    if(req==10&&handleAdminKey(uri)){pendingModule=-1;return;}
     int previous=active;
     if(pendingModule>=0&&pendingModule<modules.length)active=pendingModule;
     pendingModule=-1;
@@ -1030,7 +1060,7 @@ public class MainActivity extends Activity {
       TextView enter=caption("Войти",15,Color.WHITE,true);enter.setGravity(Gravity.CENTER);
       enter.setBackground(panel(Color.rgb(240,66,67),Color.rgb(169,0,8),9,Color.rgb(255,108,112)));
       place(root,enter,.53f,.75f,.39f,.13f,width,height);
-      enter.setOnClickListener(v->{if(login.getText().toString().equals("admin")&&password.getText().toString().equals("admin")){dialog.dismiss();showAdminTabs();}else Toast.makeText(this,"Неверный логин или пароль",Toast.LENGTH_SHORT).show();});
+      enter.setOnClickListener(v->{if(login.getText().toString().equals("admin")&&password.getText().toString().equals("admin")){dialog.dismiss();adminSession=true;view.invalidate();showAdminTabs();}else Toast.makeText(this,"Неверный логин или пароль",Toast.LENGTH_SHORT).show();});
     }else{
       // Information-only layout without duplicated Mazda logo/banner.
       TextView version=caption("Mazda 6 GH AS-Built",22,Color.BLACK,true);
@@ -1986,6 +2016,6 @@ public class MainActivity extends Activity {
       .setMessage("Раздел оформления из Run #89 переносится отдельно. Действующие настройки функций и ABT остаются без изменений.")
       .setPositiveButton("Назад к вкладкам",(d,w)->showAdminTabs()).show();
   }
-  void admin(){modal(true);}
+  void admin(){if(adminSession)showAdminTabs();else modal(true);}
   void about(){modal(false);}
 }

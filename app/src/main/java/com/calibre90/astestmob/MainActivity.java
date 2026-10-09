@@ -1724,40 +1724,46 @@ public class MainActivity extends Activity {
         });
         removeCustom.setOnClickListener(v->{
           try{
-            org.json.JSONArray catalog=new org.json.JSONArray(customPrefs.getString("catalog","[]"));
-            if(catalog.length()==0){Toast.makeText(this,"Нет дополнительных блоков",Toast.LENGTH_SHORT).show();return;}
-            String[] removeChoices=new String[catalog.length()];
-            for(int i=0;i<catalog.length();i++){org.json.JSONObject item=catalog.getJSONObject(i);removeChoices[i]=item.optString("id")+" · "+item.optString("name");}
-            new AlertDialog.Builder(this).setTitle("Удалить дополнительный блок").setItems(removeChoices,(d,index)->{
-              try{
-                org.json.JSONArray current=new org.json.JSONArray(customPrefs.getString("catalog","[]"));
-                org.json.JSONArray updated=new org.json.JSONArray();
-                for(int j=0;j<current.length();j++)if(j!=index)updated.put(current.get(j));
-                String removedId=current.getJSONObject(index).optString("id");
-                String activeId="";
-                if(active>=4){
-                  org.json.JSONObject selectedModule=current.optJSONObject(active-4);
-                  if(selectedModule!=null)activeId=selectedModule.optString("id");
-                }
-                customPrefs.edit().putString("catalog",updated.toString()).apply();
-                if(active>=4){
-                  active=0;
-                  for(int j=0;j<updated.length();j++){
-                    org.json.JSONObject remaining=updated.optJSONObject(j);
-                    if(remaining!=null&&activeId.equals(remaining.optString("id")))active=j+4;
+            org.json.JSONArray catalog=customModuleCatalog();
+            int index=selectedModuleIndex[0]-modules.length;
+            if(index<0){
+              Toast.makeText(this,"Заводской блок нельзя удалить без переноса его ABT-строк и функций",Toast.LENGTH_LONG).show();
+              return;
+            }
+            org.json.JSONObject selectedItem=catalog.optJSONObject(index);
+            if(selectedItem==null){Toast.makeText(this,"Выберите блок для удаления",Toast.LENGTH_SHORT).show();return;}
+            final String removedId=selectedItem.optString("id");
+            new AlertDialog.Builder(this).setTitle("Удалить блок "+removedId+"?")
+              .setMessage("Блок исчезнет из вкладок и каталога. Его сохранённые HEX-строки останутся в памяти приложения.")
+              .setNegativeButton("Отмена",null)
+              .setPositiveButton("Удалить",(d,w)->{
+                try{
+                  org.json.JSONArray current=customModuleCatalog();
+                  int removeIndex=-1;
+                  for(int j=0;j<current.length();j++)if(removedId.equals(current.optJSONObject(j).optString("id"))){removeIndex=j;break;}
+                  if(removeIndex<0)throw new IllegalStateException("Блок не найден");
+                  org.json.JSONArray updated=new org.json.JSONArray();
+                  for(int j=0;j<current.length();j++)if(j!=removeIndex)updated.put(current.get(j));
+                  String activeId="";
+                  if(active>=modules.length){
+                    org.json.JSONObject activeItem=current.optJSONObject(active-modules.length);
+                    if(activeItem!=null)activeId=activeItem.optString("id");
                   }
-                  saveSelectedModule();
-                }
-                customScroll.remove(removedId);
-                customFeaturePage.remove(removedId);
-                resetCustomFeatureState(removedId);
-                view.moduleTabOffset=Math.min(view.moduleTabOffset,Math.max(0f,(4+updated.length())*90f-370f));
-                view.revealActiveTab();
-                updateCatalog[0].run();view.invalidate();
-                Toast.makeText(this,"Блок удалён из каталога и вкладок",Toast.LENGTH_SHORT).show();
-              }catch(Exception ex){Toast.makeText(this,"Ошибка удаления",Toast.LENGTH_SHORT).show();}
-            }).show();
-          }catch(Exception ex){Toast.makeText(this,"Ошибка каталога",Toast.LENGTH_SHORT).show();}
+                  if(!customPrefs.edit().putString("catalog",updated.toString()).commit())throw new IllegalStateException("Не удалось сохранить каталог");
+                  if(active>=modules.length){
+                    active=0;
+                    for(int j=0;j<updated.length();j++)if(activeId.equals(updated.optJSONObject(j).optString("id")))active=modules.length+j;
+                    saveSelectedModule();
+                  }
+                  selectedModuleIndex[0]=0;
+                  if(refreshModuleFields[0]!=null)refreshModuleFields[0].run();
+                  customScroll.remove(removedId);customFeaturePage.remove(removedId);resetCustomFeatureState(removedId);
+                  view.moduleTabOffset=Math.min(view.moduleTabOffset,Math.max(0f,(modules.length+updated.length())*90f-370f));
+                  view.revealActiveTab();updateCatalog[0].run();view.invalidate();
+                  Toast.makeText(this,"Блок "+removedId+" удалён из списка",Toast.LENGTH_SHORT).show();
+                }catch(Exception ex){Toast.makeText(this,"Ошибка удаления: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+              }).show();
+          }catch(Exception ex){Toast.makeText(this,"Ошибка каталога: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
         });
       }
       if(selected[0]==3){

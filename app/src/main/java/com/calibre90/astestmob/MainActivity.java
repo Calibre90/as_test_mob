@@ -1574,8 +1574,9 @@ public class MainActivity extends Activity {
           input.setTextSize(14);input.setPadding(dp(8),0,dp(5),0);input.setBackgroundColor(Color.WHITE);
           field.addView(input,new LinearLayout.LayoutParams(0,dp(44),1));field.setPadding(dp(4),dp(3),dp(4),dp(3));fields.addView(field);inputs[k]=input;
         }
-        inputs[0].setEnabled(false);inputs[2].setEnabled(false);
         Runnable fill=()->{
+          inputs[0].setEnabled(moduleSelection[0]>=modules.length);
+          inputs[2].setEnabled(moduleSelection[0]>=modules.length);
           int m=moduleSelection[0];
           if(m>=modules.length){
             org.json.JSONObject item=customModuleCatalog().optJSONObject(m-modules.length);
@@ -1617,6 +1618,26 @@ public class MainActivity extends Activity {
             org.json.JSONObject item=catalog.optJSONObject(m-modules.length);
             if(item==null){Toast.makeText(this,"Блок не найден",Toast.LENGTH_LONG).show();return;}
             try{
+              String oldId=item.optString("id"),oldAddress=item.optString("address");
+              String newId=inputs[0].getText().toString().trim().toUpperCase(Locale.US);
+              String newAddress=inputs[2].getText().toString().trim().toUpperCase(Locale.US);
+              if(!newId.matches("[A-Z0-9_]{2,12}")||!newAddress.matches("[0-9A-F]{3}"))throw new IllegalArgumentException("ID или HEX-адрес указан неверно");
+              if(!newId.equals(oldId)||!newAddress.equals(oldAddress)){
+                for(int k=0;k<modules.length;k++)if(modules[k].equalsIgnoreCase(newId)||ids[k].equalsIgnoreCase(newAddress))throw new IllegalArgumentException("ID или адрес занят заводским блоком");
+                for(int k=0;k<catalog.length();k++)if(k!=m-modules.length){
+                  org.json.JSONObject other=catalog.optJSONObject(k);
+                  if(other!=null&&(newId.equalsIgnoreCase(other.optString("id"))||newAddress.equalsIgnoreCase(other.optString("address"))))throw new IllegalArgumentException("ID или адрес уже занят");
+                }
+                org.json.JSONArray existingRows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(oldId,"[]"));
+                if(existingRows.length()>0)throw new IllegalArgumentException("Сначала удалите HEX-строки блока перед сменой ID или адреса");
+                if(!newId.equals(oldId)){
+                  String oldFeatures=getSharedPreferences("studio_custom_features",MODE_PRIVATE).getString(oldId,"[]");
+                  if(!"[]".equals(oldFeatures))throw new IllegalArgumentException("Сначала удалите функции блока перед сменой ID");
+                  getSharedPreferences("studio_custom_rows",MODE_PRIVATE).edit().remove(oldId).apply();
+                  resetCustomFeatureState(oldId);
+                }
+                item.put("id",newId);item.put("address",newAddress);
+              }
               item.put("name",newName);
               item.put("version",inputs[3].getText().toString().trim());
               getSharedPreferences("studio_custom_modules",MODE_PRIVATE).edit().putString("catalog",catalog.toString()).apply();

@@ -1600,7 +1600,8 @@ public class MainActivity extends Activity {
             entry.setText((factoryEntryCount+i+1)+" · "+id+" · "+name);
             entry.setMinWidth(0);entry.setPadding(dp(5),0,dp(5),0);
             choices.addView(entry,new LinearLayout.LayoutParams(-1,dp(42)));
-            entry.setOnClickListener(v->{moduleSelection[0]=modules.length+index;fill.run();});
+            final int customIndex=i;
+            entry.setOnClickListener(v->{moduleSelection[0]=modules.length+customIndex;fill.run();});
 
           }
         };

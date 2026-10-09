@@ -51,7 +51,7 @@ public class MainActivity extends Activity {
   @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(Color.BLACK);getWindow().setNavigationBarColor(Color.BLACK);getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
     for(int i=0;i<4;i++)rows[i]=new ArrayList<>();
     features.addAll(StudioSettings.load(this));restoreCustomTabPositions();restoreSelectedModule();seedBuiltInRows();restoreAdminRows();
-    setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));view=new StudioView();view.moduleTabOffset=Math.max(0,active*90f-280f);setContentView(view);
+    setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));view=new StudioView();view.moduleTabOffset=Math.max(0,active*90f-280f);setContentView(view);LicenseGate.enforce(this);
   }
   /** Built-in sample configuration: available before importing any vehicle ABT. */
   void seedBuiltInRows(){

@@ -1601,7 +1601,7 @@ public class MainActivity extends Activity {
             entry.setMinWidth(0);entry.setPadding(dp(5),0,dp(5),0);
             choices.addView(entry,new LinearLayout.LayoutParams(-1,dp(42)));
             final int customIndex=i;
-            entry.setOnClickListener(v->{moduleSelection[0]=modules.length+customIndex;fill.run();});
+            entry.setOnClickListener(v->{\n              LinearLayout editForm=new LinearLayout(this);editForm.setOrientation(LinearLayout.VERTICAL);\n              EditText editName=new EditText(this);editName.setSingleLine(true);editName.setText(name);editForm.addView(editName);\n              EditText editVersion=new EditText(this);editVersion.setSingleLine(true);editVersion.setText(item.optString("version"));editForm.addView(editVersion);\n              new AlertDialog.Builder(this).setTitle("Изменить блок "+id).setView(editForm).setNegativeButton("Отмена",null)\n                .setPositiveButton("Сохранить",(d,w)->{try{org.json.JSONArray latest=customModuleCatalog();\n                  org.json.JSONObject target=latest.optJSONObject(customIndex);if(target==null)return;\n                  String updatedName=editName.getText().toString().trim();if(updatedName.isEmpty())return;\n                  target.put("name",updatedName);target.put("version",editVersion.getText().toString().trim());\n                  customPrefs.edit().putString("catalog",latest.toString()).apply();updateCatalog[0].run();view.invalidate();\n                }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}}).show();\n            });
 
           }
         };

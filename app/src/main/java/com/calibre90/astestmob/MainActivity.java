@@ -1613,14 +1613,14 @@ public class MainActivity extends Activity {
           inputs[0].setText(modules[m]);
           inputs[1].setText(StudioSettings.moduleName(this,modules[m],names[m]));
           inputs[2].setText(ids[m]);inputs[3].setText(StudioSettings.moduleVersion(this,modules[m]));
-          heading.setText("Блок "+modules[m]);
+          heading.setText("Блок "+modules[m]+(isFactoryModuleHidden(m)?" · СКРЫТ":" · АКТИВЕН"));
         };
         refreshModuleFields[0]=fill;
         fill.run();
         panel.addView(choices,new LinearLayout.LayoutParams(-1,-2));
         for(int m=0;m<modules.length;m++){
           final int index=m;Button choose=new Button(this);choose.setAllCaps(false);
-          choose.setText((m+1)+" · "+modules[m]+" · "+names[m]);
+          choose.setText((m+1)+" · "+modules[m]+" · "+names[m]+(isFactoryModuleHidden(m)?" [СКРЫТ]":""));
           choose.setTextSize(12);choose.setMinWidth(0);choose.setPadding(dp(5),0,dp(5),0);
           choices.addView(choose,new LinearLayout.LayoutParams(-1,dp(42)));
           choose.setOnClickListener(v->{moduleSelection[0]=index;fill.run();});
@@ -1719,6 +1719,7 @@ public class MainActivity extends Activity {
               int index=hidden.get(which);
               getSharedPreferences("studio_hidden_factory_modules",MODE_PRIVATE).edit().putBoolean(modules[index],false).apply();
               active=index;saveSelectedModule();view.revealActiveTab();view.invalidate();
+              if(refreshModuleFields[0]!=null)refreshModuleFields[0].run();
               Toast.makeText(this,"Блок "+modules[index]+" восстановлен",Toast.LENGTH_SHORT).show();
             }).show();
         });

@@ -803,7 +803,27 @@ public class MainActivity extends Activity {
     if(index>=available.size()){Toast.makeText(this,"Функция для этого блока ещё не настроена",Toast.LENGTH_SHORT).show();return;}
     FeatureEngine.Feature f=available.get(index);AbtCodec.Row row=findRow(active,f.address);
     if(row==null){Toast.makeText(this,"Строка "+f.address+" отсутствует в блоке "+modules[active]+". Добавьте её через админку или загрузите ABT.",Toast.LENGTH_LONG).show();return;}
-    try{boolean next=!isChecked(f);engines[active].apply(row,f,next,features);checkedFeatures.put(featureKey(f),next);if(!loaded[active])saveAdminRows(active);lastFeatureStatus=f.label+": "+(next?"изменено":"исходное значение");refreshRows(active);view.invalidate();}
+    try{
+      boolean next=!isChecked(f);
+      String before=row.value;
+      engines[active].apply(row,f,next,features);
+      checkedFeatures.put(featureKey(f),next);
+      if(!loaded[active])saveAdminRows(active);
+      String after=row.value;
+      StringBuilder changes=new StringBuilder();
+      // Do not include the final checksum byte in the displayed feature changes.
+      int dataEnd=Math.min(before.length(),after.length())-2;
+      for(int i=0;i<dataEnd;i++){
+        char oldChar=Character.toUpperCase(before.charAt(i));
+        char newChar=Character.toUpperCase(after.charAt(i));
+        if(oldChar!=newChar){
+          if(changes.length()>0)changes.append(", ");
+          changes.append(oldChar).append(" на ").append(newChar);
+        }
+      }
+      lastFeatureStatus=f.label+": "+(changes.length()>0?"Изменено "+changes:"Без изменений");
+      refreshRows(active);view.invalidate();
+    }
     catch(Exception ex){Toast.makeText(this,"Ошибка функции: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
   }
   void inspectHexRow(int index){
@@ -1024,7 +1044,7 @@ public class MainActivity extends Activity {
         styled.setSpan(new android.text.style.ForegroundColorSpan(Color.rgb(24,96,191)),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         styled.setSpan(new android.text.style.UnderlineSpan(),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         person.setText(styled);
-        place(root,person,.09f,i==0?.49f:.59f,.84f,.075f,width,height);
+        place(root,person,.09f,i==0?.49f:.555f,.84f,.075f,width,height);
         android.text.style.ClickableSpan onlyLink=new android.text.style.ClickableSpan(){
           @Override public void onClick(android.view.View widget){
             if(!url.isEmpty()&&(url.startsWith("https://")||url.startsWith("http://"))){
@@ -1045,10 +1065,10 @@ public class MainActivity extends Activity {
         if(pkg.versionName!=null&&!pkg.versionName.isEmpty())appVersion=pkg.versionName;
         appBuild=android.os.Build.VERSION.SDK_INT>=28?pkg.getLongVersionCode():pkg.versionCode;
       }catch(Exception ignored){}
-      TextView versionInfo=caption("◉  Версия: "+appVersion,13,Color.rgb(98,106,116),false);
-      place(root,versionInfo,.13f,.71f,.76f,.045f,width,height);
-      TextView buildInfo=caption("◷  Сборка: Run #"+appBuild,13,Color.rgb(98,106,116),false);
-      place(root,buildInfo,.13f,.765f,.76f,.045f,width,height);
+      TextView versionInfo=caption("◉  Версия: "+appVersion,10,Color.rgb(98,106,116),false);
+      place(root,versionInfo,.13f,.705f,.76f,.035f,width,height);
+      TextView buildInfo=caption("◷  Сборка: Run #"+appBuild,10,Color.rgb(98,106,116),false);
+      place(root,buildInfo,.13f,.739f,.76f,.035f,width,height);
       TextView ok=caption("Закрыть",16,Color.WHITE,true);ok.setGravity(Gravity.CENTER);
       ok.setBackground(panel(Color.rgb(245,69,69),Color.rgb(170,0,10),9,Color.rgb(255,103,109)));
       place(root,ok,.09f,.86f,.82f,.095f,width,height);ok.setOnClickListener(v->dialog.dismiss());

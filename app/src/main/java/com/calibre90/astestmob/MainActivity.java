@@ -540,7 +540,7 @@ public class MainActivity extends Activity {
     @Override protected void onDraw(Canvas actual){super.onDraw(actual);
       sx=getWidth()/400f;sy=getHeight()/860f;actual.save();actual.scale(sx,sy);
       Canvas c=actual;c.drawColor(appearanceColor("background",Color.BLACK));
-      img(c,"header_mazda_no_lock",8,4,384,106);
+      img(c,"header_mazda_no_lock",8,4,384,94);
       card(c,351,12,33,34,9,false);
       // Centered lock drawn as geometry: no emoji font baseline or glyph offsets.
       p.setShader(null);p.setColor(Color.rgb(35,40,48));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2.8f);

@@ -1247,7 +1247,9 @@ public class MainActivity extends Activity {
       panel.setPadding(dp(3),dp(5),dp(3),dp(5));
       if(selected[0]==0||selected[0]==1||selected[0]==2){
         ScrollView moduleScroll=new ScrollView(this);
-        moduleScroll.setFillViewport(false);
+        moduleScroll.setFillViewport(true);
+        moduleScroll.setSmoothScrollingEnabled(true);
+        moduleScroll.setDescendantFocusability(android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS);
         moduleScroll.addView(panel,new ScrollView.LayoutParams(-1,-2));
         body.addView(moduleScroll,new FrameLayout.LayoutParams(-1,-1));
       }else body.addView(panel,new FrameLayout.LayoutParams(-1,-1));
@@ -1650,7 +1652,7 @@ public class MainActivity extends Activity {
           inputs[0].setText(modules[m]);
           inputs[1].setText(StudioSettings.moduleName(this,modules[m],names[m]));
           inputs[2].setText(ids[m]);inputs[3].setText(StudioSettings.moduleVersion(this,modules[m]));
-          heading.setText("Блок "+modules[m]+(isFactoryModuleHidden(m)?" · СКРЫТ":" · АКТИВЕН"));
+          heading.setText("Блок "+modules[m]);
         };
         refreshModuleFields[0]=fill;
         fill.run();

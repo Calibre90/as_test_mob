@@ -1481,12 +1481,24 @@ public class MainActivity extends Activity {
           try{storedRows=new org.json.JSONArray(rowPrefs.getString(id,"[]"));}catch(Exception ex){storedRows=new org.json.JSONArray();}
           final org.json.JSONArray entries=storedRows;
           final int[] chosen={-1};
-          EditText addrInput=new EditText(this);addrInput.setSingleLine(true);addrInput.setTextColor(Color.BLACK);
-          addrInput.setBackgroundColor(Color.WHITE);addrInput.setHint(prefix+"-01-01");addrInput.setText(prefix+"-01-01");
-          panel.addView(addrInput,new LinearLayout.LayoutParams(-1,dp(44)));
-          EditText hexInput=new EditText(this);hexInput.setSingleLine(true);hexInput.setTextColor(Color.BLACK);
-          hexInput.setBackgroundColor(Color.WHITE);hexInput.setHint("HEX значение с checksum");
-          panel.addView(hexInput,new LinearLayout.LayoutParams(-1,dp(44)));
+          LinearLayout customForm=new LinearLayout(this);customForm.setOrientation(LinearLayout.VERTICAL);
+          panel.addView(customForm);
+          EditText addrInput=new EditText(this);
+          EditText hexInput=new EditText(this);
+          EditText[] customInputs={addrInput,hexInput};
+          String[] customLabels={"Строка","Значение"};
+          for(int k=0;k<customInputs.length;k++){
+            LinearLayout field=new LinearLayout(this);field.setOrientation(LinearLayout.HORIZONTAL);
+            TextView label=new TextView(this);label.setText(customLabels[k]);label.setTextColor(Color.WHITE);
+            label.setGravity(Gravity.CENTER_VERTICAL);label.setTextSize(12);
+            field.addView(label,new LinearLayout.LayoutParams(0,dp(44),1));
+            EditText input=customInputs[k];input.setSingleLine(true);input.setTextColor(Color.BLACK);
+            input.setTextSize(14);input.setPadding(dp(7),0,dp(5),0);input.setBackgroundColor(Color.WHITE);
+            field.addView(input,new LinearLayout.LayoutParams(0,dp(44),1));
+            field.setPadding(dp(4),dp(3),dp(4),dp(3));customForm.addView(field);
+          }
+          addrInput.setHint(prefix+"-01-01");addrInput.setText(prefix+"-01-01");
+          hexInput.setHint("HEX значение");
           ScrollView scroll=new ScrollView(this);LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);
           scroll.addView(list);panel.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
           Runnable refresh=()->{
@@ -1821,9 +1833,9 @@ public class MainActivity extends Activity {
         });
       }
       if(selected[0]==3){
-        final String[] keys={"title","background","panel","feature_columns","open_text","save_text","admin_text","author_text","ready_text","about_description","creator1_name","creator1_url","creator2_name","creator2_url"};
-        final String[] labels={"Название окна","Фон приложения","Фон HEX-блока","Колонки функций","Кнопка открытия","Кнопка сохранения","Кнопка Admin","Заголовок авторов","Текст статуса","Описание программы","Автор 1 — имя","Автор 1 — ссылка","Автор 2 — имя","Автор 2 — ссылка"};
-        final String[] defaults={"Mazda 6 GH As-Built Studio","","","3","Открыть ABT","Сохранить ABT","Админка","Кто сделал приложение","Готово","Редактор As-Built для Mazda 6 GH","Dim304","https://www.drive2.ru/users/dim304/","Wolis11","https://www.drive2.ru/users/wolis11/"};
+        final String[] keys={"title","background","panel","feature_columns","open_text","save_text","admin_text","ready_text","author_text","about_description","creator1_name","creator1_url","creator2_name","creator2_url"};
+        final String[] labels={"Название окна","Фон приложения","Фон HEX-блока","Колонки функций","Кнопка открытия","Кнопка сохранения","Кнопка Admin","Текст статуса","Заголовок авторов","Описание программы","Автор 1 — имя","Автор 1 — ссылка","Автор 2 — имя","Автор 2 — ссылка"};
+        final String[] defaults={"Mazda 6 GH As-Built Studio","","","3","Открыть ABT","Сохранить ABT","Админка","Готово","Кто сделал приложение","Редактор As-Built для Mazda 6 GH","Dim304","https://www.drive2.ru/users/dim304/","Wolis11","https://www.drive2.ru/users/wolis11/"};
         android.widget.ScrollView appearanceScroll=new android.widget.ScrollView(this);
         LinearLayout appearanceFields=new LinearLayout(this);appearanceFields.setOrientation(LinearLayout.VERTICAL);
         appearanceScroll.addView(appearanceFields);panel.addView(appearanceScroll,new LinearLayout.LayoutParams(-1,0,1));

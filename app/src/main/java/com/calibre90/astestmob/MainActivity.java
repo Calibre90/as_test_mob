@@ -1019,8 +1019,17 @@ public class MainActivity extends Activity {
       place(root,version,.09f,.205f,.82f,.10f,width,height);
       View divider=new View(this);divider.setBackgroundColor(Color.rgb(220,50,55));
       place(root,divider,.09f,.32f,.82f,.004f,width,height);
+      // Keep the complete administrator-supplied description accessible, even for long text.
+      android.widget.ScrollView descriptionScroll=new android.widget.ScrollView(this);
+      descriptionScroll.setFillViewport(false);
+      descriptionScroll.setVerticalScrollBarEnabled(true);
       TextView description=caption(StudioSettings.appearance(this,"about_description","Редактор As-Built для Mazda 6 GH"),15,Color.BLACK,false);
-      place(root,description,.09f,.35f,.84f,.13f,width,height);
+      description.setGravity(Gravity.TOP|Gravity.START);
+      description.setSingleLine(false);
+      description.setMaxLines(Integer.MAX_VALUE);
+      description.setPadding(0,dp(3),dp(5),dp(3));
+      descriptionScroll.addView(description,new android.widget.ScrollView.LayoutParams(-1,-2));
+      place(root,descriptionScroll,.09f,.35f,.84f,.17f,width,height);
       String[] creatorNames={
         StudioSettings.appearance(this,"creator1_name","Dim304"),
         StudioSettings.appearance(this,"creator2_name","Wolis11")

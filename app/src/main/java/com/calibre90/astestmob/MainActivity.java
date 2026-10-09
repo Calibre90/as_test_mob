@@ -1228,6 +1228,10 @@ public class MainActivity extends Activity {
     final int[] selected={0};
     final Runnable[] redrawRef=new Runnable[1];
     Runnable redraw=()->{
+      int maxRowsModule=modules.length+customModuleCatalog().length();
+      if(adminRowsModule<0||adminRowsModule>=maxRowsModule){
+        adminRowsModule=Math.max(0,Math.min(active,maxRowsModule-1));
+      }
       commitCurrent[0]=null;
       body.removeAllViews();
       LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);

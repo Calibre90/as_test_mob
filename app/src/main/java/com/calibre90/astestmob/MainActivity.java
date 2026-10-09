@@ -958,7 +958,7 @@ public class MainActivity extends Activity {
   void modal(boolean isAdmin){
     final Dialog dialog=new Dialog(this);
     final int width=Math.round(getResources().getDisplayMetrics().widthPixels*.87f);
-    final int height=Math.round(width*(isAdmin?1.24f:.94f));
+    final int height=Math.round(width*(isAdmin?1.24f:1.14f));
     final FrameLayout root=new FrameLayout(this);
     root.setBackground(panel(Color.rgb(252,253,254),Color.rgb(234,239,244),14,Color.rgb(225,50,51)));
     root.setClipToOutline(true);
@@ -996,11 +996,11 @@ public class MainActivity extends Activity {
       // Information-only layout without duplicated Mazda logo/banner.
       TextView version=caption("Mazda 6 GH AS-Built",22,Color.BLACK,true);
       version.setGravity(Gravity.CENTER);
-      place(root,version,.09f,.245f,.82f,.11f,width,height);
+      place(root,version,.09f,.205f,.82f,.10f,width,height);
       View divider=new View(this);divider.setBackgroundColor(Color.rgb(220,50,55));
-      place(root,divider,.09f,.375f,.82f,.004f,width,height);
+      place(root,divider,.09f,.32f,.82f,.004f,width,height);
       TextView description=caption(StudioSettings.appearance(this,"about_description","Редактор As-Built для Mazda 6 GH"),15,Color.BLACK,false);
-      place(root,description,.09f,.42f,.84f,.12f,width,height);
+      place(root,description,.09f,.35f,.84f,.13f,width,height);
       String[] creatorNames={
         StudioSettings.appearance(this,"creator1_name","Dim304"),
         StudioSettings.appearance(this,"creator2_name","Wolis11")
@@ -1024,7 +1024,7 @@ public class MainActivity extends Activity {
         styled.setSpan(new android.text.style.ForegroundColorSpan(Color.rgb(24,96,191)),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         styled.setSpan(new android.text.style.UnderlineSpan(),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         person.setText(styled);
-        place(root,person,.09f,i==0?.545f:.645f,.84f,.085f,width,height);
+        place(root,person,.09f,i==0?.49f:.59f,.84f,.075f,width,height);
         android.text.style.ClickableSpan onlyLink=new android.text.style.ClickableSpan(){
           @Override public void onClick(android.view.View widget){
             if(!url.isEmpty()&&(url.startsWith("https://")||url.startsWith("http://"))){
@@ -1038,9 +1038,20 @@ public class MainActivity extends Activity {
         person.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
         person.setHighlightColor(Color.TRANSPARENT);
       }
+      String appVersion="1.0.0 (STUDIO)";
+      long appBuild=1;
+      try{
+        android.content.pm.PackageInfo pkg=getPackageManager().getPackageInfo(getPackageName(),0);
+        if(pkg.versionName!=null&&!pkg.versionName.isEmpty())appVersion=pkg.versionName;
+        appBuild=android.os.Build.VERSION.SDK_INT>=28?pkg.getLongVersionCode():pkg.versionCode;
+      }catch(Exception ignored){}
+      TextView versionInfo=caption("◉  Версия: "+appVersion,13,Color.rgb(98,106,116),false);
+      place(root,versionInfo,.13f,.71f,.76f,.045f,width,height);
+      TextView buildInfo=caption("◷  Сборка: Run #"+appBuild,13,Color.rgb(98,106,116),false);
+      place(root,buildInfo,.13f,.765f,.76f,.045f,width,height);
       TextView ok=caption("Закрыть",16,Color.WHITE,true);ok.setGravity(Gravity.CENTER);
       ok.setBackground(panel(Color.rgb(245,69,69),Color.rgb(170,0,10),9,Color.rgb(255,103,109)));
-      place(root,ok,.09f,.765f,.82f,.14f,width,height);ok.setOnClickListener(v->dialog.dismiss());
+      place(root,ok,.09f,.86f,.82f,.095f,width,height);ok.setOnClickListener(v->dialog.dismiss());
     }
     dialog.setContentView(root);dialog.show();
     Window window=dialog.getWindow();if(window!=null){

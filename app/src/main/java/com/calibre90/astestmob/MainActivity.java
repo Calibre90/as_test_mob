@@ -559,10 +559,10 @@ public class MainActivity extends Activity {
         if(module==null){active=0;actual.restore();return;}
         String id=module.optString("id"), prefix=module.optString("address");
         card(c,10,190,380,82,13,true);
-        txtFit(c,id+" · "+module.optString("name"),25,224,18,Color.BLACK,350);
-        txt(c,"Адрес: "+prefix+"   Ver: "+module.optString("version"),25,251,12,Color.DKGRAY,false);
+        txtFit(c,id+": "+module.optString("name"),25,222,18,Color.BLACK,350);\n        p.setColor(Color.rgb(224,57,64));p.setStrokeWidth(1);c.drawLine(25,232,316,232,p);
+        txt(c,"ID: "+prefix+"  |  Ver: "+(module.optString("version").isEmpty()?"Не указана":module.optString("version")),25,252,12,Color.rgb(91,103,119),false);
         card(c,10,279,380,91,12,true);
-        card(c,10,379,380,334,13,true);
+        card(c,10,376,380,337,13,true);
         int featureY=303;
         int featureCount=0;
         int featureTotal=0;
@@ -577,12 +577,12 @@ public class MainActivity extends Activity {
           txtFit(c,(customChecked(feature)?"☑ ":"□ ")+feature.label,24,featureY,12,Color.BLACK,350);
           featureY+=25;featureCount++;
         }
-        if(featureCount==0)txt(c,"Функции не настроены",24,302,12,Color.DKGRAY,false);
+        if(featureCount==0)txt(c,"Функции не настроены",24,315,12,Color.DKGRAY,false);
         if(featureTotal>3)txt(c,"Далее › "+(featureStart+1)+"-"+Math.min(featureTotal,featureStart+3)+"/"+featureTotal,244,365,11,Color.DKGRAY,false);
         org.json.JSONArray customRows;
         try{customRows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]"));}
         catch(Exception ex){customRows=new org.json.JSONArray();}
-        if(customRows.length()==0)txt(c,"Нет строк. Добавьте их через админку.",24,415,13,Color.DKGRAY,false);
+        if(customRows.length()==0)txt(c,"Нет данных — откройте ABT блока "+id,22,420,12,Color.DKGRAY,false);
         txt(c,"HEX-строки: "+customRows.length(),24,398,11,Color.DKGRAY,false);
         int offset=Math.max(0,Math.min(customScroll.containsKey(id)?customScroll.get(id):0,Math.max(0,customRows.length()-9)));
         txt(c,(customRows.length()==0?"0":(offset+1)+"-"+Math.min(customRows.length(),offset+9))+"/"+customRows.length(),305,398,11,Color.DKGRAY,false);

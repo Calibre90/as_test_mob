@@ -1234,6 +1234,7 @@ public class MainActivity extends Activity {
     final Runnable[] redrawRef=new Runnable[1];
     final Button[] footerSave={null};
     final LinearLayout[] footerCloseLayout={null};
+    final ScrollView[] adminScroll={null};
     Runnable redraw=()->{
       int maxRowsModule=modules.length+customModuleCatalog().length();
       if(adminRowsModule<0||adminRowsModule>=maxRowsModule){
@@ -1247,6 +1248,7 @@ public class MainActivity extends Activity {
       panel.setPadding(dp(3),dp(5),dp(3),dp(5));
       if(selected[0]==0||selected[0]==1||selected[0]==2){
         ScrollView moduleScroll=new ScrollView(this);
+        adminScroll[0]=moduleScroll;
         moduleScroll.setFillViewport(true);
         moduleScroll.setSmoothScrollingEnabled(true);
         moduleScroll.setDescendantFocusability(android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS);
@@ -1298,6 +1300,16 @@ public class MainActivity extends Activity {
           value.setBackgroundColor(Color.WHITE);lineRow.addView(value,new LinearLayout.LayoutParams(0,dp(42),1));
           lineRow.setPadding(dp(4),dp(3),dp(4),dp(3));
           values[j]=value;fieldRows[j]=lineRow;fields.addView(lineRow);
+          value.setOnFocusChangeListener((focusedView,hasFocus)->{
+            if(hasFocus&&adminScroll[0]!=null){
+              adminScroll[0].post(()->{
+                android.graphics.Rect rect=new android.graphics.Rect();
+                focusedView.getDrawingRect(rect);
+                adminScroll[0].offsetDescendantRectToMyCoords(focusedView,rect);
+                adminScroll[0].smoothScrollTo(0,Math.max(0,rect.bottom-adminScroll[0].getHeight()+dp(72)));
+              });
+            }
+          });
         }
         Runnable updateModeFields=()->{
           boolean bits="BITS".equalsIgnoreCase(values[4].getText().toString().trim());

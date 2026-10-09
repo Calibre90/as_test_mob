@@ -563,34 +563,41 @@ public class MainActivity extends Activity {
         txt(c,"ID: "+prefix+"  |  Ver: "+(module.optString("version").isEmpty()?"Не указана":module.optString("version")),25,252,12,Color.rgb(91,103,119),false);
         card(c,10,279,380,91,12,true);
         card(c,10,376,380,337,13,true);
-        int featureY=303;
         int featureCount=0;
         int featureTotal=0;
         for(FeatureEngine.Feature feature:features)if(id.equalsIgnoreCase(feature.module))featureTotal++;
         int featureStart=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;
         if(featureStart>=featureTotal)featureStart=0;
+        p.setColor(Color.rgb(190,199,211));p.setStrokeWidth(1);
+        for(int line=1;line<3;line++){float fy=284+line*27;c.drawLine(15,fy,385,fy,p);}
         int featureSkip=0;
         for(FeatureEngine.Feature feature:features){
           if(!id.equalsIgnoreCase(feature.module))continue;
           if(featureSkip++<featureStart)continue;
           if(featureCount>=3)break;
-          txtFit(c,(customChecked(feature)?"☑ ":"□ ")+feature.label,24,featureY,12,Color.BLACK,350);
-          featureY+=25;featureCount++;
+          float fx=25f,fy=289f+featureCount*26f;
+          card(c,fx,fy,17,17,4,false);
+          if(customChecked(feature)){
+            rect(c,Color.rgb(210,28,37),fx+3,fy+3,11,11,2);
+            p.setColor(Color.WHITE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);
+            Path mark=new Path();mark.moveTo(fx+3,fy+9);mark.lineTo(fx+7,fy+13);mark.lineTo(fx+14,fy+4);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
+          }
+          txtFit(c,feature.label,fx+25,fy+13,12,Color.BLACK,310);
+          featureCount++;
         }
         if(featureCount==0)txt(c,"Функции не настроены",24,315,12,Color.DKGRAY,false);
-        if(featureTotal>3)txt(c,"Далее › "+(featureStart+1)+"-"+Math.min(featureTotal,featureStart+3)+"/"+featureTotal,244,365,11,Color.DKGRAY,false);
+        if(featureTotal>3)txt(c,"›",365,346,22,Color.rgb(155,0,0),true);
         org.json.JSONArray customRows;
         try{customRows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]"));}
         catch(Exception ex){customRows=new org.json.JSONArray();}
         if(customRows.length()==0)txt(c,"Нет данных — откройте ABT блока "+id,22,420,12,Color.DKGRAY,false);
-        txt(c,"HEX-строки: "+customRows.length(),24,398,11,Color.DKGRAY,false);
         int offset=Math.max(0,Math.min(customScroll.containsKey(id)?customScroll.get(id):0,Math.max(0,customRows.length()-9)));
-        txt(c,(customRows.length()==0?"0":(offset+1)+"-"+Math.min(customRows.length(),offset+9))+"/"+customRows.length(),305,398,11,Color.DKGRAY,false);
         for(int i=0;i<Math.min(9,customRows.length()-offset);i++){
           org.json.JSONObject item=customRows.optJSONObject(i+offset);if(item==null)continue;
-          float yy=409+i*30;
-          card(c,17,yy,366,28,7,false);
-          txtFit(c,item.optString("address"),24,yy+19,12,Color.BLACK,138);
+          float yy=380+i*36.5f;
+          card(c,15,yy,370,35,8,false);
+          p.setColor(Color.rgb(202,209,219));p.setStrokeWidth(1);c.drawLine(165,yy+4,165,yy+31,p);
+          txtFit(c,item.optString("address"),28,yy+23,14,Color.BLACK,132);
           String hex=item.optString("value");
           java.util.HashSet<Integer> marked=new java.util.HashSet<>();
           String baseline=customBaseline(id,item.optString("address"));
@@ -599,17 +606,18 @@ public class MainActivity extends Activity {
             for(int k=0;k<currentHex.length();k++)
               if(k>=oldHex.length()||oldHex.charAt(k)!=currentHex.charAt(k))marked.add(k);
           }
-          p.setTextSize(12);p.setStyle(Paint.Style.FILL);
-          c.save();c.clipRect(168,yy+1,374,yy+27);
-          float px=168;
+          p.setTextSize(13);p.setStyle(Paint.Style.FILL);
+          c.save();c.clipRect(175,yy+2,381,yy+33);
+          float px=177;int hexIndex=0;
           for(int k=0;k<hex.length();k++){
-            String ch=hex.substring(k,k+1);
-            boolean highlight=marked.contains(k);
+            char ch=hex.charAt(k);
+            boolean highlight=ch!=' '&&marked.contains(hexIndex);
             p.setTypeface(Typeface.create("monospace",highlight?Typeface.BOLD:Typeface.NORMAL));
-            p.setColor(highlight?Color.rgb(210,38,48):Color.BLACK);
-            if(px+p.measureText(ch)>374)break;
-            c.drawText(ch,px,yy+19,p);
-            px+=p.measureText(ch);
+            p.setColor(highlight?Color.rgb(20,105,220):Color.BLACK);
+            if(px+p.measureText(String.valueOf(ch))>381)break;
+            c.drawText(String.valueOf(ch),px,yy+23,p);
+            px+=p.measureText(String.valueOf(ch));
+            if(ch!=' ')hexIndex++;
           }
           c.restore();
         }
@@ -1235,8 +1243,8 @@ public class MainActivity extends Activity {
         adminRowsModule=Math.max(0,Math.min(active,maxRowsModule-1));
       }
       commitCurrent[0]=null;
-      if(footerSave[0]!=null)footerSave[0].setVisibility(selected[0]==1?View.GONE:View.VISIBLE);
-      if(footerCloseLayout[0]!=null)footerCloseLayout[0].setWeightSum(selected[0]==1?1f:2f);
+      if(footerSave[0]!=null){footerSave[0].setVisibility(selected[0]==3?View.VISIBLE:View.GONE);footerSave[0].setText("Сохранить оформление");}
+      if(footerCloseLayout[0]!=null)footerCloseLayout[0].setWeightSum(selected[0]==3?2f:1f);
       body.removeAllViews();
       LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);
       panel.setPadding(dp(3),dp(5),dp(3),dp(5));
@@ -1857,7 +1865,7 @@ public class MainActivity extends Activity {
         note.setTextColor(Color.LTGRAY);appearanceFields.addView(note);
         Button saveAppearance=new Button(this);saveAppearance.setText("Сохранить оформление");saveAppearance.setAllCaps(false);
         saveAppearance.setTextSize(12);saveAppearance.setMinWidth(0);saveAppearance.setPadding(dp(4),0,dp(4),0);
-        panel.addView(saveAppearance,new LinearLayout.LayoutParams(-1,dp(48)));
+        commitCurrent[0]=()->saveAppearance.performClick();
         saveAppearance.setOnClickListener(v->{
           try{
             java.util.HashMap<String,String> changes=new java.util.HashMap<>();
@@ -1894,7 +1902,7 @@ public class MainActivity extends Activity {
     Button close=new Button(this);close.setText("Закрыть");close.setAllCaps(false);
     footer.addView(close,new LinearLayout.LayoutParams(0,dp(52),1));close.setOnClickListener(v->dialog.dismiss());
     root.addView(footer);
-    save.setVisibility(selected[0]==1?View.GONE:View.VISIBLE);
+    save.setVisibility(View.GONE);
     dialog.setContentView(root);
     android.view.Window window=dialog.getWindow();
     if(window!=null){window.setBackgroundDrawableResource(android.R.color.transparent);window.setLayout(-1,-1);}

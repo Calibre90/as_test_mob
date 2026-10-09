@@ -540,17 +540,17 @@ public class MainActivity extends Activity {
       p.setStyle(Paint.Style.FILL);c.drawRoundRect(359.5f,27,375.5f,40,2.5f,2.5f,p);
       p.setColor(Color.WHITE);c.drawCircle(367.5f,32,1.3f,p);c.drawRect(366.8f,32,368.2f,36,p);
       org.json.JSONArray customTabs=customModuleCatalog();
-      int tabCount=4+customTabs.length();
+      int tabCount=visibleTabCount();
       float tabWidth=tabCount<=4?93.75f:90f;
       card(c,10,125,380,57,13,false);
       c.save();c.clipRect(15,129,385,179);
       for(int i=0;i<tabCount;i++){
         float x=15+i*tabWidth-moduleTabOffset;
         if(x+tabWidth<15||x>385)continue;
-        String tab=i<4?modules[i]:customTabs.optJSONObject(i-4)==null?"?":customTabs.optJSONObject(i-4).optString("id","?");
-        if(i==active){p.setShader(new LinearGradient(x,132,x,175,Color.rgb(255,74,79),Color.rgb(176,0,10),Shader.TileMode.CLAMP));p.setStyle(Paint.Style.FILL);c.drawRoundRect(x,131,x+tabWidth-5,175,9,9,p);p.setShader(null);}
+        int tabModule=moduleAtTabIndex(i);\n        String tab=tabModule<4?modules[tabModule]:customTabs.optJSONObject(tabModule-4)==null?"?":customTabs.optJSONObject(tabModule-4).optString("id","?");
+        if(tabModule==active){p.setShader(new LinearGradient(x,132,x,175,Color.rgb(255,74,79),Color.rgb(176,0,10),Shader.TileMode.CLAMP));p.setStyle(Paint.Style.FILL);c.drawRoundRect(x,131,x+tabWidth-5,175,9,9,p);p.setShader(null);}
         else card(c,x,131,tabWidth-5,44,9,false);
-        centered(c,tab,x,131,tabWidth-5,44,13,i==active?Color.WHITE:Color.BLACK);
+        centered(c,tab,x,131,tabWidth-5,44,13,tabModule==active?Color.WHITE:Color.BLACK);
       }
       c.restore();
       if(active>=4){
@@ -687,13 +687,13 @@ public class MainActivity extends Activity {
     }
     float startY,startX,moduleTabOffset=0;
     void revealActiveTab(){
-      int count=4+customModuleCatalog().length();
+      int count=visibleTabCount();
       float width=count<=4?93.75f:90f;
       float maxOffset=Math.max(0,count*width-370f);
-      float left=active*width-moduleTabOffset;
+      int tabPosition=visibleTabIndex(active);\n      float left=tabPosition*width-moduleTabOffset;
       float right=left+width;
-      if(left<0)moduleTabOffset=active*width;
-      else if(right>370f)moduleTabOffset=(active+1)*width-370f;
+      if(left<0)moduleTabOffset=tabPosition*width;
+      else if(right>370f)moduleTabOffset=(tabPosition+1)*width-370f;
       moduleTabOffset=Math.max(0,Math.min(maxOffset,moduleTabOffset));
     }
     @Override public boolean onTouchEvent(MotionEvent e){if(e.getAction()==MotionEvent.ACTION_DOWN){startY=e.getY()/sy;startX=e.getX()/sx;return true;}if(e.getAction()!=MotionEvent.ACTION_UP)return true;float x=e.getX()/sx,y=e.getY()/sy;
@@ -718,13 +718,13 @@ public class MainActivity extends Activity {
         float maxOffset=Math.max(0,count*width-370f);
         if(Math.abs(x-startX)>12){moduleTabOffset=Math.max(0,Math.min(maxOffset,moduleTabOffset+startX-x));invalidate();return true;}
         if(x<15||x>385)return true;
-        int selected=(int)((x-15+moduleTabOffset)/width);
+        int selected=(int)((x-15+moduleTabOffset)/width);\n        if(selected<0||selected>=count)return true;\n        selected=moduleAtTabIndex(selected);
         if(selected>=4&&selected<count){
           org.json.JSONObject item=customModuleCatalog().optJSONObject(selected-4);
           active=selected;saveSelectedModule();revealActiveTab();invalidate();
           return true;
         }
-        if(selected>=0&&selected<modules.length){active=selected;invalidate();}
+        if(selected>=0&&selected<modules.length){active=selected;saveSelectedModule();invalidate();}
         return true;
       }
       if(x>=346&&y>=8&&y<=70){admin();return true;}
@@ -1181,6 +1181,24 @@ public class MainActivity extends Activity {
         Toast.makeText(this,"Добавлено шаблонов: "+added,Toast.LENGTH_LONG).show();
       }).show());
     new AlertDialog.Builder(this).setTitle("Админка · функции и биты").setView(scroll).setPositiveButton("Закрыть",null).show();
+  }
+  boolean isFactoryModuleHidden(int index){
+    return index>=0&&index<modules.length&&getSharedPreferences("studio_hidden_factory_modules",MODE_PRIVATE).getBoolean(modules[index],false);
+  }
+  int visibleTabCount(){
+    int count=customModuleCatalog().length();
+    for(int i=0;i<modules.length;i++)if(!isFactoryModuleHidden(i))count++;
+    return count;
+  }
+  int visibleTabIndex(int underlying){
+    int position=0;
+    for(int i=0;i<modules.length;i++)if(!isFactoryModuleHidden(i)){if(i==underlying)return position;position++;}
+    if(underlying>=modules.length)return position+underlying-modules.length;
+    return 0;
+  }
+  int moduleAtTabIndex(int position){
+    for(int i=0;i<modules.length;i++)if(!isFactoryModuleHidden(i)){if(position--==0)return i;}
+    return modules.length+position;
   }
   int adminRowsModule=0;
   void showAdminTabs(){

@@ -549,17 +549,17 @@ public class MainActivity extends Activity {
       p.setColor(Color.WHITE);c.drawCircle(367.5f,32,1.3f,p);c.drawRect(366.8f,32,368.2f,36,p);
       org.json.JSONArray customTabs=customModuleCatalog();
       int tabCount=visibleTabCount();
-      float tabWidth=tabCount<=4?93.75f:90f;
+      float tabWidth=370f/Math.max(1,tabCount);
       card(c,10,125,380,57,13,false);
       c.save();c.clipRect(15,129,385,179);
       for(int i=0;i<tabCount;i++){
-        float x=15+i*tabWidth-moduleTabOffset;
+        float x=15+i*tabWidth;
         if(x+tabWidth<15||x>385)continue;
         int tabModule=moduleAtTabIndex(i);
         String tab=tabModule<4?modules[tabModule]:customTabs.optJSONObject(tabModule-4)==null?"?":customTabs.optJSONObject(tabModule-4).optString("id","?");
-        if(tabModule==active){p.setShader(new LinearGradient(x,132,x,175,Color.rgb(255,74,79),Color.rgb(176,0,10),Shader.TileMode.CLAMP));p.setStyle(Paint.Style.FILL);c.drawRoundRect(x,131,x+tabWidth-5,175,9,9,p);p.setShader(null);}
-        else card(c,x,131,tabWidth-5,44,9,false);
-        centered(c,tab,x,131,tabWidth-5,44,13,tabModule==active?Color.WHITE:Color.BLACK);
+        if(tabModule==active){p.setShader(new LinearGradient(x,132,x,175,Color.rgb(255,74,79),Color.rgb(176,0,10),Shader.TileMode.CLAMP));p.setStyle(Paint.Style.FILL);c.drawRoundRect(x,131,x+tabWidth-3,175,9,9,p);p.setShader(null);}
+        else card(c,x,131,tabWidth-3,44,9,false);
+        centered(c,tab,x,131,tabWidth-3,44,Math.max(7f,Math.min(13f,65f/Math.max(4,tabCount))),tabModule==active?Color.WHITE:Color.BLACK);
       }
       c.restore();
       if(active>=4){
@@ -704,17 +704,7 @@ public class MainActivity extends Activity {
       actual.restore();
     }
     float startY,startX,moduleTabOffset=0;
-    void revealActiveTab(){
-      int count=visibleTabCount();
-      float width=count<=4?93.75f:90f;
-      float maxOffset=Math.max(0,count*width-370f);
-      int tabPosition=visibleTabIndex(active);
-      float left=tabPosition*width-moduleTabOffset;
-      float right=left+width;
-      if(left<0)moduleTabOffset=tabPosition*width;
-      else if(right>370f)moduleTabOffset=(tabPosition+1)*width-370f;
-      moduleTabOffset=Math.max(0,Math.min(maxOffset,moduleTabOffset));
-    }
+    void revealActiveTab(){moduleTabOffset=0;}
     @Override public boolean onTouchEvent(MotionEvent e){if(e.getAction()==MotionEvent.ACTION_DOWN){startY=e.getY()/sy;startX=e.getX()/sx;return true;}if(e.getAction()!=MotionEvent.ACTION_UP)return true;float x=e.getX()/sx,y=e.getY()/sy;
       if(active>=4&&startY>=391&&startY<=713&&y>=391&&y<=713&&Math.abs(y-startY)>18){
         org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
@@ -732,12 +722,10 @@ public class MainActivity extends Activity {
       }
       if(active<4&&startY>=376&&startY<=713&&y>=376&&y<=713&&Math.abs(y-startY)>18){int delta=Math.round((startY-y)/36.5f);scrollOffset[active]=Math.max(0,Math.min(Math.max(0,rowCount(active)-9),scrollOffset[active]+delta));invalidate();return true;}
       if(y>=127&&y<=183){
-        int count=4+customModuleCatalog().length();
-        float width=count<=4?93.75f:90f;
-        float maxOffset=Math.max(0,count*width-370f);
-        if(Math.abs(x-startX)>12){moduleTabOffset=Math.max(0,Math.min(maxOffset,moduleTabOffset+startX-x));invalidate();return true;}
+        int count=visibleTabCount();
+        float width=370f/Math.max(1,count);
         if(x<15||x>385)return true;
-        int selected=(int)((x-15+moduleTabOffset)/width);
+        int selected=(int)((x-15)/width);
         if(selected<0||selected>=count)return true;
         selected=moduleAtTabIndex(selected);
         if(selected>=4&&selected<count){
@@ -1296,9 +1284,8 @@ public class MainActivity extends Activity {
               refreshFeatureChoices.run();choiceDialog.dismiss();
             }).setNegativeButton("Закрыть",null).show();
         });
-        android.widget.ScrollView featureScroll=new android.widget.ScrollView(this);
         LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);
-        featureScroll.addView(content);panel.addView(featureScroll,new LinearLayout.LayoutParams(-1,0,1));
+        panel.addView(content,new LinearLayout.LayoutParams(-1,-2));
         LinearLayout fields=new LinearLayout(this);fields.setOrientation(LinearLayout.VERTICAL);
         for(int j=0;j<labels.length;j++){
           LinearLayout lineRow=new LinearLayout(this);lineRow.setOrientation(LinearLayout.HORIZONTAL);
@@ -1898,7 +1885,7 @@ public class MainActivity extends Activity {
     save.setVisibility(View.GONE);
     dialog.setContentView(root);
     android.view.Window window=dialog.getWindow();
-    if(window!=null){window.setBackgroundDrawableResource(android.R.color.transparent);window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);window.setLayout(-1,-1);}
+    if(window!=null){window.setBackgroundDrawableResource(android.R.color.transparent);window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE|android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);window.setLayout(-1,-1);}
     redrawRef[0].run();dialog.show();
     window=dialog.getWindow();if(window!=null)window.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.97f),(int)(getResources().getDisplayMetrics().heightPixels*.87f));
   }

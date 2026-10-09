@@ -370,7 +370,7 @@ public class MainActivity extends Activity {
     try{stored=new org.json.JSONArray(prefs.getString(id,"[]"));}catch(Exception ex){stored=new org.json.JSONArray();}
     final org.json.JSONArray entries=stored;
     LinearLayout layout=new LinearLayout(this);layout.setOrientation(LinearLayout.VERTICAL);layout.setPadding(dp(12),dp(8),dp(12),dp(8));
-    TextView info=new TextView(this);info.setText("Адрес: "+address+"\\nРедактирование и импорт/экспорт ABT");
+    TextView info=new TextView(this);info.setText("Адрес: "+address+"\nРедактирование и импорт/экспорт ABT");
     layout.addView(info);
     ScrollView scroll=new ScrollView(this);LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);
     scroll.addView(list);layout.addView(scroll,new LinearLayout.LayoutParams(-1,dp(150)));
@@ -612,10 +612,11 @@ public class MainActivity extends Activity {
           }
           c.restore();
         }
-        card(c,10,720,185,52,12,true);centered(c,"Строки блока",10,720,185,52,15,Color.BLACK);
-        card(c,205,720,185,52,12,true);centered(c,"Админка",205,720,185,52,15,Color.BLACK);
-        card(c,10,782,380,57,12,true);
-        txtFit(c,id+" · As-Built · "+customRows.length()+" строк",22,816,12,Color.BLACK,355);
+        card(c,10,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"open_text","Открыть ABT"),10,720,185,52,15,Color.BLACK);
+        card(c,205,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"save_text","Сохранить ABT"),205,720,185,52,15,Color.BLACK);
+        card(c,10,782,319,57,12,true);
+        txtFit(c,id+" · As-Built · "+customRows.length()+" строк",22,816,12,Color.BLACK,290);
+        card(c,336,782,54,57,12,true);txt(c,"♙",350,821,32,Color.BLACK,true);
         actual.restore();return;
       }
       card(c,10,190,380,82,13,true);
@@ -731,7 +732,7 @@ public class MainActivity extends Activity {
         org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
         if(module!=null){String id=module.optString("id");int total=0;for(FeatureEngine.Feature f:features)if(id.equalsIgnoreCase(f.module))total++;int current=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;customFeaturePage.put(id,current+3>=total?0:current+3);saveCustomTabPosition(id);invalidate();}
         return true;
-      }if(y>=282&&y<=355){int slot=(int)((y-283)/25);org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);if(module!=null){String id=module.optString("id");int offset=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;toggleCustomFeature(offset+slot);}return true;}if(y>=717&&y<=777){if(x<200){org.json.JSONObject item=customModuleCatalog().optJSONObject(active-4);if(item!=null)showCustomRows(item);}else showAdminTabs();}return true;}
+      }if(y>=282&&y<=355){int slot=(int)((y-283)/25);org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);if(module!=null){String id=module.optString("id");int offset=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;toggleCustomFeature(offset+slot);}return true;}if(y>=717&&y<=777){org.json.JSONObject item=customModuleCatalog().optJSONObject(active-4);if(item!=null)customAbtPicker(x>=200,item.optString("id"));return true;}if(y>=779&&x>=336){about();return true;}return true;}
       if(y>=279&&y<=370){int slots=featureSlots();if(x>=345&&moduleFeatures(active).size()>slots){featurePage[active]=(featurePage[active]+slots>=moduleFeatures(active).size())?0:featurePage[active]+slots;invalidate();return true;}int i=(int)((y-284)/27);if(i>=0&&i<slots&&featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}
       // HEX rows on the main screen are read-only; edit via features or admin panel.
       if(y>=380&&y<=713&&Math.abs(y-startY)<=18)return true;

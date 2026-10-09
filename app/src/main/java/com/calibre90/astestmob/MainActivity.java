@@ -1044,7 +1044,7 @@ public class MainActivity extends Activity {
         styled.setSpan(new android.text.style.ForegroundColorSpan(Color.rgb(24,96,191)),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         styled.setSpan(new android.text.style.UnderlineSpan(),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         person.setText(styled);
-        place(root,person,.09f,i==0?.49f:.555f,.84f,.075f,width,height);
+        place(root,person,.09f,i==0?.535f:.595f,.84f,.075f,width,height);
         android.text.style.ClickableSpan onlyLink=new android.text.style.ClickableSpan(){
           @Override public void onClick(android.view.View widget){
             if(!url.isEmpty()&&(url.startsWith("https://")||url.startsWith("http://"))){
@@ -1066,9 +1066,9 @@ public class MainActivity extends Activity {
         appBuild=android.os.Build.VERSION.SDK_INT>=28?pkg.getLongVersionCode():pkg.versionCode;
       }catch(Exception ignored){}
       TextView versionInfo=caption("◉  Версия: "+appVersion,10,Color.rgb(98,106,116),false);
-      place(root,versionInfo,.13f,.705f,.76f,.035f,width,height);
+      place(root,versionInfo,.095f,.777f,.78f,.030f,width,height);
       TextView buildInfo=caption("◷  Сборка: Run #"+appBuild,10,Color.rgb(98,106,116),false);
-      place(root,buildInfo,.13f,.739f,.76f,.035f,width,height);
+      place(root,buildInfo,.095f,.810f,.78f,.030f,width,height);
       TextView ok=caption("Закрыть",16,Color.WHITE,true);ok.setGravity(Gravity.CENTER);
       ok.setBackground(panel(Color.rgb(245,69,69),Color.rgb(170,0,10),9,Color.rgb(255,103,109)));
       place(root,ok,.09f,.86f,.82f,.095f,width,height);ok.setOnClickListener(v->dialog.dismiss());

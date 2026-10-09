@@ -586,13 +586,13 @@ public class MainActivity extends Activity {
           if(featureSkip++<featureStart)continue;
           if(featureCount>=featureSlots())break;
           float fx=featureX(featureCount),fy=featureY(featureCount);
-          card(c,fx,fy,12,12,3,false);
+          card(c,fx,fy,17,17,4,false);
           if(customChecked(feature)){
-            rect(c,Color.rgb(210,28,37),fx+2,fy+2,8,8,2);
+            rect(c,Color.rgb(210,28,37),fx+3,fy+3,11,11,2);
             p.setColor(Color.WHITE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);
-            Path mark=new Path();mark.moveTo(fx+2,fy+6);mark.lineTo(fx+5,fy+9);mark.lineTo(fx+10,fy+3);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
+            Path mark=new Path();mark.moveTo(fx+3,fy+9);mark.lineTo(fx+7,fy+13);mark.lineTo(fx+14,fy+4);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
           }
-          txtFit(c,feature.label,fx+18,fy+11,11,Color.BLACK,featureCellWidth()-22);
+          txtFit(c,feature.label,fx+22,fy+13,11,Color.BLACK,featureCellWidth()-25);
           featureCount++;
         }
         if(featureTotal>featureSlots())txt(c,"›",366,365,18,Color.rgb(155,0,0),true);
@@ -654,13 +654,13 @@ public class MainActivity extends Activity {
       if(shown.size()>slots)txt(c,"›",366,362,18,Color.rgb(155,0,0),true);
       for(int i=0;i<slots&&page+i<shown.size();i++){
         float x=featureX(i),y=featureY(i);
-        card(c,x,y,12,12,3,false);
+        card(c,x,y,17,17,4,false);
         if(isChecked(shown.get(page+i))){
-          rect(c,Color.rgb(210,28,37),x+2,y+2,8,8,2);
+          rect(c,Color.rgb(210,28,37),x+3,y+3,11,11,2);
           p.setColor(Color.WHITE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);
-          Path mark=new Path();mark.moveTo(x+2,y+6);mark.lineTo(x+5,y+9);mark.lineTo(x+10,y+3);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
+          Path mark=new Path();mark.moveTo(x+3,y+9);mark.lineTo(x+7,y+13);mark.lineTo(x+14,y+4);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
         }
-        txtFit(c,shown.get(page+i).label,x+18,y+11,11,Color.BLACK,featureCellWidth()-22);
+        txtFit(c,shown.get(page+i).label,x+22,y+13,11,Color.BLACK,featureCellWidth()-25);
       }
       
       card(c,10,376,380,337,13,true);
@@ -1018,12 +1018,18 @@ public class MainActivity extends Activity {
         styled.setSpan(new android.text.style.UnderlineSpan(),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         person.setText(styled);
         place(root,person,.09f,i==0?.545f:.645f,.84f,.085f,width,height);
-        person.setOnClickListener(v->{
-          if(!url.isEmpty()&&(url.startsWith("https://")||url.startsWith("http://"))){
-            try{startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse(url)));}
-            catch(Exception ex){Toast.makeText(this,"Не удалось открыть ссылку",Toast.LENGTH_SHORT).show();}
+        android.text.style.ClickableSpan onlyLink=new android.text.style.ClickableSpan(){
+          @Override public void onClick(android.view.View widget){
+            if(!url.isEmpty()&&(url.startsWith("https://")||url.startsWith("http://"))){
+              try{startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse(url)));}
+              catch(Exception ex){Toast.makeText(MainActivity.this,"Не удалось открыть ссылку",Toast.LENGTH_SHORT).show();}
+            }
           }
-        });
+        };
+        styled.setSpan(onlyLink,linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        person.setText(styled);
+        person.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
+        person.setHighlightColor(Color.TRANSPARENT);
       }
       TextView ok=caption("Закрыть",16,Color.WHITE,true);ok.setGravity(Gravity.CENTER);
       ok.setBackground(panel(Color.rgb(245,69,69),Color.rgb(170,0,10),9,Color.rgb(255,103,109)));

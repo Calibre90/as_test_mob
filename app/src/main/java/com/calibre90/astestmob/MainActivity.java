@@ -1227,12 +1227,16 @@ public class MainActivity extends Activity {
     final View[] underlines=new View[4];
     final int[] selected={0};
     final Runnable[] redrawRef=new Runnable[1];
+    final Button[] footerSave={null};
+    final LinearLayout[] footerCloseLayout={null};
     Runnable redraw=()->{
       int maxRowsModule=modules.length+customModuleCatalog().length();
       if(adminRowsModule<0||adminRowsModule>=maxRowsModule){
         adminRowsModule=Math.max(0,Math.min(active,maxRowsModule-1));
       }
       commitCurrent[0]=null;
+      if(footerSave[0]!=null)footerSave[0].setVisibility(selected[0]==1?View.GONE:View.VISIBLE);
+      if(footerCloseLayout[0]!=null)footerCloseLayout[0].setWeightSum(selected[0]==1?1f:2f);
       body.removeAllViews();
       LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);
       panel.setPadding(dp(3),dp(5),dp(3),dp(5));
@@ -1538,7 +1542,6 @@ public class MainActivity extends Activity {
               }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
             });
           }
-          commitCurrent[0]=()->customRowActions[chosen[0]>=0?1:0].performClick();
         }
       }
       if(selected[0]==1&&adminRowsModule<4){
@@ -1883,12 +1886,15 @@ public class MainActivity extends Activity {
       buttons[i]=b;underlines[i]=underline;b.setOnClickListener(v->{selected[0]=tab;redrawRef[0].run();});
     }
     LinearLayout footer=new LinearLayout(this);
+    footerCloseLayout[0]=footer;
     Button save=new Button(this);save.setText("Сохранить изменения");save.setAllCaps(false);
     footer.addView(save,new LinearLayout.LayoutParams(0,dp(52),1));
+    footerSave[0]=save;
     save.setOnClickListener(v->{if(commitCurrent[0]!=null)commitCurrent[0].run();else Toast.makeText(this,"Для сохранения используйте кнопку в выбранной вкладке",Toast.LENGTH_LONG).show();});
     Button close=new Button(this);close.setText("Закрыть");close.setAllCaps(false);
     footer.addView(close,new LinearLayout.LayoutParams(0,dp(52),1));close.setOnClickListener(v->dialog.dismiss());
     root.addView(footer);
+    save.setVisibility(selected[0]==1?View.GONE:View.VISIBLE);
     dialog.setContentView(root);
     android.view.Window window=dialog.getWindow();
     if(window!=null){window.setBackgroundDrawableResource(android.R.color.transparent);window.setLayout(-1,-1);}

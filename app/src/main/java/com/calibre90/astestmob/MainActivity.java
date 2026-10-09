@@ -1502,8 +1502,10 @@ public class MainActivity extends Activity {
         commitCurrent[0]=()->rowActions[chosen[0]>=0?1:0].performClick();
       }
       LinearLayout choices=new LinearLayout(this);choices.setOrientation(LinearLayout.VERTICAL);
+      final int[] selectedModuleIndex={Math.min(active,modules.length-1)};
+      final Runnable[] refreshModuleFields={null};
       if(selected[0]==2){
-        final int[] moduleSelection={Math.min(active,modules.length-1)};
+        final int[] moduleSelection=selectedModuleIndex;
         LinearLayout fields=new LinearLayout(this);fields.setOrientation(LinearLayout.VERTICAL);
         panel.addView(fields);
         final EditText[] inputs=new EditText[4];
@@ -1534,6 +1536,7 @@ public class MainActivity extends Activity {
           inputs[2].setText(ids[m]);inputs[3].setText(StudioSettings.moduleVersion(this,modules[m]));
           heading.setText("Блок "+modules[m]);
         };
+        refreshModuleFields[0]=fill;
         fill.run();
         panel.addView(choices,new LinearLayout.LayoutParams(-1,-2));
         for(int m=0;m<modules.length;m++){
@@ -1602,16 +1605,8 @@ public class MainActivity extends Activity {
             choices.addView(entry,new LinearLayout.LayoutParams(-1,dp(42)));
             final int customIndex=i;
             entry.setOnClickListener(v->{
-              LinearLayout editForm=new LinearLayout(this);editForm.setOrientation(LinearLayout.VERTICAL);
-              EditText editName=new EditText(this);editName.setSingleLine(true);editName.setText(name);editForm.addView(editName);
-              EditText editVersion=new EditText(this);editVersion.setSingleLine(true);editVersion.setText(item.optString("version"));editForm.addView(editVersion);
-              new AlertDialog.Builder(this).setTitle("Изменить блок "+id).setView(editForm).setNegativeButton("Отмена",null)
-                .setPositiveButton("Сохранить",(d,w)->{try{org.json.JSONArray latest=customModuleCatalog();
-                  org.json.JSONObject target=latest.optJSONObject(customIndex);if(target==null)return;
-                  String updatedName=editName.getText().toString().trim();if(updatedName.isEmpty())return;
-                  target.put("name",updatedName);target.put("version",editVersion.getText().toString().trim());
-                  customPrefs.edit().putString("catalog",latest.toString()).apply();updateCatalog[0].run();view.invalidate();
-                }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}}).show();
+              selectedModuleIndex[0]=modules.length+customIndex;
+              if(refreshModuleFields[0]!=null)refreshModuleFields[0].run();
             });
 
           }

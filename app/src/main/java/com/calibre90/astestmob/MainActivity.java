@@ -1444,24 +1444,34 @@ public class MainActivity extends Activity {
         }
         commitCurrent[0]=()->featureActions[chosen[0]>=0?1:0].performClick();
       }
+      if(selected[0]==1){
+        Button chooseRowsBlock=new Button(this);
+        chooseRowsBlock.setAllCaps(false);
+        chooseRowsBlock.setText("Выбрать блок  ▾");
+        chooseRowsBlock.setTextSize(12);
+        chooseRowsBlock.setMinWidth(0);
+        panel.addView(chooseRowsBlock,new LinearLayout.LayoutParams(-1,dp(42)));
+        chooseRowsBlock.setOnClickListener(v->{
+          org.json.JSONArray catalog=customModuleCatalog();
+          String[] options=new String[modules.length+catalog.length()];
+          for(int k=0;k<modules.length;k++)options[k]=modules[k]+(isFactoryModuleHidden(k)?" · скрыт":"");
+          for(int k=0;k<catalog.length();k++){
+            org.json.JSONObject item=catalog.optJSONObject(k);
+            options[modules.length+k]=item==null?"?":item.optString("id")+" · "+item.optString("name");
+          }
+          new AlertDialog.Builder(this).setTitle("Строки As-Built · выберите блок")
+            .setSingleChoiceItems(options,Math.min(adminRowsModule,options.length-1),(d,which)->{
+              adminRowsModule=which;
+              d.dismiss();
+              redrawRef[0].run();
+            }).setNegativeButton("Отмена",null).show();
+        });
+      }
       if(selected[0]==1&&adminRowsModule>=4){
         org.json.JSONObject custom=customModuleCatalog().optJSONObject(adminRowsModule-4);
         if(custom!=null){
           final String id=custom.optString("id"),prefix=custom.optString("address");
           heading.setText("Строки "+id+" · "+custom.optString("name"));
-          heading.setOnClickListener(v->{
-            org.json.JSONArray catalog=customModuleCatalog();
-            String[] options=new String[modules.length+catalog.length()];
-            for(int k=0;k<modules.length;k++)options[k]=modules[k];
-            for(int k=0;k<catalog.length();k++){
-              org.json.JSONObject item=catalog.optJSONObject(k);
-              options[modules.length+k]=item==null?"?":item.optString("id")+" · "+item.optString("name");
-            }
-            new AlertDialog.Builder(this).setTitle("Выберите блок").setItems(options,(d,which)->{
-              adminRowsModule=which;
-              redrawRef[0].run();
-            }).show();
-          });
           android.content.SharedPreferences rowPrefs=getSharedPreferences("studio_custom_rows",MODE_PRIVATE);
           org.json.JSONArray storedRows;
           try{storedRows=new org.json.JSONArray(rowPrefs.getString(id,"[]"));}catch(Exception ex){storedRows=new org.json.JSONArray();}
@@ -1529,19 +1539,6 @@ public class MainActivity extends Activity {
           input.setBackgroundColor(Color.WHITE);input.setPadding(dp(7),0,dp(5),0);
           field.addView(input,new LinearLayout.LayoutParams(0,dp(44),1));field.setPadding(dp(4),dp(3),dp(4),dp(3));form.addView(field);inputs[k]=input;
         }
-        heading.setOnClickListener(v->{
-          org.json.JSONArray custom=customModuleCatalog();
-          String[] options=new String[modules.length+custom.length()];
-          for(int i=0;i<modules.length;i++)options[i]=modules[i];
-          for(int i=0;i<custom.length();i++){
-            org.json.JSONObject item=custom.optJSONObject(i);
-            options[modules.length+i]=item==null?"?":item.optString("id")+" · "+item.optString("name");
-          }
-          new AlertDialog.Builder(this).setTitle("Выберите блок").setItems(options,(d,which)->{
-            if(which<modules.length){adminRowsModule=which;redrawRef[0].run();}
-            else{adminRowsModule=which;redrawRef[0].run();}
-          }).show();
-        });
         android.widget.ScrollView listScroll=new android.widget.ScrollView(this);
         LinearLayout entries=new LinearLayout(this);entries.setOrientation(LinearLayout.VERTICAL);
         listScroll.addView(entries);panel.addView(listScroll,new LinearLayout.LayoutParams(-1,0,1));

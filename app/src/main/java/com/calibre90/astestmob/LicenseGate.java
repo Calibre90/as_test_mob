@@ -58,9 +58,20 @@ final class LicenseGate {
     }catch(Exception e){return false;}
   }
 
-  static void enforce(Activity activity){
+  static boolean isActivated(Activity activity){
     String saved=activity.getSharedPreferences(STORE,Context.MODE_PRIVATE).getString(CODE,"");
-    if(valid(activity,saved))return;
+    return valid(activity,saved);
+  }
+
+  static void enforce(Activity activity){
+    enforce(activity,()->{});
+  }
+
+  static void enforce(Activity activity,Runnable onActivated){
+    if(isActivated(activity)){
+      onActivated.run();
+      return;
+    }
     String id=deviceId(activity);
     LinearLayout body=new LinearLayout(activity);
     body.setOrientation(LinearLayout.VERTICAL);
@@ -103,6 +114,7 @@ final class LicenseGate {
       boolean stored=activity.getSharedPreferences(STORE,Context.MODE_PRIVATE).edit().putString(CODE,candidate).commit();
       if(!stored){Toast.makeText(activity,"Ошибка сохранения лицензии",Toast.LENGTH_LONG).show();return;}
       dialog.dismiss();
+      onActivated.run();
       Toast.makeText(activity,"Бессрочная лицензия активирована",Toast.LENGTH_LONG).show();
     }));
     dialog.show();

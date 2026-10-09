@@ -594,6 +594,7 @@ public class MainActivity extends Activity {
           txtFit(c,feature.label,fx+20,fy+10,11,Color.BLACK,315);
           featureCount++;
         }
+        if(featureTotal>6)txt(c,"›",366,362,18,Color.rgb(155,0,0),true);
         if(featureCount==0)txt(c,"Функции не настроены",24,315,12,Color.DKGRAY,false);
         
         org.json.JSONArray customRows;
@@ -645,8 +646,10 @@ public class MainActivity extends Activity {
       card(c,10,279,380,91,12,true);
       ArrayList<FeatureEngine.Feature> shown=moduleFeatures(active);
       int page=featurePage[active],slots=featureSlots();
+      if(page>=shown.size()){page=0;featurePage[active]=0;}
       p.setColor(Color.rgb(190,199,211));p.setStrokeWidth(1);
       for(int line=1;line<6;line++){float yy=283+line*14.2f;c.drawLine(15,yy,385,yy,p);}
+      if(shown.size()>slots)txt(c,"›",366,362,18,Color.rgb(155,0,0),true);
       for(int i=0;i<slots&&page+i<shown.size();i++){
         float x=featureX(i),y=featureY(i);
         card(c,x,y,12,12,3,false);
@@ -737,11 +740,12 @@ public class MainActivity extends Activity {
         return true;
       }
       if(x>=346&&y>=8&&y<=70){admin();return true;}
-      if(active>=4){if(y>=357&&y<=373&&x>=230){
+      if(active>=4){if(y>=351&&y<=373&&x>=340){
         org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
         if(module!=null){String id=module.optString("id");int total=0;for(FeatureEngine.Feature f:features)if(id.equalsIgnoreCase(f.module))total++;int current=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;customFeaturePage.put(id,current+6>=total?0:current+6);saveCustomTabPosition(id);invalidate();}
         return true;
       }if(y>=282&&y<=355){int slot=(int)((y-283)/14.2f);org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);if(module!=null){String id=module.optString("id");int offset=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;toggleCustomFeature(offset+slot);}return true;}if(y>=717&&y<=777){org.json.JSONObject item=customModuleCatalog().optJSONObject(active-4);if(item!=null)customAbtPicker(x>=200,item.optString("id"));return true;}if(y>=779&&x>=336){about();return true;}return true;}
+      if(y>=351&&y<=373&&x>=340&&moduleFeatures(active).size()>featureSlots()){int total=moduleFeatures(active).size();featurePage[active]=featurePage[active]+featureSlots()>=total?0:featurePage[active]+featureSlots();invalidate();return true;}
       if(y>=279&&y<=370){int slots=featureSlots();int i=(int)((y-283)/14.2f);if(i>=0&&i<slots&&featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}
       // HEX rows on the main screen are read-only; edit via features or admin panel.
       if(y>=380&&y<=713&&Math.abs(y-startY)<=18)return true;

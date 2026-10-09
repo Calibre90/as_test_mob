@@ -60,8 +60,14 @@ public class MainActivity extends Activity {
     setContentView(splash);
     new Handler(Looper.getMainLooper()).postDelayed(()->{
       if(isFinishing() || isDestroyed())return;
-      setContentView(view);
-      LicenseGate.enforce(this);
+      if(LicenseGate.isActivated(this)){
+        setContentView(view);
+      }else{
+        // Keep the splash behind the activation dialog until a valid license is entered.
+        LicenseGate.enforce(this,()->{
+          if(!isFinishing() && !isDestroyed())setContentView(view);
+        });
+      }
     },1500);
   }
   /** Built-in sample configuration: available before importing any vehicle ABT. */

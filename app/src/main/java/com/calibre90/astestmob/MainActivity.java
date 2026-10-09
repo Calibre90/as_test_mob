@@ -1702,6 +1702,22 @@ public class MainActivity extends Activity {
           }
         };
         updateCatalog[0].run();
+        Button restoreFactory=new Button(this);
+        restoreFactory.setAllCaps(false);restoreFactory.setText("Восстановить скрытый блок");restoreFactory.setTextSize(12);
+        panel.addView(restoreFactory,new LinearLayout.LayoutParams(-1,dp(42)));
+        restoreFactory.setOnClickListener(v->{
+          java.util.ArrayList<Integer> hidden=new java.util.ArrayList<>();
+          java.util.ArrayList<String> labels=new java.util.ArrayList<>();
+          for(int j=0;j<modules.length;j++)if(isFactoryModuleHidden(j)){hidden.add(j);labels.add(modules[j]);}
+          if(hidden.isEmpty()){Toast.makeText(this,"Скрытых блоков нет",Toast.LENGTH_SHORT).show();return;}
+          new AlertDialog.Builder(this).setTitle("Восстановить блок")
+            .setItems(labels.toArray(new String[0]),(d,which)->{
+              int index=hidden.get(which);
+              getSharedPreferences("studio_hidden_factory_modules",MODE_PRIVATE).edit().putBoolean(modules[index],false).apply();
+              active=index;saveSelectedModule();view.revealActiveTab();view.invalidate();
+              Toast.makeText(this,"Блок "+modules[index]+" восстановлен",Toast.LENGTH_SHORT).show();
+            }).show();
+        });
         addCustom.setOnClickListener(v->{
           LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(16),dp(8),dp(16),dp(8));
           final EditText[] edits=new EditText[4];

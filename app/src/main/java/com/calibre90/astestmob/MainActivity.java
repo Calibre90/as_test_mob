@@ -1603,7 +1603,7 @@ public class MainActivity extends Activity {
           choose.setOnClickListener(v->{moduleSelection[0]=index;fill.run();});
         }
         TextView warning=new TextView(this);
-        warning.setText("ID и адрес блока защищены: они используются для распознавания файлов ABT.");
+        warning.setText("ID и HEX-адрес определяют распознавание ABT. Изменение адреса требует переноса строк и функций.");
         warning.setTextColor(Color.LTGRAY);warning.setTextSize(12);panel.addView(warning);
         Button saveModule=new Button(this);saveModule.setAllCaps(false);saveModule.setText("Сохранить настройки блока");
         saveModule.setTextSize(12);saveModule.setMinWidth(0);saveModule.setPadding(dp(4),0,dp(4),0);
@@ -1641,16 +1641,11 @@ public class MainActivity extends Activity {
         final android.content.SharedPreferences customPrefs=getSharedPreferences("studio_custom_modules",MODE_PRIVATE);
         // Keep factory entries and render every custom module as a real scrollable list item.
         final int factoryEntryCount=choices.getChildCount();
-        TextView customCatalogInfo=new TextView(this);
-        customCatalogInfo.setTextColor(Color.LTGRAY);customCatalogInfo.setTextSize(12);
-        customCatalogInfo.setPadding(dp(8),dp(12),dp(8),dp(8));
-        choices.addView(customCatalogInfo);
         final Runnable[] updateCatalog={null};
         updateCatalog[0]=()->{
-          while(choices.getChildCount()>factoryEntryCount+1)
+          while(choices.getChildCount()>factoryEntryCount)
             choices.removeViewAt(choices.getChildCount()-1);
           org.json.JSONArray catalog=customModuleCatalog();
-          customCatalogInfo.setText("Заводские блоки IC, BCM, RKE, ABS защищены от удаления.\\nДополнительные блоки: "+catalog.length());
           for(int i=0;i<catalog.length();i++){
             org.json.JSONObject item=catalog.optJSONObject(i);
             if(item==null)continue;

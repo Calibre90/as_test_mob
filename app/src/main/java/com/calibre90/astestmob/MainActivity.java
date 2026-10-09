@@ -701,9 +701,25 @@ public class MainActivity extends Activity {
       card(c,205,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"save_text","Сохранить ABT"),205,720,185,52,15,Color.BLACK);
       card(c,10,782,319,57,12,true);
       String status=lastFeatureStatus;
-      p.setTypeface(Typeface.create("sans-serif",Typeface.NORMAL));p.setTextSize(10);p.setColor(Color.BLACK);
-      if(status.length()>44)status=status.substring(0,41)+"…";
-      c.drawText(status,22,814,p);
+      p.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));p.setTextSize(14);p.setColor(Color.BLACK);
+      final float maxStatusWidth=296f;
+      if(p.measureText(status)<=maxStatusWidth){
+        c.drawText(status,22,816,p);
+      }else{
+        int split=0;
+        for(int i=1;i<status.length();i++){
+          if(p.measureText(status.substring(0,i))>maxStatusWidth)break;
+          split=i;
+        }
+        int boundary=status.lastIndexOf(' ',split);
+        if(boundary>Math.max(5,split/2))split=boundary;
+        String first=status.substring(0,split).trim();
+        String second=status.substring(split).trim();
+        while(second.length()>0&&p.measureText(second)>maxStatusWidth)second=second.substring(0,second.length()-1);
+        if(second.length()<status.substring(split).trim().length()&&second.length()>1)second=second.substring(0,second.length()-1)+"…";
+        c.drawText(first,22,806,p);
+        c.drawText(second,22,825,p);
+      }
       card(c,336,782,54,57,12,true);
       txt(c,"♙",350,821,32,Color.BLACK,true);
       actual.restore();

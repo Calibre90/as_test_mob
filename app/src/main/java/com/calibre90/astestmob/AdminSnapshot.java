@@ -147,8 +147,12 @@ public final class AdminSnapshot {
   }
 
   private static void writeStore(Context context,String name,JSONObject values,boolean clear) throws Exception {
-    SharedPreferences.Editor editor=context.getSharedPreferences(name,Context.MODE_PRIVATE).edit();
-    if(clear)editor.clear();
+    SharedPreferences prefs=context.getSharedPreferences(name,Context.MODE_PRIVATE);
+    SharedPreferences.Editor editor=prefs.edit();
+    // Never clear the whole store: unrelated app preferences may coexist here.
+    // Remove only keys belonging to the administrator configuration.
+    if(clear)for(String existing:prefs.getAll().keySet())
+      if(allowedKey(name,existing))editor.remove(existing);
     JSONArray keys=values.names();
     if(keys!=null)for(int i=0;i<keys.length();i++){
       String key=keys.getString(i);

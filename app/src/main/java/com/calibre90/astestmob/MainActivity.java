@@ -104,6 +104,29 @@ public class MainActivity extends Activity {
         startActivityForResult(intent,9088);
       });
       adminHome.addView(importSnapshot);
+      Button publishOnline=new Button(this);
+      publishOnline.setText("Опубликовать онлайн");
+      publishOnline.setOnClickListener(v->{
+        try{
+          org.json.JSONObject snapshot=AdminSnapshot.exportLocal(this);
+          AdminSnapshot.validate(snapshot);
+          org.json.JSONObject stores=snapshot.getJSONObject("stores");
+          int featureCount=new org.json.JSONArray(stores.getJSONObject("run35_settings").optString("features","[]")).length();
+          int moduleCount=new org.json.JSONArray(stores.getJSONObject("studio_custom_modules").optString("catalog","[]")).length();
+          new AlertDialog.Builder(this)
+            .setTitle("Онлайн-публикация Studio")
+            .setMessage("Подготовлено функций: "+featureCount+"\\nДополнительных блоков: "+moduleCount+
+              "\\n\\nДля безопасной отправки необходима авторизация владельца через сервер публикации. "+
+              "До подключения сервера настройки останутся только на этом телефоне. "+
+              "Закрытый ключ подписи никогда не хранится в приложении.")
+            .setNegativeButton("Закрыть",null)
+            .setPositiveButton("Экспортировать пока вручную",(d,w)->exportSnapshot.performClick())
+            .show();
+        }catch(Exception ex){
+          Toast.makeText(this,"Ошибка подготовки: "+ex.getMessage(),Toast.LENGTH_LONG).show();
+        }
+      });
+      adminHome.addView(publishOnline);
       setContentView(adminHome);
       adminHome.post(()->showAdminTabs());
       return;

@@ -10,3 +10,7 @@ android {
         versionName = "0.1.0-draft"
     }
 }
+
+// Reuse the original Run #303 administrator implementation and its resources.
+android.sourceSets.getByName("main").java.srcDir("../app/src/main/java")
+android.sourceSets.getByName("main").res.srcDir("../app/src/main/res")

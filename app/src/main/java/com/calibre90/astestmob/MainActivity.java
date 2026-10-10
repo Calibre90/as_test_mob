@@ -1086,7 +1086,13 @@ public class MainActivity extends Activity {
             .setPositiveButton("Импортировать",(dialog,which)->{
               try{
                 AdminSnapshot.importLocal(this,snapshot);
-                Toast.makeText(this,"Импорт завершён. Перезапустите приложение.",Toast.LENGTH_LONG).show();
+                // The admin UI uses an in-memory feature list. Refresh it after
+                // restoring preferences so imported functions are visible now.
+                features.clear();
+                features.addAll(StudioSettings.load(this));
+                restoreAdminRows();
+                if(view!=null)view.invalidate();
+                Toast.makeText(this,"Импорт завершён. Функции обновлены.",Toast.LENGTH_LONG).show();
               }catch(Exception ex){
                 Toast.makeText(this,"Ошибка импорта: "+ex.getMessage(),Toast.LENGTH_LONG).show();
               }

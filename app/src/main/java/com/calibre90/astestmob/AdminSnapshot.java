@@ -114,30 +114,60 @@ public final class AdminSnapshot {
         throw new IllegalArgumentException("Недопустимый ключ блока: "+key);
     }
   }
-  /** Replace only the three allowlisted admin stores after validating the complete file.
-   * License state and ABT files are never modified. */
+  /** Imports a validated snapshot. Restores the original values if any store write fails. */
   public static void importLocal(Context context, JSONObject snapshot) throws Exception {
     validate(snapshot);
-    JSONObject stores=snapshot.getJSONObject("stores");
+    JSONObject incoming=snapshot.getJSONObject("stores");
+    JSONObject backup=new JSONObject();
     for(String name:STORES){
-      JSONObject values=stores.getJSONObject(name);
-      SharedPreferences.Editor editor=context.getSharedPreferences(name,Context.MODE_PRIVATE).edit();
-      editor.clear();
-      JSONArray keys=values.names();
-      if(keys!=null)for(int i=0;i<keys.length();i++){
-        String key=keys.getString(i);
-        if("run35_settings".equals(name) &&
-          !("features".equals(key)||key.startsWith("module_name_")||
-            key.startsWith("module_version_")||key.startsWith("appearance_")))continue;
-        Object value=values.get(key);
-        if(value instanceof String)editor.putString(key,(String)value);
-        else if(value instanceof Boolean)editor.putBoolean(key,(Boolean)value);
-        else if(value instanceof Integer)editor.putInt(key,(Integer)value);
-        else if(value instanceof Long)editor.putLong(key,(Long)value);
-        else if(value instanceof Number)editor.putFloat(key,((Number)value).floatValue());
+      JSONObject values=new JSONObject();
+      for(Map.Entry<String,?> e:context.getSharedPreferences(name,Context.MODE_PRIVATE).getAll().entrySet()){
+        Object v=e.getValue();
+        if(v instanceof String||v instanceof Boolean||v instanceof Number)
+          values.put(e.getKey(),v);
       }
-      if(!editor.commit())throw new IllegalStateException("Cannot save "+name);
+      backup.put(name,values);
+    }
+    int written=0;
+    try{
+      for(String name:STORES){
+        writeStore(context,name,incoming.getJSONObject(name),true);
+        written++;
+      }
+    }catch(Exception failure){
+      Exception rollbackError=null;
+      for(int i=written;i>=0;i--){
+        if(i>=STORES.length)continue;
+        try{writeStore(context,STORES[i],backup.getJSONObject(STORES[i]),true);}
+        catch(Exception ex){if(rollbackError==null)rollbackError=ex;}
+      }
+      if(rollbackError!=null)failure.addSuppressed(rollbackError);
+      throw failure;
     }
   }
 
+  private static void writeStore(Context context,String name,JSONObject values,boolean clear) throws Exception {
+    SharedPreferences.Editor editor=context.getSharedPreferences(name,Context.MODE_PRIVATE).edit();
+    if(clear)editor.clear();
+    JSONArray keys=values.names();
+    if(keys!=null)for(int i=0;i<keys.length();i++){
+      String key=keys.getString(i);
+      if(!allowedKey(name,key))continue;
+      Object value=values.get(key);
+      if(value instanceof String)editor.putString(key,(String)value);
+      else if(value instanceof Boolean)editor.putBoolean(key,(Boolean)value);
+      else if(value instanceof Integer)editor.putInt(key,(Integer)value);
+      else if(value instanceof Long)editor.putLong(key,(Long)value);
+      else if(value instanceof Number)editor.putFloat(key,((Number)value).floatValue());
+    }
+    if(!editor.commit())throw new IllegalStateException("Не удалось сохранить "+name);
+  }
+
+  private static boolean allowedKey(String name,String key){
+    if("run35_settings".equals(name))
+      return "features".equals(key)||key.startsWith("module_name_")||
+        key.startsWith("module_version_")||key.startsWith("appearance_");
+    if("studio_custom_modules".equals(name))return "catalog".equals(key);
+    return "studio_admin_rows".equals(name);
+  }
 }

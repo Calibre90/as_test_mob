@@ -47,7 +47,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Verify catalog admin Java source is compilable
+      - name: Check admin module inputs
         run: |
           test -f catalog-admin/src/main/java/com/calibre90/catalogadmin/AdminActivity.java
           test -f catalog-admin/src/main/AndroidManifest.xml
@@ -60,6 +60,11 @@ jobs:
           java -cp /tmp/abt-test-classes com.calibre90.astestmob.CodecSelfTest
       - name: Build both Android APKs
         run: gradle :app:assembleDebug :catalog-admin:assembleDebug -PbuildNumber=${{ github.run_number }}
+      - name: Verify APK outputs
+        run: |
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          test -s catalog-admin/build/outputs/apk/debug/catalog-admin-debug.apk
+          ls -lh app/build/outputs/apk/debug/app-debug.apk catalog-admin/build/outputs/apk/debug/catalog-admin-debug.apk
       - uses: actions/upload-artifact@v4
         with:
           name: Mazda6GH-ASBuilt-Test-APK

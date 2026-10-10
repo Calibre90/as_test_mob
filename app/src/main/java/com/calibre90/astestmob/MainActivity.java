@@ -153,8 +153,13 @@ public class MainActivity extends Activity {
                             runOnUiThread(()->new AlertDialog.Builder(this)
                               .setTitle("Запрос отправлен")
                               .setMessage("GitHub принял запрос на выпуск v"+version+
-                                ". Это ещё НЕ подтверждение публикации. Проверь результат GitHub Actions.")
-                              .setPositiveButton("OK",null).show());
+                                ". Это ещё НЕ подтверждение публикации. Открой GitHub Actions и проверь завершение задания.")
+                              .setNegativeButton("Закрыть",null)
+                              .setPositiveButton("Открыть GitHub Actions",(d,w)->{
+                                Intent browser=new Intent(Intent.ACTION_VIEW,
+                                  Uri.parse("https://github.com/Calibre90/as_test_mob/actions/workflows/studio-release.yml"));
+                                startActivity(browser);
+                              }).show());
                           }catch(Exception ex){
                             runOnUiThread(()->Toast.makeText(this,"Выпуск: "+ex.getMessage(),Toast.LENGTH_LONG).show());
                           }

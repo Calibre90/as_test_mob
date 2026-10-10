@@ -43,7 +43,7 @@ final class CatalogSync {
         if(!CatalogSignature.verify(document))return; // Untrusted catalog must never reach local storage.\n        if(document.getInt("schema")!=1)return;
         int version=document.getInt("version");
         if(version<1)return;
-        JSONArray features=document.getJSONArray("features");
+        JSONArray features=new JSONArray(document.getString("features_payload"));
         if(features.length()==0||features.length()>500)return; // Never replace built-ins with an empty draft catalog.
         for(int i=0;i<features.length();i++){
           JSONObject f=features.getJSONObject(i);

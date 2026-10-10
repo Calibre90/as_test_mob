@@ -27,7 +27,7 @@ jobs:
           source='admin_design_patch/res/drawable-nodpi/admin_gh_fullscreen_background.jpg'
           with zipfile.ZipFile(archive) as z:
               data=z.read(source)
-          if not data.startswith(b'\\xff\\xd8\\xff') or len(data)>4000000:
+          if not data.startswith(bytes((0xff, 0xd8, 0xff))) or len(data)>4000000:
               raise ValueError('Unexpected Admin background image')
           target.parent.mkdir(parents=True,exist_ok=True)
           target.write_bytes(data)

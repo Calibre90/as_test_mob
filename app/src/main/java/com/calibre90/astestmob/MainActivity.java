@@ -92,7 +92,8 @@ public class MainActivity extends Activity {
         adminRoot.setBackgroundResource(R.drawable.admin_home_background);
         adminHome.setBackgroundColor(Color.TRANSPARENT);
       }
-      adminHome.setPadding(dp(14),dp(42),dp(14),dp(12));
+      // Position real menu controls over the six shaded button slots in the artwork.
+      adminHome.setPadding(dp(34),0,dp(34),0);
       Button reopen=new Button(this);
       reopen.setText("Администрирование интерфейса");
       reopen.setOnClickListener(v->showAdminTabs());
@@ -309,7 +310,21 @@ public class MainActivity extends Activity {
       adminHome.addView(tokenSettings);
       adminRoot.addView(adminHome,new FrameLayout.LayoutParams(-1,-1));
       setContentView(adminRoot);
-      adminHome.post(()->showAdminTabs());
+      // The old automatic showAdminTabs() hid the home screen immediately.
+      // Scale the six live controls to the artwork rather than covering the GH car.
+      adminRoot.post(()->{
+        int h=adminRoot.getHeight();
+        if(h<=0)return;
+        adminHome.setPadding(dp(34),(int)(h*0.187f),dp(34),0);
+        int buttonHeight=Math.max(dp(44),(int)(h*0.057f));
+        int buttonGap=Math.max(dp(6),(int)(h*0.011f));
+        for(int i=0;i<adminHome.getChildCount();i++){
+          View child=adminHome.getChildAt(i);
+          LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,buttonHeight);
+          lp.setMargins(0,0,0,buttonGap);
+          child.setLayoutParams(lp);
+        }
+      });
       return;
     }
     setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));view=new StudioView();view.moduleTabOffset=Math.max(0,active*90f-280f);// Studio splash is shown before the editor and the existing RSA license gate.

@@ -61,21 +61,32 @@ jobs:
       - name: Prepare stable Android signing key
         env:
           MAZDA_KEYSTORE_B64: ${{ secrets.MAZDA_KEYSTORE_B64 }}
-          MAZDA_SIGNING_STORE_PASSWORD: ${{ secrets.MAZDA_SIGNING_STORE_PASSWORD }}
-          MAZDA_SIGNING_KEY_ALIAS: ${{ secrets.MAZDA_SIGNING_KEY_ALIAS }}
-          MAZDA_SIGNING_KEY_PASSWORD: ${{ secrets.MAZDA_SIGNING_KEY_PASSWORD }}
+          STORE_PASS: ${{ secrets.MAZDA_SIGNING_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.MAZDA_SIGNING_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.MAZDA_SIGNING_KEY_PASSWORD }}
+        shell: bash
         run: |
-          if [ -n "$MAZDA_KEYSTORE_B64" ] && [ -n "$MAZDA_SIGNING_STORE_PASSWORD" ] && [ -n "$MAZDA_SIGNING_KEY_ALIAS" ] && [ -n "$MAZDA_SIGNING_KEY_PASSWORD" ]; then
-            printf '%s' "$MAZDA_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/mazda-update-key.jks"
-            echo "MAZDA_SIGNING_STORE_FILE=$RUNNER_TEMP/mazda-update-key.jks" >> "$GITHUB_ENV"
-            echo "MAZDA_SIGNING_STORE_PASSWORD=$MAZDA_SIGNING_STORE_PASSWORD" >> "$GITHUB_ENV"
-            echo "MAZDA_SIGNING_KEY_ALIAS=$MAZDA_SIGNING_KEY_ALIAS" >> "$GITHUB_ENV"
-            echo "MAZDA_SIGNING_KEY_PASSWORD=$MAZDA_SIGNING_KEY_PASSWORD" >> "$GITHUB_ENV"
-            echo "Using persistent signing key for both APKs"
-          else
-            echo "::error::Stable signing secrets missing. Refusing to publish non-upgradable APKs."
+          set -euo pipefail
+          if [ -z "$MAZDA_KEYSTORE_B64" ] || [ -z "$STORE_PASS" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASS" ]; then
+            echo "::error::Signing secrets are missing"
             exit 1
           fi
+          echo "::add-mask::$STORE_PASS"
+          echo "::add-mask::$KEY_ALIAS"
+          echo "::add-mask::$KEY_PASS"
+          printf '%s' "$MAZDA_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/mazda-update-key.jks"
+          # Validate store password before compiling; no secrets in command output.
+          if ! keytool -list -keystore "$RUNNER_TEMP/mazda-update-key.jks" -storepass "$STORE_PASS" -alias "$KEY_ALIAS" >/dev/null 2>&1; then
+            echo "::error::Signing keystore cannot be opened. Check STORE_PASSWORD, KEY_ALIAS and uploaded JKS base64."
+            exit 1
+          fi
+          {
+            echo "MAZDA_SIGNING_STORE_FILE=$RUNNER_TEMP/mazda-update-key.jks"
+            echo "MAZDA_SIGNING_STORE_PASSWORD=$STORE_PASS"
+            echo "MAZDA_SIGNING_KEY_ALIAS=$KEY_ALIAS"
+            echo "MAZDA_SIGNING_KEY_PASSWORD=$KEY_PASS"
+          } >> "$GITHUB_ENV"
+          echo "Signing keystore validated"
       - name: Build both Android APKs
         run: gradle :app:assembleDebug :catalog-admin:assembleDebug -PbuildNumber=${{ github.run_number }} --stacktrace
       - name: Verify APK outputs

@@ -73,7 +73,8 @@ jobs:
             echo "MAZDA_SIGNING_KEY_PASSWORD=$MAZDA_SIGNING_KEY_PASSWORD" >> "$GITHUB_ENV"
             echo "Using persistent signing key for both APKs"
           else
-            echo "::warning::Stable signing secrets not configured. APKs may not upgrade prior installs."
+            echo "::error::Stable signing secrets missing. Refusing to publish non-upgradable APKs."
+            exit 1
           fi
       - name: Build both Android APKs
         run: gradle :app:assembleDebug :catalog-admin:assembleDebug -PbuildNumber=${{ github.run_number }} --stacktrace
@@ -82,6 +83,20 @@ jobs:
           test -s app/build/outputs/apk/debug/app-debug.apk
           test -s catalog-admin/build/outputs/apk/debug/catalog-admin-debug.apk
           ls -lh app/build/outputs/apk/debug/app-debug.apk catalog-admin/build/outputs/apk/debug/catalog-admin-debug.apk
+      - name: Verify both APKs use the same persistent certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)"
+          test -n "$APKSIGNER"
+          STUDIO=app/build/outputs/apk/debug/app-debug.apk
+          ADMIN=catalog-admin/build/outputs/apk/debug/catalog-admin-debug.apk
+          "$APKSIGNER" verify --verbose --print-certs "$STUDIO" > /tmp/studio-cert.txt
+          "$APKSIGNER" verify --verbose --print-certs "$ADMIN" > /tmp/admin-cert.txt
+          studio_sha="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' /tmp/studio-cert.txt | head -1)"
+          admin_sha="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' /tmp/admin-cert.txt | head -1)"
+          test -n "$studio_sha" && test "$studio_sha" = "$admin_sha"
+          echo "Both APKs signed with certificate SHA-256: $studio_sha"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

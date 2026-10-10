@@ -1,0 +1,53 @@
+name: Prepare signed Studio catalog
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Increasing publication version (positive integer)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    environment: studio-publication
+    steps:
+      - name: Check out approved branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate version and snapshot presence
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          [[ "$VERSION" =~ ^[1-9][0-9]*$ ]] || { echo "Invalid version"; exit 1; }
+          test -f publication/admin-settings.json || {
+            echo "Missing publication/admin-settings.json: add a reviewed export before running."
+            exit 1
+          }
+      - name: Sign publication using protected publisher key
+        env:
+          VERSION: ${{ inputs.version }}
+          PUBLISHER_PRIVATE_KEY: ${{ secrets.STUDIO_CATALOG_SIGNING_KEY_PEM }}
+        run: |
+          test -n "$PUBLISHER_PRIVATE_KEY" || { echo "Signing secret is not configured"; exit 1; }
+          umask 077
+          key_file="$(mktemp)"
+          trap 'rm -f "$key_file"' EXIT
+          printf '%s\n' "$PUBLISHER_PRIVATE_KEY" > "$key_file"
+          python3 tools/sign_full_catalog.py \
+            --input publication/admin-settings.json \
+            --output studio-published-settings.json \
+            --version "$VERSION" \
+            --private-key "$key_file"
+      - name: Upload signed publication for owner review
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-published-settings
+          path: studio-published-settings.json
+          retention-days: 7
+          if-no-files-found: error

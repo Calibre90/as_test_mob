@@ -7,10 +7,6 @@ on:
         description: "Reviewed snapshot commit SHA from feature/studio-catalog-integration"
         required: true
         type: string
-      version:
-        description: "New strictly increasing catalog version"
-        required: true
-        type: string
 
 permissions:
   contents: write
@@ -45,16 +41,12 @@ jobs:
           git show "$SNAPSHOT_SHA:publication/admin-settings.json" > publication/admin-settings.json
           test -s publication/admin-settings.json
           echo "Imported only snapshot JSON; no application code from review branch was merged."
-      - name: Validate input and approved snapshot
-        env:
-          VERSION: ${{ inputs.version }}
+      - name: Validate snapshot and calculate next version
         run: |
           set -euo pipefail
-          [[ "$VERSION" =~ ^[1-9][0-9]*$ ]] || { echo "Invalid version"; exit 1; }
           test -s publication/admin-settings.json
           python3 - <<'PY'
           import json, os, pathlib
-          version = int(os.environ["VERSION"])
           source = pathlib.Path("publication/admin-settings.json").read_text(encoding="utf-8")
           if len(source.encode("utf-8")) > 262144:
               raise SystemExit("Snapshot too large")
@@ -70,12 +62,17 @@ jobs:
               old = json.loads(published.read_text(encoding="utf-8"))
               if old.get("kind") != "mazda6gh-published-settings" or type(old.get("version")) is not int:
                   raise SystemExit("Existing published catalog invalid")
-              if version <= old["version"]:
-                  raise SystemExit("Version must increase")
+              if old["version"] < 0:
+                  raise SystemExit("Existing version invalid")
+              version = old["version"] + 1
+          else:
+              version = 1
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
+              env.write(f"VERSION={version}\\n")
+          print("Next catalog version:", version)
           PY
       - name: Sign approved snapshot with protected RSA key
         env:
-          VERSION: ${{ inputs.version }}
           PUBLISHER_PRIVATE_KEY: ${{ secrets.STUDIO_CATALOG_SIGNING_KEY_PEM }}
         run: |
           set -euo pipefail
@@ -103,8 +100,6 @@ jobs:
                   "-signature",str(sig),str(m)],check=True)
           PY
       - name: Commit and publish to main
-        env:
-          VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"

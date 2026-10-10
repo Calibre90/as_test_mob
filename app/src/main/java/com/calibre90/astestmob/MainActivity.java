@@ -2203,14 +2203,7 @@ public class MainActivity extends Activity {
           LinearLayout field=new LinearLayout(this);field.setOrientation(LinearLayout.HORIZONTAL);
           TextView label=new TextView(this);label.setText(labels[k]);label.setTextColor(Color.WHITE);
           label.setGravity(Gravity.CENTER_VERTICAL);label.setTextSize(12);field.addView(label,new LinearLayout.LayoutParams(0,dp(44),1));
-          EditText input=new EditText(this);
-          boolean isDescription="about_description".equals(keys[k]);
-          input.setSingleLine(!isDescription);
-          if(isDescription){
-            input.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE|android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
-            input.setGravity(Gravity.TOP|Gravity.START);
-            input.setMinLines(4);
-          }
+          EditText input=new EditText(this);input.setSingleLine(true);
           input.setTextSize(14);input.setTextColor(Color.BLACK);
           input.setBackgroundColor(Color.WHITE);input.setPadding(dp(7),0,dp(5),0);
           field.addView(input,new LinearLayout.LayoutParams(0,dp(44),1));field.setPadding(dp(4),dp(3),dp(4),dp(3));form.addView(field);inputs[k]=input;
@@ -2486,7 +2479,15 @@ public class MainActivity extends Activity {
         for(int k=0;k<keys.length;k++){
           TextView label=new TextView(this);label.setText(labels[k]);label.setTextColor(Color.WHITE);label.setTextSize(13);
           label.setPadding(dp(5),dp(7),dp(5),dp(3));appearanceFields.addView(label);
-          EditText input=new EditText(this);input.setSingleLine(true);input.setTextSize(14);
+          EditText input=new EditText(this);
+          boolean isDescription="about_description".equals(keys[k]);
+          input.setSingleLine(!isDescription);
+          if(isDescription){
+            input.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE|android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+            input.setGravity(Gravity.TOP|Gravity.START);
+            input.setMinLines(4);
+          }
+          input.setTextSize(14);
           input.setText(StudioSettings.appearance(this,keys[k],defaults[k]));
           input.setBackgroundColor(Color.WHITE);input.setTextColor(Color.BLACK);input.setPadding(dp(8),0,dp(6),0);
           appearanceFields.addView(input,new LinearLayout.LayoutParams(-1,isDescription?dp(112):dp(42)));appearanceInputs[k]=input;

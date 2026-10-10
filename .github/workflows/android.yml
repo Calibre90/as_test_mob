@@ -1,7 +1,7 @@
 name: Build APK
 on:
   push:
-    branches: [ main, run35-functional-port, fix-run203-module-picker, feature/run296-studio-splash, feature/online-function-catalog ]
+    branches: [ main, run35-functional-port, fix-run203-module-picker, feature/run296-studio-splash, feature/online-function-catalog, feature/studio-catalog-integration ]
   workflow_dispatch:
 jobs:
   build:

@@ -104,6 +104,65 @@ public class MainActivity extends Activity {
         startActivityForResult(intent,9088);
       });
       adminHome.addView(importSnapshot);
+      Button restoreOnline=new Button(this);
+      restoreOnline.setText("Восстановить настройки из GitHub");
+      restoreOnline.setOnClickListener(v->{
+        restoreOnline.setEnabled(false);
+        Toast.makeText(this,"Загружаем опубликованные настройки…",Toast.LENGTH_SHORT).show();
+        new Thread(()->{
+          try{
+            final FullCatalogEnvelope published=AdminOnlineRestore.download();
+            final org.json.JSONObject stores=published.snapshot.getJSONObject("stores");
+            final int functions=new org.json.JSONArray(
+              stores.getJSONObject("run35_settings").optString("features","[]")).length();
+            final int modules=new org.json.JSONArray(
+              stores.getJSONObject("studio_custom_modules").optString("catalog","[]")).length();
+            runOnUiThread(()->{
+              restoreOnline.setEnabled(true);
+              new AlertDialog.Builder(this)
+                .setTitle("Восстановить из GitHub — версия "+published.version)
+                .setMessage("Найдено функций: "+functions+
+                  "\\nДополнительных блоков: "+modules+
+                  "\\n\\nБудут заменены локальные настройки администратора: функции, строки, блоки и оформление. Данные ABT и лицензии не затрагиваются. Перед заменой текущие настройки будут сохранены в резервную копию внутри приложения. Продолжить?".replace("\\n","\n"))
+                .setNegativeButton("Отмена",null)
+                .setPositiveButton("Восстановить",(dialog,which)->{
+                  try{
+                    // Preserve existing admin data before any destructive import.
+                    try{
+                      org.json.JSONObject backup=AdminSnapshot.exportLocal(this);
+                      AdminSnapshot.validate(backup);
+                      if(!getSharedPreferences("studio_admin_restore_backup",MODE_PRIVATE)
+                          .edit().putString("previous_snapshot",backup.toString()).commit())
+                        throw new IllegalStateException("Не удалось сохранить резервную копию");
+                    }catch(IllegalStateException empty){
+                      if(!empty.getMessage().startsWith("Нет сохранённых настроек"))throw empty;
+                    }
+                    AdminSnapshot.importLocal(this,published.snapshot);
+                    features.clear();
+                    features.addAll(StudioSettings.load(this));
+                    restoreAdminRows();
+                    if(view!=null)view.invalidate();
+                    new AlertDialog.Builder(this)
+                      .setTitle("Настройки восстановлены")
+                      .setMessage("Каталог GitHub версии "+published.version+
+                        " импортирован. Откройте «Администрирование интерфейса», чтобы проверить блоки и функции.")
+                      .setPositiveButton("Понятно",null).show();
+                  }catch(Exception ex){
+                    new AlertDialog.Builder(this).setTitle("Ошибка восстановления")
+                      .setMessage(ex.getMessage()).setPositiveButton("Закрыть",null).show();
+                  }
+                }).show();
+            });
+          }catch(Exception ex){
+            runOnUiThread(()->{
+              restoreOnline.setEnabled(true);
+              new AlertDialog.Builder(this).setTitle("Не удалось загрузить из GitHub")
+                .setMessage(ex.getMessage()).setPositiveButton("Закрыть",null).show();
+            });
+          }
+        }).start();
+      });
+      adminHome.addView(restoreOnline);
       Button publishOnline=new Button(this);
       publishOnline.setText("Отправить настройки в GitHub");
       publishOnline.setOnClickListener(v->{

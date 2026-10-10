@@ -12,7 +12,7 @@ import java.security.spec.X509EncodedKeySpec;
 final class CatalogSignature {
   // Set to a dedicated catalog-signing RSA public key after generating the publisher key pair.
   // Never reuse or embed the private license-generation key.
-  private static final String CATALOG_PUBLIC_KEY_BASE64 = "MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAxGvZWE8zmhI20vr8FeAJK5QPy7Tg0ks6uKSi4utGbsEaR/L+xDl7RnIl8pw6Xu31axAYXRzMipAoWxrVCvUZ5zMjhIVbxmxtFWAYu6Ie/QOG7RGPgw+Q5KMW29e03UC2Xaf7Us5r/PeIiM3ks5V5GNkRpIWDWlunjdjglREgYJkcDrDPRPpmqnShcbzTZpYy915suGBtDzx9fHVmB7XrxZgrVHGhu9Qpt6vCI5QiLI2ZgKiCsdLiLFL13F1d0qod8S1r2W4XOCgW8AADBJJi3XT7pJlX2SZrsxzcUQ2e/TCMRUHOIZYOoaO8bJH/flBADpDhifDNvUQFdhxL8tBp95BdHah3Vpf1zB0IU6K42WBKQ1lNi2dPH5BpEBQ/Fa/6uwCbW1GbW3+5ABzRAt/HgLkF1wT3NTOwPrSVub0POZ6y0bAfDWDvHfst5z2zjKF/+nje5D3lucsgihAG1VlqQzSubGBe";
+  private static final String CATALOG_PUBLIC_KEY_BASE64 = "";
   private CatalogSignature(){}
 
   /** Verify a full published configuration; never trust an unsigned admin export. */

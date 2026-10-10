@@ -110,21 +110,38 @@ public class MainActivity extends Activity {
         try{
           org.json.JSONObject snapshot=AdminSnapshot.exportLocal(this);
           AdminSnapshot.validate(snapshot);
+          final boolean saved=GitHubTokenStore.hasToken(this);
           final EditText tokenInput=new EditText(this);
           tokenInput.setSingleLine(true);
           tokenInput.setHint("Fine-grained GitHub token");
           tokenInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
           new AlertDialog.Builder(this)
             .setTitle("Отправить в GitHub")
-            .setMessage("Настройки будут отправлены в ветку проверки, но НЕ опубликованы для клиентов до подписи и выпуска. Введите временный токен с правом Contents: Read and write для этого репозитория. Токен не сохраняется.")
-            .setView(tokenInput)
+            .setMessage(saved
+              ?"Использовать сохранённый зашифрованный токен? Для замены или удаления нажмите «Токен GitHub» на главном экране. Настройки сначала отправятся на проверку."
+              :"Введите GitHub-токен с правами Contents и Actions: Read and write. После успешной отправки он будет сохранён в зашифрованном виде на этом устройстве. Настройки сначала отправятся на проверку.")
+            .setView(saved?null:tokenInput)
             .setNegativeButton("Отмена",null)
             .setPositiveButton("Отправить",(d,w)->{
-              final String token=tokenInput.getText().toString();
+              final String token;
+              try{
+                token=saved?GitHubTokenStore.load(this):tokenInput.getText().toString().trim();
+                if(token==null||token.length()<12)throw new IllegalArgumentException("Введите действительный токен");
+              }catch(Exception ex){
+                Toast.makeText(this,"Токен: "+ex.getMessage(),Toast.LENGTH_LONG).show();
+                return;
+              }
               tokenInput.setText("");
               new Thread(()->{
                 try{
                   String sha=GitHubSnapshotUploader.upload(snapshot,token);
+                  if(!saved){
+                    try{GitHubTokenStore.save(this,token);}
+                    catch(Exception storeError){
+                      runOnUiThread(()->Toast.makeText(this,
+                        "Отправлено, но токен не сохранён: "+storeError.getMessage(),Toast.LENGTH_LONG).show());
+                    }
+                  }
                   runOnUiThread(()->{
                     new AlertDialog.Builder(this)
                       .setTitle("Настройки загружены в GitHub")
@@ -162,6 +179,35 @@ public class MainActivity extends Activity {
         }
       });
       adminHome.addView(publishOnline);
+      Button tokenSettings=new Button(this);
+      tokenSettings.setText("Токен GitHub: изменить / удалить");
+      tokenSettings.setOnClickListener(v->{
+        final EditText replacement=new EditText(this);
+        replacement.setSingleLine(true);
+        replacement.setHint("Новый GitHub-токен");
+        replacement.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        new AlertDialog.Builder(this)
+          .setTitle("Токен GitHub")
+          .setMessage(GitHubTokenStore.hasToken(this)
+            ?"Токен сохранён в зашифрованном виде. Можно заменить или удалить его."
+            :"Токен пока не сохранён. Введите его для будущих отправок.")
+          .setView(replacement)
+          .setNegativeButton("Отмена",null)
+          .setNeutralButton("Удалить",(dialog,which)->{
+            GitHubTokenStore.clear(this);
+            Toast.makeText(this,"Токен удалён с устройства",Toast.LENGTH_SHORT).show();
+          })
+          .setPositiveButton("Сохранить",(dialog,which)->{
+            try{
+              GitHubTokenStore.save(this,replacement.getText().toString());
+              replacement.setText("");
+              Toast.makeText(this,"Токен защищённо сохранён",Toast.LENGTH_SHORT).show();
+            }catch(Exception ex){
+              Toast.makeText(this,"Ошибка токена: "+ex.getMessage(),Toast.LENGTH_LONG).show();
+            }
+          }).show();
+      });
+      adminHome.addView(tokenSettings);
       setContentView(adminHome);
       adminHome.post(()->showAdminTabs());
       return;

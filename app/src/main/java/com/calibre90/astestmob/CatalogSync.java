@@ -46,12 +46,13 @@ final class CatalogSync {
         if(version<1)return;
         JSONArray features=new JSONArray(document.getString("features_payload"));
         if(features.length()==0||features.length()>500)return; // Never replace built-ins with an empty draft catalog.
+        java.util.HashSet<String> seenIds=new java.util.HashSet<>();
         for(int i=0;i<features.length();i++){
           JSONObject f=features.getJSONObject(i);
           String id=f.getString("id"),module=f.getString("module");
           String address=f.getString("row"),mode=f.getString("mode");
           String indices=f.getString("indices"),on=f.getString("on");
-          if(id.isEmpty()||id.length()>80||!(module.equals("IC")||module.equals("BCM")||module.equals("RKE")||module.equals("ABS"))
+          if(id.isEmpty()||id.length()>80||!seenIds.add(id)||!(module.equals("IC")||module.equals("BCM")||module.equals("RKE")||module.equals("ABS"))
             ||!address.matches("[0-9A-Fa-f]{3}-[0-9A-Fa-f]{2}-[0-9A-Fa-f]{2}")
             ||!(mode.equals("HEX")||mode.equals("BITS"))||indices.length()>80
             ||!indices.matches("[0-9]+(,[0-9]+)*")||!on.matches("[0-9A-Fa-f]{1,64}"))return;
@@ -59,7 +60,15 @@ final class CatalogSync {
           if(!off.isEmpty()&&!off.matches("[0-9A-Fa-f]{1,64}"))return;
           if(mode.equals("HEX") && on.length()!=indices.split(",").length)return;
           if(mode.equals("HEX") && !off.isEmpty() && off.length()!=indices.split(",").length)return;
-          if(f.optInt("byte",0)<0 || f.optInt("byte",0)>256)return;
+          if(!f.has("byte")||f.getInt("byte")<0||f.getInt("byte")>63)return;
+          if(!f.has("label")||f.getString("label").trim().isEmpty()||f.getString("label").length()>120)return;
+          String prefix=module.equals("IC")?"720":module.equals("BCM")?"726":module.equals("RKE")?"731":"760";
+          if(!address.toUpperCase(java.util.Locale.US).startsWith(prefix+"-"))return;
+          String[] positions=indices.split(",");
+          java.util.HashSet<Integer> seenPositions=new java.util.HashSet<>();
+          for(String position:positions){int n=Integer.parseInt(position);
+            if(n>127||(mode.equals("BITS")&&n>7)||!seenPositions.add(n))return;
+          }
         }
         int current=app.getSharedPreferences("studio_published_catalog",0).getInt("version",0);
         if(version<=current)return;

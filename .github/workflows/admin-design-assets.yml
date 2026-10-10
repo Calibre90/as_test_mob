@@ -1,0 +1,46 @@
+name: Install Admin GH design assets
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/studio-catalog-integration]
+    paths:
+      - '.github/workflows/admin-design-assets.yml'
+      - 'Mazda6GH_Admin_design_assets.zip'
+permissions:
+  contents: write
+jobs:
+  install-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Extract checked Admin artwork
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import zipfile
+          from pathlib import Path
+          archive=Path('Mazda6GH_Admin_design_assets.zip')
+          target=Path('app/src/main/res/drawable-nodpi/admin_gh_fullscreen_background.jpg')
+          source='admin_design_patch/res/drawable-nodpi/admin_gh_fullscreen_background.jpg'
+          with zipfile.ZipFile(archive) as z:
+              data=z.read(source)
+          if not data.startswith(b'\\xff\\xd8\\xff') or len(data)>4000000:
+              raise ValueError('Unexpected Admin background image')
+          target.parent.mkdir(parents=True,exist_ok=True)
+          target.write_bytes(data)
+          print('Installed',target,'bytes',len(data))
+          PY
+      - name: Commit extracted background only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add app/src/main/res/drawable-nodpi/admin_gh_fullscreen_background.jpg
+          if git diff --cached --quiet; then
+            echo "Background already installed"
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Install full-resolution Mazda GH Admin background'
+          git push

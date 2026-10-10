@@ -105,7 +105,7 @@ public class MainActivity extends Activity {
       });
       adminHome.addView(importSnapshot);
       Button restoreOnline=new Button(this);
-      restoreOnline.setText("Восстановить настройки с сервера");
+      restoreOnline.setText("Восстановить настройки из сервера");
       restoreOnline.setOnClickListener(v->{
         restoreOnline.setEnabled(false);
         Toast.makeText(this,"Загружаем опубликованные настройки…",Toast.LENGTH_SHORT).show();
@@ -120,7 +120,7 @@ public class MainActivity extends Activity {
             runOnUiThread(()->{
               restoreOnline.setEnabled(true);
               new AlertDialog.Builder(this)
-                .setTitle("Восстановить с сервера — версия "+published.version)
+                .setTitle("Восстановить из сервера — версия "+published.version)
                 .setMessage("Найдено функций: "+functions+
                   "\\nДополнительных блоков: "+modules+
                   "\\n\\nБудут заменены локальные настройки администратора: функции, строки, блоки и оформление. Данные ABT и лицензии не затрагиваются. Перед заменой текущие настройки будут сохранены в резервную копию внутри приложения. Продолжить?")

@@ -3,6 +3,10 @@ name: Publish signed Studio catalog
 on:
   workflow_dispatch:
     inputs:
+      snapshot_sha:
+        description: "Reviewed snapshot commit SHA from feature/studio-catalog-integration"
+        required: true
+        type: string
       version:
         description: "New strictly increasing catalog version"
         required: true
@@ -26,6 +30,21 @@ jobs:
         with:
           ref: main
           persist-credentials: true
+      - name: Import only the reviewed Admin snapshot
+        env:
+          SNAPSHOT_SHA: ${{ inputs.snapshot_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$SNAPSHOT_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "Expected full 40-character commit SHA"; exit 1; }
+          git fetch --no-tags --depth=100 origin feature/studio-catalog-integration
+          git cat-file -e "$SNAPSHOT_SHA^{commit}"
+          git merge-base --is-ancestor "$SNAPSHOT_SHA" FETCH_HEAD || {
+            echo "Snapshot commit is not in the approved review branch"; exit 1;
+          }
+          mkdir -p publication
+          git show "$SNAPSHOT_SHA:publication/admin-settings.json" > publication/admin-settings.json
+          test -s publication/admin-settings.json
+          echo "Imported only snapshot JSON; no application code from review branch was merged."
       - name: Validate input and approved snapshot
         env:
           VERSION: ${{ inputs.version }}

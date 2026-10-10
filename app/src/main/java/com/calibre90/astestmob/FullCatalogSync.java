@@ -48,7 +48,7 @@ final class FullCatalogSync {
       if (envelope.version <= current) return false;
       // One atomic preferences transaction; keep previous valid data on failure.
       return prefs.edit().putInt("version", envelope.version)
-          .putString("snapshot_payload", envelope.rawSnapshot).commit();
+          .putString("signed_document", document.toString()).commit();
     } catch (Exception ignored) {
       return false;
     } finally {
@@ -56,16 +56,18 @@ final class FullCatalogSync {
     }
   }
 
-  /** Return only a previously verified, cached configuration. */
+  /** Verify the cached signature again before returning any published settings. */
   static JSONObject cached(Context context) {
     try {
       SharedPreferences prefs = context.getApplicationContext()
           .getSharedPreferences(STORE, Context.MODE_PRIVATE);
-      String payload = prefs.getString("snapshot_payload", "");
-      if (payload.isEmpty()) return null;
-      JSONObject snapshot = new JSONObject(payload);
-      AdminSnapshot.validate(snapshot);
-      return snapshot;
+      String signed = prefs.getString("signed_document", "");
+      if (signed.isEmpty()) return null;
+      JSONObject document = new JSONObject(signed);
+      if (!CatalogSignature.verifyFull(document)) return null;
+      FullCatalogEnvelope envelope = FullCatalogEnvelope.parse(document);
+      if (envelope.version != prefs.getInt("version", 0)) return null;
+      return envelope.snapshot;
     } catch (Exception ignored) {
       return null;
     }

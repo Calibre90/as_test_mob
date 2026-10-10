@@ -74,7 +74,24 @@ public class MainActivity extends Activity {
       LinearLayout adminHome=new LinearLayout(this);
       adminHome.setOrientation(LinearLayout.VERTICAL);
       // Admin-only dark automotive theme. Studio screens and their behavior remain untouched.
-      adminHome.setBackgroundResource(R.drawable.admin_home_background);
+      // The background is a separate bitmap layer, never a screenshot of buttons.
+      // Resolve by name so the source still builds before the JPG asset is uploaded.
+      int backgroundId=getResources().getIdentifier(
+          "admin_gh_fullscreen_background","drawable",getPackageName());
+      FrameLayout adminRoot=new FrameLayout(this);
+      if(backgroundId!=0){
+        ImageView adminBackdrop=new ImageView(this);
+        adminBackdrop.setImageResource(backgroundId);
+        // FIT_CENTER preserves the entire GH car and original artwork proportions.
+        adminBackdrop.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        adminBackdrop.setBackgroundColor(Color.rgb(6,7,11));
+        adminRoot.addView(adminBackdrop,new FrameLayout.LayoutParams(-1,-1));
+        // Subtle veil behind text/buttons while retaining the photograph.
+        adminHome.setBackgroundColor(Color.TRANSPARENT);
+      }else{
+        adminRoot.setBackgroundResource(R.drawable.admin_home_background);
+        adminHome.setBackgroundColor(Color.TRANSPARENT);
+      }
       adminHome.setPadding(dp(14),dp(42),dp(14),dp(12));
       Button reopen=new Button(this);
       reopen.setText("Администрирование интерфейса");
@@ -290,7 +307,8 @@ public class MainActivity extends Activity {
       });
       styleAdminHomeButton(tokenSettings, "◆");
       adminHome.addView(tokenSettings);
-      setContentView(adminHome);
+      adminRoot.addView(adminHome,new FrameLayout.LayoutParams(-1,-1));
+      setContentView(adminRoot);
       adminHome.post(()->showAdminTabs());
       return;
     }

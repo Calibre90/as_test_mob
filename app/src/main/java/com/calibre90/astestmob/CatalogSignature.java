@@ -15,6 +15,23 @@ final class CatalogSignature {
   private static final String CATALOG_PUBLIC_KEY_BASE64 = "";
   private CatalogSignature(){}
 
+  /** Verify a full published configuration; never trust an unsigned admin export. */
+  static boolean verifyFull(JSONObject document) {
+    if (CATALOG_PUBLIC_KEY_BASE64.isEmpty()) return false;
+    try {
+      FullCatalogEnvelope envelope = FullCatalogEnvelope.parse(document);
+      byte[] publicDer = Base64.decode(CATALOG_PUBLIC_KEY_BASE64, Base64.DEFAULT);
+      PublicKey publicKey = KeyFactory.getInstance("RSA")
+          .generatePublic(new X509EncodedKeySpec(publicDer));
+      Signature verifier = Signature.getInstance("SHA256withRSA");
+      verifier.initVerify(publicKey);
+      verifier.update(envelope.signingMessage().getBytes(StandardCharsets.UTF_8));
+      return verifier.verify(Base64.decode(document.getString("signature"), Base64.DEFAULT));
+    } catch (Exception ex) {
+      return false;
+    }
+  }
+
   static boolean verify(JSONObject document){
     if(CATALOG_PUBLIC_KEY_BASE64.isEmpty())return false; // Fail closed until configured.
     try{

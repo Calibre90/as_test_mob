@@ -138,6 +138,18 @@ public final class AdminSnapshot {
       }
       backup.put(name,values);
     }
+    // Administrator-edited custom rows are configuration, unlike customer ABT.
+    // Mirror only these rows into the editor's runtime store after import.
+    JSONObject customRows=incoming.optJSONObject("studio_admin_custom_rows");
+    SharedPreferences live=context.getSharedPreferences("studio_custom_rows",Context.MODE_PRIVATE);
+    JSONObject liveBackup=new JSONObject();
+    if(customRows!=null){
+      JSONArray keys=customRows.names();
+      if(keys!=null)for(int i=0;i<keys.length();i++){
+        String module=keys.getString(i);
+        liveBackup.put(module,live.getString(module,"[]"));
+      }
+    }
     int written=0;
     try{
       for(String name:STORES){
@@ -145,7 +157,33 @@ public final class AdminSnapshot {
         if(next!=null)writeStore(context,name,next,true);
         written++;
       }
+      if(customRows!=null){
+        JSONArray keys=customRows.names();
+        if(keys!=null)for(int i=0;i<keys.length();i++){
+          String module=keys.getString(i);
+          JSONArray incomingRows=new JSONArray(customRows.getString(module));
+          JSONArray existing=new JSONArray(live.getString(module,"[]"));
+          for(int j=0;j<incomingRows.length();j++){
+            JSONObject row=incomingRows.getJSONObject(j);
+            String address=row.getString("address");
+            for(int k=existing.length()-1;k>=0;k--){
+              JSONObject old=existing.optJSONObject(k);
+              if(old!=null&&address.equalsIgnoreCase(old.optString("address")))
+                existing.remove(k);
+            }
+            existing.put(row);
+          }
+          if(!live.edit().putString(module,existing.toString()).commit())
+            throw new IllegalStateException("Не удалось восстановить строки "+module);
+        }
+      }
     }catch(Exception failure){
+      JSONArray restore=liveBackup.names();
+      if(restore!=null)for(int i=0;i<restore.length();i++){
+        String module=restore.getString(i);
+        if(!live.edit().putString(module,liveBackup.getString(module)).commit())
+          failure.addSuppressed(new IllegalStateException("Ошибка отката строк "+module));
+      }
       Exception rollbackError=null;
       for(int i=written;i>=0;i--){
         if(i>=STORES.length)continue;

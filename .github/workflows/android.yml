@@ -47,6 +47,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - name: Verify catalog admin Java source is compilable
+        run: |
+          test -f catalog-admin/src/main/java/com/calibre90/catalogadmin/AdminActivity.java
+          test -f catalog-admin/src/main/AndroidManifest.xml
       - name: Test RSA catalog signing and tamper rejection
         run: python3 catalog/test_signing.py
       - name: Run ABT and feature engine regression tests
@@ -54,7 +58,8 @@ jobs:
           mkdir -p /tmp/abt-test-classes
           javac -d /tmp/abt-test-classes app/src/main/java/com/calibre90/astestmob/AbtCodec.java app/src/main/java/com/calibre90/astestmob/FeatureEngine.java app/src/main/java/com/calibre90/astestmob/AbtSnapshot.java app/src/test/java/com/calibre90/astestmob/CodecSelfTest.java
           java -cp /tmp/abt-test-classes com.calibre90.astestmob.CodecSelfTest
-      - run: gradle :app:assembleDebug :catalog-admin:assembleDebug -PbuildNumber=${{ github.run_number }}
+      - name: Build both Android APKs
+        run: gradle :app:assembleDebug :catalog-admin:assembleDebug -PbuildNumber=${{ github.run_number }}
       - uses: actions/upload-artifact@v4
         with:
           name: Mazda6GH-ASBuilt-Test-APK

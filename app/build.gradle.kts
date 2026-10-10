@@ -7,6 +7,6 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = (project.findProperty("buildNumber")?.toString()?.toIntOrNull() ?: 1)
-        versionName = "1.0.0 (STUDIO)"
+        versionName = "1.0." + (project.findProperty("buildNumber")?.toString()?.toIntOrNull() ?: 1).toString()
     }
 }

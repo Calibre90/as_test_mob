@@ -850,6 +850,23 @@ public class MainActivity extends Activity {
           String address=template.optString("address").trim().toUpperCase(java.util.Locale.ROOT);
           if(!address.isEmpty()&&localAddresses.add(address))customRows.put(template);
         }
+        // Keep row addresses in ascending order even when a checkbox creates a
+        // local working copy of an online template. This is display-only.
+        java.util.ArrayList<org.json.JSONObject> displayRows=new java.util.ArrayList<>();
+        java.util.HashSet<String> workingAddresses=new java.util.HashSet<>();
+        for(int i=0;i<localRowCount;i++){
+          org.json.JSONObject item=customRows.optJSONObject(i);
+          if(item!=null)workingAddresses.add(item.optString("address").trim().toUpperCase(java.util.Locale.ROOT));
+        }
+        for(int i=0;i<customRows.length();i++){
+          org.json.JSONObject item=customRows.optJSONObject(i);
+          if(item!=null)displayRows.add(item);
+        }
+        java.util.Collections.sort(displayRows,(left,right)->
+          left.optString("address").compareToIgnoreCase(right.optString("address")));
+        org.json.JSONArray orderedRows=new org.json.JSONArray();
+        for(org.json.JSONObject item:displayRows)orderedRows.put(item);
+        customRows=orderedRows;
         boolean showingOnlineTemplates=localRowCount==0&&customRows.length()>0;
         if(customRows.length()==0)txt(c,"Нет данных — откройте ABT блока "+id,22,420,12,Color.DKGRAY,false);
         int offset=Math.max(0,Math.min(customScroll.containsKey(id)?customScroll.get(id):0,Math.max(0,customRows.length()-9)));
@@ -862,7 +879,7 @@ public class MainActivity extends Activity {
           String hex=item.optString("value");
           java.util.HashSet<Integer> marked=new java.util.HashSet<>();
           String baseline=customBaseline(id,item.optString("address"));
-          if(i+offset<localRowCount&&baseline!=null){
+          if(workingAddresses.contains(item.optString("address").trim().toUpperCase(java.util.Locale.ROOT))&&baseline!=null){
             String oldHex=AbtCodec.norm(baseline),currentHex=AbtCodec.norm(hex);
             for(int k=0;k<currentHex.length();k++)
               if(k>=oldHex.length()||oldHex.charAt(k)!=currentHex.charAt(k))marked.add(k);

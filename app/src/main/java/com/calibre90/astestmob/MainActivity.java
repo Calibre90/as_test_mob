@@ -13,6 +13,7 @@ import java.io.*;
 
 public class MainActivity extends Activity {
   StudioView view;
+  String pendingAdminSnapshot;
   boolean adminSession=false;
   private static final String ADMIN_MAGIC="MAZDA6GH-ADMIN-V1";
   private static final String ADMIN_PUBLIC_KEY="MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5ZvEA9vU4BHQ35UQKaBqsdZElVfATRC79SjFLRwMN/9g9ezgQk91ziDLaDzc4SuoRtuqiKDBqhRR/HJLfvfOB6+/DNAyc896dfW85seTaN51shqae5Rw/boIO0C9w9rgoJg7N7SHfqDvLAaKBeNYtleBdfhfU5AShumRUZnYRrT1irp0VLGLlTiYF+CMCF+oN2NV2QzA/cENGCCmxjsWpQKionXNPGKx7D36DBzLwmAYOF3M2J/JRuCtEpKO8O9/cMoTNZoB8/R40A4vY4pZBbuPZnhpmHiCXx5uzXXrJatpTTj04dqFw2Mrbo/CQP80FRYnNGipeCbIbGtk/tda8wIDAQAB";
@@ -48,6 +49,19 @@ public class MainActivity extends Activity {
   ArrayList<String>[] rows=new ArrayList[4];
   boolean[][] checks=new boolean[4][3];
   int active=0;
+  @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){
+    super.onActivityResult(requestCode,resultCode,data);
+    if(requestCode==9087 && resultCode==RESULT_OK && data!=null &&
+       data.getData()!=null && pendingAdminSnapshot!=null){
+      try(java.io.OutputStream out=getContentResolver().openOutputStream(data.getData())){
+        if(out==null)throw new java.io.IOException("No output stream");
+        out.write(pendingAdminSnapshot.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        Toast.makeText(this,"Настройки экспортированы",Toast.LENGTH_LONG).show();
+      }catch(Exception ex){
+        Toast.makeText(this,"Ошибка записи: "+ex.getMessage(),Toast.LENGTH_LONG).show();
+      }finally{pendingAdminSnapshot=null;}
+    }
+  }
   @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(Color.BLACK);getWindow().setNavigationBarColor(Color.BLACK);getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
     for(int i=0;i<4;i++)rows[i]=new ArrayList<>();
     features.addAll(StudioSettings.load(this));restoreCustomTabPositions();restoreSelectedModule();seedBuiltInRows();restoreAdminRows();
@@ -61,6 +75,22 @@ public class MainActivity extends Activity {
       reopen.setText("Администрирование интерфейса");
       reopen.setOnClickListener(v->showAdminTabs());
       adminHome.addView(reopen);
+      Button exportSnapshot=new Button(this);
+      exportSnapshot.setText("Экспорт настроек Studio");
+      exportSnapshot.setOnClickListener(v->{
+        try{
+          pendingAdminSnapshot=AdminSnapshot.exportLocal(this).toString(2);
+          AdminSnapshot.validate(new org.json.JSONObject(pendingAdminSnapshot));
+          Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT);
+          intent.addCategory(Intent.CATEGORY_OPENABLE);
+          intent.setType("application/json");
+          intent.putExtra(Intent.EXTRA_TITLE,"mazda6gh-admin-settings.json");
+          startActivityForResult(intent,9087);
+        }catch(Exception ex){
+          Toast.makeText(this,"Ошибка экспорта: "+ex.getMessage(),Toast.LENGTH_LONG).show();
+        }
+      });
+      adminHome.addView(exportSnapshot);
       setContentView(adminHome);
       adminHome.post(()->showAdminTabs());
       return;

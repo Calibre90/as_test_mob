@@ -58,6 +58,23 @@ jobs:
           mkdir -p /tmp/abt-test-classes
           javac -d /tmp/abt-test-classes app/src/main/java/com/calibre90/astestmob/AbtCodec.java app/src/main/java/com/calibre90/astestmob/FeatureEngine.java app/src/main/java/com/calibre90/astestmob/AbtSnapshot.java app/src/test/java/com/calibre90/astestmob/CodecSelfTest.java
           java -cp /tmp/abt-test-classes com.calibre90.astestmob.CodecSelfTest
+      - name: Prepare stable Android signing key
+        env:
+          MAZDA_KEYSTORE_B64: ${{ secrets.MAZDA_KEYSTORE_B64 }}
+          MAZDA_SIGNING_STORE_PASSWORD: ${{ secrets.MAZDA_SIGNING_STORE_PASSWORD }}
+          MAZDA_SIGNING_KEY_ALIAS: ${{ secrets.MAZDA_SIGNING_KEY_ALIAS }}
+          MAZDA_SIGNING_KEY_PASSWORD: ${{ secrets.MAZDA_SIGNING_KEY_PASSWORD }}
+        run: |
+          if [ -n "$MAZDA_KEYSTORE_B64" ] && [ -n "$MAZDA_SIGNING_STORE_PASSWORD" ] && [ -n "$MAZDA_SIGNING_KEY_ALIAS" ] && [ -n "$MAZDA_SIGNING_KEY_PASSWORD" ]; then
+            printf '%s' "$MAZDA_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/mazda-update-key.jks"
+            echo "MAZDA_SIGNING_STORE_FILE=$RUNNER_TEMP/mazda-update-key.jks" >> "$GITHUB_ENV"
+            echo "MAZDA_SIGNING_STORE_PASSWORD=$MAZDA_SIGNING_STORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "MAZDA_SIGNING_KEY_ALIAS=$MAZDA_SIGNING_KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "MAZDA_SIGNING_KEY_PASSWORD=$MAZDA_SIGNING_KEY_PASSWORD" >> "$GITHUB_ENV"
+            echo "Using persistent signing key for both APKs"
+          else
+            echo "::warning::Stable signing secrets not configured. APKs may not upgrade prior installs."
+          fi
       - name: Build both Android APKs
         run: gradle :app:assembleDebug :catalog-admin:assembleDebug -PbuildNumber=${{ github.run_number }} --stacktrace
       - name: Verify APK outputs

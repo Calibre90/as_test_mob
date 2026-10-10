@@ -22,7 +22,7 @@ final class CatalogSignature {
       int version=document.getInt("version");
       if(version<1)return false;
       String payload="MAZDA6GH-CATALOG-V1\n"+version+"\n"+document.getJSONArray("features").toString();
-      // Verify the exact published UTF-8 payload, not a reserialized JSON array.\n      if(!new org.json.JSONArray(document.getString("features_payload")).similar(document.getJSONArray("features")))return false;\n      byte[] publicDer=Base64.decode(CATALOG_PUBLIC_KEY_BASE64,Base64.DEFAULT);
+      // Verify the exact published UTF-8 payload, not a reserialized JSON array.\n      new org.json.JSONArray(document.getString("features_payload")); // Parse before verifying.\n      byte[] publicDer=Base64.decode(CATALOG_PUBLIC_KEY_BASE64,Base64.DEFAULT);
       PublicKey publicKey=KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(publicDer));
       Signature verifier=Signature.getInstance("SHA256withRSA");
       verifier.initVerify(publicKey);

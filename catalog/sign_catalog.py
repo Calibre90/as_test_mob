@@ -28,7 +28,8 @@ def main():
         input_path.write_bytes(payload)
         subprocess.run(["openssl","dgst","-sha256","-sign",args.private_key,"-out",str(signature_path),str(input_path)],check=True)
         signature=base64.b64encode(signature_path.read_bytes()).decode("ascii")
-    source["features_payload"]=compact\n    source["signature"]=signature
+    source["features_payload"]=compact
+    source["signature"]=signature
     pathlib.Path(args.output).write_text(json.dumps(source,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print("Signed catalog version",source["version"],"with",len(features),"features")
 

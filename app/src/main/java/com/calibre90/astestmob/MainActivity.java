@@ -371,7 +371,29 @@ public class MainActivity extends Activity {
         customChecks.put(featureKey(feature),next);
         view.invalidate();return;
       }
-      Toast.makeText(this,"Строка "+feature.address+" не найдена в блоке "+id,Toast.LENGTH_LONG).show();
+      org.json.JSONArray templates=PublishedFullSettings.customRowTemplates(this,id);
+      if(templates!=null)for(int i=0;i<templates.length();i++){
+        org.json.JSONObject template=templates.optJSONObject(i);
+        if(template==null||!feature.address.equalsIgnoreCase(template.optString("address")))continue;
+        final String value=template.optString("value");
+        new AlertDialog.Builder(this).setTitle("Создать рабочую копию?")
+          .setMessage("Строка "+feature.address+" доступна как онлайн-шаблон. Создать отдельную редактируемую копию блока "+id+" и применить функцию? Онлайн-шаблон останется неизменным.")
+          .setNegativeButton("Отмена",null)
+          .setPositiveButton("Создать и применить",(d,w)->{
+            try{
+              String hex=AbtCodec.norm(value);
+              if(!hex.matches("[0-9A-F]{4,}")||hex.length()%2!=0)throw new IllegalArgumentException("Некорректное HEX-значение");
+              org.json.JSONArray current=new org.json.JSONArray(prefs.getString(id,"[]"));
+              for(int j=0;j<current.length();j++)if(feature.address.equalsIgnoreCase(current.getJSONObject(j).optString("address")))return;
+              org.json.JSONObject copy=new org.json.JSONObject();
+              copy.put("address",feature.address);copy.put("value",value);current.put(copy);
+              if(!prefs.edit().putString(id,current.toString()).commit())throw new IllegalStateException("Не удалось сохранить копию");
+              toggleCustomFeature(index);view.invalidate();
+            }catch(Exception ex){Toast.makeText(this,"Не удалось создать копию: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+          }).show();
+        return;
+      }
+      Toast.makeText(this,"Строка "+feature.address+" не найдена в рабочих данных блока "+id,Toast.LENGTH_LONG).show();
     }catch(Exception ex){
       String reason=ex.getMessage()==null?ex.getClass().getSimpleName():ex.getMessage();
       Toast.makeText(this,"Ошибка "+id+" · "+feature.label+" · "+feature.address+": "+reason,Toast.LENGTH_LONG).show();
@@ -997,7 +1019,32 @@ public class MainActivity extends Activity {
     ArrayList<FeatureEngine.Feature> available=moduleFeatures(active);
     if(index>=available.size()){Toast.makeText(this,"Функция для этого блока ещё не настроена",Toast.LENGTH_SHORT).show();return;}
     FeatureEngine.Feature f=available.get(index);AbtCodec.Row row=findRow(active,f.address);
-    if(row==null){Toast.makeText(this,"Строка "+f.address+" отсутствует в блоке "+modules[active]+". Добавьте её через админку или загрузите ABT.",Toast.LENGTH_LONG).show();return;}
+    if(row==null){
+      final int targetModule=active;
+      if(!loaded[targetModule]){
+        org.json.JSONArray templates=PublishedFullSettings.builtInRowTemplates(this,modules[targetModule]);
+        if(templates!=null)for(int i=0;i<templates.length();i++){
+          org.json.JSONObject item=templates.optJSONObject(i);
+          if(item==null||!f.address.equalsIgnoreCase(item.optString("address")))continue;
+          final String value=item.optString("value");
+          new AlertDialog.Builder(this).setTitle("Создать рабочую копию?")
+            .setMessage("Строка "+f.address+" сейчас только онлайн-шаблон. Создать отдельную редактируемую копию для "+modules[targetModule]+" и применить функцию? Исходный шаблон и ABT автомобиля не изменятся.")
+            .setNegativeButton("Отмена",null)
+            .setPositiveButton("Создать и применить",(d,w)->{
+              if(active!=targetModule||loaded[targetModule]||findRow(targetModule,f.address)!=null)return;
+              try{
+                String hex=AbtCodec.norm(value);
+                if(!hex.matches("[0-9A-F]{4,}")||hex.length()%2!=0)throw new IllegalArgumentException("Некорректное HEX-значение");
+                AbtCodec.Row copy=new AbtCodec.Row(modules[targetModule],f.address,value,Integer.parseInt(f.address.split("-")[1]));
+                abtRows[targetModule].add(copy);original.put(key(copy),hex);
+                saveAdminRows(targetModule);refreshRows(targetModule);toggleFeature(index);
+              }catch(Exception ex){Toast.makeText(this,"Не удалось создать копию: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+            }).show();
+          return;
+        }
+      }
+      Toast.makeText(this,"Строка "+f.address+" отсутствует в рабочих данных блока "+modules[active]+". Откройте ABT или добавьте строку.",Toast.LENGTH_LONG).show();return;
+    }
     try{
       boolean next=!isChecked(f);
       String before=row.value;

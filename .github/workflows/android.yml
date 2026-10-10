@@ -59,17 +59,21 @@ jobs:
           javac -d /tmp/abt-test-classes app/src/main/java/com/calibre90/astestmob/AbtCodec.java app/src/main/java/com/calibre90/astestmob/FeatureEngine.java app/src/main/java/com/calibre90/astestmob/AbtSnapshot.java app/src/test/java/com/calibre90/astestmob/CodecSelfTest.java
           java -cp /tmp/abt-test-classes com.calibre90.astestmob.CodecSelfTest
       - name: Build both Android APKs
-        run: gradle :app:assembleDebug :catalog-admin:assembleDebug -PbuildNumber=${{ github.run_number }}
+        run: gradle :app:assembleDebug :catalog-admin:assembleDebug -PbuildNumber=${{ github.run_number }} --stacktrace
       - name: Verify APK outputs
         run: |
           test -s app/build/outputs/apk/debug/app-debug.apk
           test -s catalog-admin/build/outputs/apk/debug/catalog-admin-debug.apk
           ls -lh app/build/outputs/apk/debug/app-debug.apk catalog-admin/build/outputs/apk/debug/catalog-admin-debug.apk
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
+          if-no-files-found: warn
           name: Mazda6GH-ASBuilt-Test-APK
           path: app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
+          if-no-files-found: warn
           name: Mazda6GH-Studio-Admin-Draft-APK
           path: catalog-admin/build/outputs/apk/debug/catalog-admin-debug.apk

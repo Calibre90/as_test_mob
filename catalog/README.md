@@ -37,3 +37,25 @@ Do not put license private keys, signing secrets, admin passwords, or device ide
 - Initial catalog is empty to avoid distributing unverified Mazda configuration data.
 - The legacy built-in functions are preserved in the Android application.
 - Separate admin Android app, authentication, signature verification, deployment URL, and end-to-end release testing are still pending.
+
+## Signed envelope (schema 1)
+
+The signing tool produces `features_payload` containing the exact compact JSON array as a string and `signature` as base64. The signature input is UTF-8 bytes of:
+
+```
+MAZDA6GH-CATALOG-V1\\n<version>\\n<features_payload>
+```
+
+Here `\\n` denotes a newline character, not a backslash followed by n. The consumer verifies that exact payload before parsing the functions from `features_payload`; the outer `features` array is informational only and must **not** be used by the app.
+
+Generate a dedicated RSA-2048 or stronger key pair outside the repository, then set only the public X.509 DER key in `CatalogSignature.CATALOG_PUBLIC_KEY_BASE64`. Keep the private PEM in secure owner-controlled storage and never commit it.
+
+Example local commands:
+
+```sh
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out catalog-private.pem
+openssl pkey -in catalog-private.pem -pubout -outform DER | openssl base64 -A
+python3 catalog/sign_catalog.py --catalog catalog/catalog.json --private-key catalog-private.pem --output signed-catalog.json
+```
+
+The first command creates a sensitive private key: run locally in a secure location and never upload the PEM to GitHub. Publishing remains disabled until the URL, public key, and release tests are configured.

@@ -41,12 +41,14 @@ def validate_catalog(document):
             raise ValueError(f"Feature {fid}: address prefix does not match module")
         if mode not in ("HEX","BITS") or not isinstance(indices,str) or not INDICES.fullmatch(indices):
             raise ValueError(f"Feature {fid}: invalid mode/indices")
+        if len(indices)>80:
+            raise ValueError(f"Feature {fid}: indices too long")
         numbers=[int(i) for i in indices.split(",")]
         if len(numbers)!=len(set(numbers)) or any(i>127 for i in numbers):
             raise ValueError(f"Feature {fid}: duplicate/out-of-range index")
         if type(byte) is not int or not 0<=byte<=63:
             raise ValueError(f"Feature {fid}: invalid byte index")
-        if not isinstance(label,str) or not 1<=len(label)<=120:
+        if not isinstance(label,str) or not 1<=len(label)<=120 or not label.strip():
             raise ValueError(f"Feature {fid}: invalid label")
         if not isinstance(on,str) or not HEX.fullmatch(on) or len(on)>64:
             raise ValueError(f"Feature {fid}: invalid on value")

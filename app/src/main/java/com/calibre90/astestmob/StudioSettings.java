@@ -17,7 +17,8 @@ public final class StudioSettings {
   }
   /** Read-only published catalog cached from a trusted sync. Local admin edits still take precedence. */
   public static ArrayList<FeatureEngine.Feature> published(Context ctx){
-    String data=ctx.getSharedPreferences("studio_published_catalog",0).getString("features","");
+    JSONArray full=PublishedFullSettings.features(ctx);
+    String data=full==null?ctx.getSharedPreferences("studio_published_catalog",0).getString("features",""):full.toString();
     if(data.isEmpty())return defaults();
     try{
       JSONArray a=new JSONArray(data);ArrayList<FeatureEngine.Feature> out=new ArrayList<>();
@@ -47,10 +48,16 @@ public final class StudioSettings {
     return out;
   }
   public static String moduleName(Context ctx,String id,String fallback){
-    return ctx.getSharedPreferences(PREF,0).getString("module_name_"+id,fallback);
+    String local=ctx.getSharedPreferences(PREF,0).getString("module_name_"+id,null);
+    if(local!=null)return local;
+    String published=PublishedFullSettings.moduleSetting(ctx,"module_name_"+id);
+    return published==null?fallback:published;
   }
   public static String moduleVersion(Context ctx,String id){
-    return ctx.getSharedPreferences(PREF,0).getString("module_version_"+id,"");
+    String local=ctx.getSharedPreferences(PREF,0).getString("module_version_"+id,null);
+    if(local!=null)return local;
+    String published=PublishedFullSettings.moduleSetting(ctx,"module_version_"+id);
+    return published==null?"":published;
   }
   public static void saveModule(Context ctx,String id,String name,String version){
     if(!ctx.getSharedPreferences(PREF,0).edit()
@@ -58,7 +65,10 @@ public final class StudioSettings {
       throw new IllegalStateException("Module settings not saved");
   }
   public static String appearance(Context ctx,String key,String fallback){
-    return ctx.getSharedPreferences(PREF,0).getString("appearance_"+key,fallback);
+    String local=ctx.getSharedPreferences(PREF,0).getString("appearance_"+key,null);
+    if(local!=null)return local;
+    String published=PublishedFullSettings.moduleSetting(ctx,"appearance_"+key);
+    return published==null?fallback:published;
   }
   public static void saveAppearance(Context ctx,Map<String,String> values){
     android.content.SharedPreferences.Editor edit=ctx.getSharedPreferences(PREF,0).edit();

@@ -537,10 +537,6 @@ public class MainActivity extends Activity {
     // editable ABT rows: doing so could silently replace vehicle-specific HEX.
     org.json.JSONArray publishedTemplates=PublishedFullSettings.customRowTemplates(this,id);
     if(publishedTemplates!=null && publishedTemplates.length()>0){
-      TextView templateHeader=new TextView(this);
-      templateHeader.setText("Онлайн-шаблоны строк (только просмотр)");
-      templateHeader.setPadding(0,dp(8),0,dp(4));
-      layout.addView(templateHeader);
       for(int p=0;p<publishedTemplates.length();p++){
         org.json.JSONObject template=publishedTemplates.optJSONObject(p);
         if(template==null)continue;
@@ -788,11 +784,10 @@ public class MainActivity extends Activity {
           if(templates!=null&&templates.length()>0)customRows=templates;
         }
         if(customRows.length()==0)txt(c,"Нет данных — откройте ABT блока "+id,22,420,12,Color.DKGRAY,false);
-        else if(showingOnlineTemplates)txt(c,"Онлайн-шаблоны · только просмотр",22,392,11,Color.DKGRAY,false);
         int offset=Math.max(0,Math.min(customScroll.containsKey(id)?customScroll.get(id):0,Math.max(0,customRows.length()-9)));
         for(int i=0;i<Math.min(9,customRows.length()-offset);i++){
           org.json.JSONObject item=customRows.optJSONObject(i+offset);if(item==null)continue;
-          float yy=(showingOnlineTemplates?400:380)+i*36.5f;
+          float yy=380+i*36.5f;
           card(c,15,yy,370,35,8,false);
           p.setColor(Color.rgb(202,209,219));p.setStrokeWidth(1);c.drawLine(165,yy+4,165,yy+31,p);
           txtFit(c,item.optString("address"),28,yy+23,14,Color.BLACK,132);
@@ -860,12 +855,11 @@ public class MainActivity extends Activity {
         onlineRows=PublishedFullSettings.builtInRowTemplates(MainActivity.this,modules[active]);
       boolean onlineReference=onlineRows!=null&&onlineRows.length()>0;
       if(onlineReference){
-        txt(c,"Онлайн-шаблоны · только просмотр",22,392,11,Color.DKGRAY,false);
         int onlineCount=Math.min(9,onlineRows.length());
         for(int i=0;i<onlineCount;i++){
           org.json.JSONObject item=onlineRows.optJSONObject(i);
           if(item==null)continue;
-          float y=400+i*36.5f;card(c,15,y,370,35,8,false);
+          float y=380+i*36.5f;card(c,15,y,370,35,8,false);
           p.setColor(Color.rgb(202,209,219));p.setStrokeWidth(1);
           c.drawLine(165,y+4,165,y+31,p);
           txtFit(c,item.optString("address"),28,y+23,14,Color.BLACK,132);

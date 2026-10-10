@@ -40,7 +40,8 @@ final class CatalogSync {
           }
         }
         JSONObject document=new JSONObject(new String(output.toByteArray(),StandardCharsets.UTF_8));
-        if(!CatalogSignature.verify(document))return; // Untrusted catalog must never reach local storage.\n        if(document.getInt("schema")!=1)return;
+        if(!CatalogSignature.verify(document))return; // Untrusted catalog must never reach local storage.
+        if(document.getInt("schema")!=1)return;
         int version=document.getInt("version");
         if(version<1)return;
         JSONArray features=new JSONArray(document.getString("features_payload"));

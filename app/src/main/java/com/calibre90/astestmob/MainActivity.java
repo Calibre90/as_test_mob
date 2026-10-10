@@ -42,6 +42,23 @@ public class MainActivity extends Activity {
     return true;
   }
 
+  private static boolean verifyStudioAdminPassword(String candidate) {
+    try {
+      byte[] salt=hexBytes("3bccda4bc5fe6fd75885c87d5a137dd5");
+      byte[] value=candidate.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+      java.security.MessageDigest md=java.security.MessageDigest.getInstance("SHA-256");
+      md.update(salt);
+      byte[] digest=md.digest(value);
+      byte[] expected=hexBytes("1af4681bfe9f3c023102fe69730cbc8360ac88c434662d7a4fddb95f131d7565");
+      return java.security.MessageDigest.isEqual(digest,expected);
+    }catch(Exception ignored){return false;}
+  }
+  private static byte[] hexBytes(String hex){
+    byte[] out=new byte[hex.length()/2];
+    for(int i=0;i<out.length;i++)out[i]=(byte)Integer.parseInt(hex.substring(i*2,i*2+2),16);
+    return out;
+  }
+
   private void styleAdminHomeButton(Button button,String symbol){
     // Real native buttons: no click targets are baked into the background artwork.
     String label=button.getText().toString().toUpperCase(java.util.Locale.forLanguageTag("ru"));
@@ -1563,7 +1580,7 @@ public class MainActivity extends Activity {
       TextView enter=caption("Войти",15,Color.WHITE,true);enter.setGravity(Gravity.CENTER);
       enter.setBackground(panel(Color.rgb(240,66,67),Color.rgb(169,0,8),9,Color.rgb(255,108,112)));
       place(root,enter,.53f,.75f,.39f,.13f,width,height);
-      enter.setOnClickListener(v->{if(login.getText().toString().equals("admin")&&password.getText().toString().equals("admin")){dialog.dismiss();adminSession=true;view.invalidate();showAdminTabs();}else Toast.makeText(this,"Неверный логин или пароль",Toast.LENGTH_SHORT).show();});
+      enter.setOnClickListener(v->{if(login.getText().toString().equals("admin")&&verifyStudioAdminPassword(password.getText().toString())){dialog.dismiss();adminSession=true;view.invalidate();showAdminTabs();}else Toast.makeText(this,"Неверный логин или пароль",Toast.LENGTH_SHORT).show();});
     }else{
       // Information-only layout without duplicated Mazda logo/banner.
       TextView version=caption("Mazda 6 GH AS-Built",22,Color.BLACK,true);

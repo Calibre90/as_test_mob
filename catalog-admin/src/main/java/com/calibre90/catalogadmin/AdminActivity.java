@@ -112,6 +112,29 @@ public final class AdminActivity extends Activity {
         String module=obj.getString("module");
         if(!(module.equals("IC")||module.equals("BCM")||module.equals("RKE")||module.equals("ABS")))
           throw new IllegalArgumentException("Неизвестный блок");
+        String prefix=module.equals("IC")?"720":module.equals("BCM")?"726":module.equals("RKE")?"731":"760";
+        if(!obj.getString("row").toUpperCase(java.util.Locale.US).startsWith(prefix+"-"))
+          throw new IllegalArgumentException("Адрес не соответствует блоку "+module);
+        String mode=obj.getString("mode");
+        String indices=obj.getString("indices");
+        String on=obj.getString("on"),off=obj.getString("off");
+        if(!(mode.equals("HEX")||mode.equals("BITS"))||!indices.matches("[0-9]+(,[0-9]+)*"))
+          throw new IllegalArgumentException("Неверный режим или индексы");
+        String[] positions=indices.split(",");
+        java.util.HashSet<String> unique=new java.util.HashSet<>(java.util.Arrays.asList(positions));
+        if(unique.size()!=positions.length)throw new IllegalArgumentException("Повтор индекса");
+        for(String position:positions){
+          int n=Integer.parseInt(position);
+          if(n>127||(mode.equals("BITS")&&n>7))throw new IllegalArgumentException("Индекс вне диапазона");
+        }
+        if(!on.matches("[0-9A-Fa-f]{1,64}")||(!off.isEmpty()&&!off.matches("[0-9A-Fa-f]{1,64}")))
+          throw new IllegalArgumentException("Неверное HEX значение");
+        if(mode.equals("HEX")&&(on.length()!=positions.length||(!off.isEmpty()&&off.length()!=positions.length)))
+          throw new IllegalArgumentException("Число HEX символов не совпадает с индексами");
+        if(obj.getInt("byte")<0||obj.getInt("byte")>63)throw new IllegalArgumentException("Неверный индекс байта");
+        for(int i=0;i<draft.size();i++)
+          if(i!=index&&draft.get(i).optString("id").equals(obj.getString("id")))
+            throw new IllegalArgumentException("ID функции уже существует");
         if(index<0)draft.add(obj);else draft.set(index,obj);
         activeModule=module;
         save();redraw();dialog.dismiss();

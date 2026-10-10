@@ -6,6 +6,7 @@ import json
 import pathlib
 import subprocess
 import tempfile
+from validate_catalog import validate_catalog
 
 def main():
     p=argparse.ArgumentParser()
@@ -19,7 +20,8 @@ def main():
     features=source.get("features")
     if not isinstance(features,list) or not features or len(features)>500:
         p.error("Only reviewed, nonempty feature lists may be signed")
-    # Match Android org.json compact serialization for the simple catalog schema.
+    validate_catalog(source)
+    # Sign the exact compact payload bytes, independent of Android JSON reserialization.
     compact=json.dumps(features,ensure_ascii=False,separators=(",",":"))
     payload=("MAZDA6GH-CATALOG-V1\n"+str(source["version"])+"\n"+compact).encode("utf-8")
     with tempfile.TemporaryDirectory() as d:

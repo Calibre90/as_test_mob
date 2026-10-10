@@ -6,6 +6,7 @@ import pathlib
 import subprocess
 import sys
 import tempfile
+from validate_catalog import validate_catalog
 
 ROOT=pathlib.Path(__file__).resolve().parent
 
@@ -23,10 +24,12 @@ def main():
         signature=d/"signature.bin"
         run("openssl","genpkey","-algorithm","RSA","-pkeyopt","rsa_keygen_bits:2048","-out",str(key))
         run("openssl","pkey","-in",str(key),"-pubout","-out",str(pub))
-        source.write_text(json.dumps({"schema":1,"version":7,"features":[{
+        draft={"schema":1,"version":7,"features":[{
             "id":"test_only","module":"IC","row":"720-01-01","mode":"HEX",
             "indices":"0","on":"8","off":"0","byte":0,"label":"Signature test only"
-        }]}),encoding="utf-8")
+        }]}
+        validate_catalog(draft)
+        source.write_text(json.dumps(draft),encoding="utf-8")
         run(sys.executable,str(ROOT/"sign_catalog.py"),"--catalog",str(source),
             "--private-key",str(key),"--output",str(signed))
         doc=json.loads(signed.read_text(encoding="utf-8"))
@@ -38,7 +41,17 @@ def main():
             "-signature",str(signature),str(payload)],capture_output=True)
         if tampered.returncode==0:
             raise AssertionError("Tampered payload was accepted")
-        print("PASS: signature accepted; tampering rejected")
+        for broken in (
+            dict(draft, features=[]),
+            dict(draft, features=[dict(draft["features"][0], row="731-01-01")]),
+            dict(draft, features=[dict(draft["features"][0], indices="0,0")]),
+        ):
+            try:
+                validate_catalog(broken)
+            except ValueError:
+                continue
+            raise AssertionError("Invalid catalog passed validation")
+        print("PASS: RSA signature, tamper rejection, and draft validation")
 
 if __name__=="__main__":
     main()

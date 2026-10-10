@@ -80,4 +80,30 @@ public final class AdminSnapshot {
     new JSONArray(stores.getJSONObject("run35_settings").optString("features", "[]"));
     new JSONArray(stores.getJSONObject("studio_custom_modules").optString("catalog", "[]"));
   }
+  /** Replace only the three allowlisted admin stores after validating the complete file.
+   * License state and ABT files are never modified. */
+  public static void importLocal(Context context, JSONObject snapshot) throws Exception {
+    validate(snapshot);
+    JSONObject stores=snapshot.getJSONObject("stores");
+    for(String name:STORES){
+      JSONObject values=stores.getJSONObject(name);
+      SharedPreferences.Editor editor=context.getSharedPreferences(name,Context.MODE_PRIVATE).edit();
+      editor.clear();
+      JSONArray keys=values.names();
+      if(keys!=null)for(int i=0;i<keys.length();i++){
+        String key=keys.getString(i);
+        if("run35_settings".equals(name) &&
+          !("features".equals(key)||key.startsWith("module_name_")||
+            key.startsWith("module_version_")||key.startsWith("appearance_")))continue;
+        Object value=values.get(key);
+        if(value instanceof String)editor.putString(key,(String)value);
+        else if(value instanceof Boolean)editor.putBoolean(key,(Boolean)value);
+        else if(value instanceof Integer)editor.putInt(key,(Integer)value);
+        else if(value instanceof Long)editor.putLong(key,(Long)value);
+        else if(value instanceof Number)editor.putFloat(key,((Number)value).floatValue());
+      }
+      if(!editor.commit())throw new IllegalStateException("Cannot save "+name);
+    }
+  }
+
 }

@@ -131,7 +131,7 @@ public class MainActivity extends Activity {
     },1500);
   }
   /** Refresh only published feature definitions; never replace a locally edited draft. */
-  private static final String FULL_CATALOG_URL = "";
+  private static final String FULL_CATALOG_URL = "https://raw.githubusercontent.com/Calibre90/as_test_mob/main/publication/studio-published-settings.json";
   void refreshPublishedCatalog(){
     if(!FULL_CATALOG_URL.isEmpty()){
       android.content.Context app=getApplicationContext();

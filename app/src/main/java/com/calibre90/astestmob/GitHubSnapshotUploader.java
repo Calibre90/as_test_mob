@@ -39,12 +39,10 @@ final class GitHubSnapshotUploader {
     }finally{put.disconnect();}
   }
   /** Request the protected release workflow. A successful 204 means queued, not published. */
-  static void requestRelease(String token, String snapshotSha, int version) throws Exception {
+  static void requestRelease(String token, String snapshotSha) throws Exception {
     if(snapshotSha==null||!snapshotSha.matches("[0-9a-fA-F]{40}"))throw new IOException("Неверный SHA снимка");
-    if(version<1)throw new IOException("Неверная версия каталога");
     JSONObject inputs=new JSONObject();
     inputs.put("snapshot_sha",snapshotSha);
-    inputs.put("version",Integer.toString(version));
     JSONObject payload=new JSONObject();
     payload.put("ref","main");
     payload.put("inputs",inputs);

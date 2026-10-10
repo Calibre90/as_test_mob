@@ -1798,6 +1798,23 @@ public class MainActivity extends Activity {
                   if(kind==0)entries.put(row);else entries.put(chosen[0],row);
                 }
                 if(!rowPrefs.edit().putString(id,entries.toString()).commit())throw new IllegalStateException("Не удалось сохранить строки");
+                // Keep only administrator-edited rows in a separate exportable store.
+                // Imported vehicle ABT rows must never leak into the admin snapshot.
+                android.content.SharedPreferences adminRows=getSharedPreferences("studio_admin_custom_rows",MODE_PRIVATE);
+                org.json.JSONArray edited=new org.json.JSONArray(adminRows.getString(id,"[]"));
+                String changedAddress=kind==2?addrInput.getText().toString().trim().toUpperCase(Locale.US):
+                  (kind==0?entries.optJSONObject(entries.length()-1):entries.optJSONObject(chosen[0])).optString("address");
+                org.json.JSONArray updated=new org.json.JSONArray();
+                for(int j=0;j<edited.length();j++){
+                  org.json.JSONObject item=edited.optJSONObject(j);
+                  if(item!=null&&!changedAddress.equalsIgnoreCase(item.optString("address")))updated.put(item);
+                }
+                if(kind!=2){
+                  org.json.JSONObject changed=kind==0?entries.optJSONObject(entries.length()-1):entries.optJSONObject(chosen[0]);
+                  updated.put(changed);
+                }
+                if(!adminRows.edit().putString(id,updated.toString()).commit())
+                  throw new IllegalStateException("Не удалось сохранить строки администратора");
                 resetCustomFeatureState(id);view.invalidate();refresh.run();
                 Toast.makeText(this,"Строки блока "+id+" сохранены",Toast.LENGTH_SHORT).show();
               }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}

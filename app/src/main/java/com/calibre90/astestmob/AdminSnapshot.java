@@ -13,7 +13,8 @@ import java.util.Map;
  */
 public final class AdminSnapshot {
   private static final String[] STORES = {
-    "run35_settings", "studio_admin_rows", "studio_custom_modules"
+    "run35_settings", "studio_admin_rows", "studio_custom_modules",
+    "studio_admin_custom_rows"
   };
   private AdminSnapshot() {}
 
@@ -63,7 +64,9 @@ public final class AdminSnapshot {
       throw new IllegalArgumentException("Unsupported admin snapshot");
     JSONObject stores = snapshot.getJSONObject("stores");
     for (String name : STORES) {
-      JSONObject values = stores.getJSONObject(name);
+      JSONObject values = stores.optJSONObject(name);
+      if(values==null && "studio_admin_custom_rows".equals(name))continue;
+      if(values==null)throw new IllegalArgumentException("Missing store "+name);
       if (values.length() > 512) throw new IllegalArgumentException("Too many settings");
       JSONArray names = values.names();
       if (names == null) continue;
@@ -80,7 +83,9 @@ public final class AdminSnapshot {
     JSONObject settings=stores.getJSONObject("run35_settings");
     JSONObject rows=stores.getJSONObject("studio_admin_rows");
     JSONObject custom=stores.getJSONObject("studio_custom_modules");
-    boolean any=settings.length()>0||rows.length()>0||custom.length()>0;
+    JSONObject adminCustom=stores.optJSONObject("studio_admin_custom_rows");
+    boolean any=settings.length()>0||rows.length()>0||custom.length()>0||
+      (adminCustom!=null&&adminCustom.length()>0);
     if(!any)throw new IllegalArgumentException("Пустой файл настроек");
     JSONArray features=new JSONArray(settings.optString("features","[]"));
     JSONArray modules=new JSONArray(custom.optString("catalog","[]"));
@@ -96,6 +101,11 @@ public final class AdminSnapshot {
       JSONObject m=modules.getJSONObject(i);
       if(m.optString("id","").trim().isEmpty()||m.optString("name","").trim().isEmpty())
         throw new IllegalArgumentException("Неполный дополнительный блок");
+    }
+    if(adminCustom!=null){
+      JSONArray names=adminCustom.names();
+      if(names!=null)for(int i=0;i<names.length();i++)
+        new JSONArray(adminCustom.getString(names.getString(i)));
     }
     JSONArray rowKeys=rows.names();
     if(rowKeys!=null)for(int i=0;i<rowKeys.length();i++)
@@ -131,7 +141,8 @@ public final class AdminSnapshot {
     int written=0;
     try{
       for(String name:STORES){
-        writeStore(context,name,incoming.getJSONObject(name),true);
+        JSONObject next=incoming.optJSONObject(name);
+        if(next!=null)writeStore(context,name,next,true);
         written++;
       }
     }catch(Exception failure){
@@ -172,6 +183,6 @@ public final class AdminSnapshot {
       return "features".equals(key)||key.startsWith("module_name_")||
         key.startsWith("module_version_")||key.startsWith("appearance_");
     if("studio_custom_modules".equals(name))return "catalog".equals(key);
-    return "studio_admin_rows".equals(name);
+    return "studio_admin_rows".equals(name)||"studio_admin_custom_rows".equals(name);
   }
 }

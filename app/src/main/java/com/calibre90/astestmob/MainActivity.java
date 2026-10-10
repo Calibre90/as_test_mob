@@ -706,6 +706,8 @@ public class MainActivity extends Activity {
         item.put("address",row.address);item.put("value",row.value);entries.put(item);
       }
       prefs.edit().putString(id,entries.toString()).apply();
+      // A custom block is marked as loaded only after a successful ABT import.
+      getSharedPreferences("studio_custom_abt_loaded",MODE_PRIVATE).edit().putBoolean(id,true).apply();
       resetCustomFeatureState(id);view.invalidate();
       int invalid=0;
       for(AbtCodec.Row row:rows)if(!AbtCodec.checksumValid(row.address,row.value))invalid++;
@@ -981,7 +983,9 @@ public class MainActivity extends Activity {
         card(c,10,190,380,82,13,true);
         txtFitBold(c,id+": "+module.optString("name"),25,222,18,Color.BLACK,350);
         p.setColor(Color.rgb(224,57,64));p.setStrokeWidth(1);c.drawLine(25,232,316,232,p);
-        txt(c,"ID: "+prefix+"  |  Ver: "+(module.optString("version").isEmpty()?"Не указана":module.optString("version")),25,252,12,Color.rgb(91,103,119),false);
+        String customVersion=getSharedPreferences("studio_custom_abt_loaded",MODE_PRIVATE).getBoolean(id,false)
+          ?"ABT загружен":"Образец";
+        txt(c,"ID: "+prefix+"  |  Ver: "+customVersion,25,252,12,Color.rgb(91,103,119),false);
         card(c,10,279,380,91,12,true);
         card(c,10,376,380,337,13,true);
         int featureCount=0;

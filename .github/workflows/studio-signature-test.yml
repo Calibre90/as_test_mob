@@ -1,0 +1,24 @@
+name: Test Studio catalog signature
+
+on:
+  push:
+    branches:
+      - feature/studio-catalog-integration
+    paths:
+      - "tools/sign_full_catalog.py"
+      - "tools/test_full_catalog_signing.py"
+      - ".github/workflows/studio-signature-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signing-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test signing and tamper rejection using disposable RSA key
+        run: python3 tools/test_full_catalog_signing.py

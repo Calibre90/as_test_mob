@@ -835,13 +835,22 @@ public class MainActivity extends Activity {
         org.json.JSONArray customRows;
         try{customRows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]"));}
         catch(Exception ex){customRows=new org.json.JSONArray();}
-        // When no vehicle ABT is loaded, show signature-verified online templates
-        // for reference only. Never persist templates as editable customer ABT.
-        boolean showingOnlineTemplates=customRows.length()==0;
-        if(showingOnlineTemplates){
-          org.json.JSONArray templates=PublishedFullSettings.customRowTemplates(MainActivity.this,id);
-          if(templates!=null&&templates.length()>0)customRows=templates;
+        // Merge signed catalog templates into the display only. Locally saved
+        // vehicle rows always take priority; never persist missing templates as ABT.
+        int localRowCount=customRows.length();
+        org.json.JSONArray templates=PublishedFullSettings.customRowTemplates(MainActivity.this,id);
+        java.util.HashSet<String> localAddresses=new java.util.HashSet<>();
+        for(int i=0;i<localRowCount;i++){
+          org.json.JSONObject local=customRows.optJSONObject(i);
+          if(local!=null)localAddresses.add(local.optString("address").trim().toUpperCase(java.util.Locale.ROOT));
         }
+        if(templates!=null)for(int i=0;i<templates.length();i++){
+          org.json.JSONObject template=templates.optJSONObject(i);
+          if(template==null)continue;
+          String address=template.optString("address").trim().toUpperCase(java.util.Locale.ROOT);
+          if(!address.isEmpty()&&localAddresses.add(address))customRows.put(template);
+        }
+        boolean showingOnlineTemplates=localRowCount==0&&customRows.length()>0;
         if(customRows.length()==0)txt(c,"Нет данных — откройте ABT блока "+id,22,420,12,Color.DKGRAY,false);
         int offset=Math.max(0,Math.min(customScroll.containsKey(id)?customScroll.get(id):0,Math.max(0,customRows.length()-9)));
         for(int i=0;i<Math.min(9,customRows.length()-offset);i++){
@@ -853,7 +862,7 @@ public class MainActivity extends Activity {
           String hex=item.optString("value");
           java.util.HashSet<Integer> marked=new java.util.HashSet<>();
           String baseline=customBaseline(id,item.optString("address"));
-          if(!showingOnlineTemplates&&baseline!=null){
+          if(i+offset<localRowCount&&baseline!=null){
             String oldHex=AbtCodec.norm(baseline),currentHex=AbtCodec.norm(hex);
             for(int k=0;k<currentHex.length();k++)
               if(k>=oldHex.length()||oldHex.charAt(k)!=currentHex.charAt(k))marked.add(k);
@@ -876,7 +885,7 @@ public class MainActivity extends Activity {
         card(c,10,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"open_text","Открыть ABT"),10,720,185,52,15,Color.BLACK);
         card(c,205,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"save_text","Сохранить ABT"),205,720,185,52,15,Color.BLACK);
         card(c,10,782,319,57,12,true);
-        txtFit(c,id+" · "+(showingOnlineTemplates&&customRows.length()>0?"Шаблон":"As-Built")+" · "+customRows.length()+" строк",22,816,12,Color.BLACK,290);
+        txtFit(c,id+" · "+localRowCount+" лок. + "+(customRows.length()-localRowCount)+" шабл. · "+customRows.length()+" строк",22,816,12,Color.BLACK,290);
         card(c,336,782,54,57,12,true);txt(c,"♙",350,821,32,Color.BLACK,true);
         actual.restore();return;
       }

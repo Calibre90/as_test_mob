@@ -25,7 +25,7 @@ public class MainActivity extends Activity {
         byte[] bytes=new byte[1024];int n;
         while((n=in.read(bytes))!=-1){if(buffer.size()+n>4096)return false;buffer.write(bytes,0,n);}
       }
-      String[] lines=new String(buffer.toByteArray(),"UTF-8").trim().split("\\r?\\n");
+      String[] lines=new String(buffer.toByteArray(),"UTF-8").trim().split("\\r?\n");
       if(lines.length!=2||!ADMIN_MAGIC.equals(lines[0]))return false;
       byte[] encoded=android.util.Base64.decode(ADMIN_PUBLIC_KEY,android.util.Base64.DEFAULT);
       java.security.PublicKey key=java.security.KeyFactory.getInstance("RSA").generatePublic(new java.security.spec.X509EncodedKeySpec(encoded));
@@ -75,11 +75,11 @@ public class MainActivity extends Activity {
           org.json.JSONObject moduleStore=stores.getJSONObject("studio_custom_modules");
           int featureCount=new org.json.JSONArray(settings.optString("features","[]")).length();
           int moduleCount=new org.json.JSONArray(moduleStore.optString("catalog","[]")).length();
-          String details="Функций: "+featureCount+"\\nДополнительных блоков: "+moduleCount+
-            "\\nСохранённых наборов строк: "+rowStore.length()+
-            "\\nПараметров оформления и блоков: "+Math.max(0,settings.length()-(settings.has("features")?1:0));
+          String details="Функций: "+featureCount+"\nДополнительных блоков: "+moduleCount+
+            "\nСохранённых наборов строк: "+rowStore.length()+
+            "\nПараметров оформления и блоков: "+Math.max(0,settings.length()-(settings.has("features")?1:0));
           new AlertDialog.Builder(this).setTitle("Проверка полного экспорта")
-            .setMessage(details+"\\n\\nЭкспортируются все сохранённые настройки, а не только текущий блок.")
+            .setMessage(details+"\n\nЭкспортируются все сохранённые настройки, а не только текущий блок.")
             .setNegativeButton("Отмена",null)
             .setPositiveButton("Сохранить JSON",(dialog,which)->{
               Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT);
@@ -1116,7 +1116,7 @@ public class MainActivity extends Activity {
     final int width=Math.round(getResources().getDisplayMetrics().widthPixels*.87f);
     final String aboutText=StudioSettings.appearance(this,"about_description","Редактор As-Built для Mazda 6 GH");
     final int screenHeight=getResources().getDisplayMetrics().heightPixels;
-    final int estimatedLines=Math.max(1,(int)Math.ceil(aboutText.length()/37.0)+aboutText.split("\\n",-1).length-1);
+    final int estimatedLines=Math.max(1,(int)Math.ceil(aboutText.length()/37.0)+aboutText.split("\n",-1).length-1);
     final int height=isAdmin?Math.round(width*1.24f):Math.min(Math.round(screenHeight*.89f),Math.max(Math.round(width*1.39f),Math.round(width*1.22f)+Math.max(0,estimatedLines-4)*dp(19)));
     final FrameLayout root=new FrameLayout(this);
     root.setBackground(panel(Color.rgb(252,253,254),Color.rgb(234,239,244),14,Color.rgb(225,50,51)));

@@ -3,6 +3,10 @@ package com.calibre90.catalogadmin;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.os.Bundle;
+import android.content.Intent;
+import android.net.Uri;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import android.text.InputType;
 import android.view.View;
 import android.widget.*;
@@ -20,6 +24,7 @@ public final class AdminActivity extends Activity {
   private TextView status;
   private String activeModule="IC";
   private LinearLayout tabs;
+  private static final int EXPORT_DRAFT=4001;
 
   @Override public void onCreate(Bundle saved){
     super.onCreate(saved);
@@ -41,6 +46,8 @@ public final class AdminActivity extends Activity {
     scroll.addView(list);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
     Button preview=new Button(this);preview.setText("Показать JSON черновика");root.addView(preview);
     preview.setOnClickListener(v->showJson());
+    Button export=new Button(this);export.setText("Экспорт JSON черновика");root.addView(export);
+    export.setOnClickListener(v->exportDraft());
     setContentView(root);
     load();redraw();
   }
@@ -141,6 +148,31 @@ public final class AdminActivity extends Activity {
       }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
     }));
     dialog.show();
+  }
+  private JSONObject draftDocument() throws org.json.JSONException {
+    JSONArray arr=new JSONArray();for(JSONObject f:draft)arr.put(f);
+    JSONObject doc=new JSONObject();doc.put("schema",1);doc.put("version",1);doc.put("features",arr);
+    return doc;
+  }
+  private void exportDraft(){
+    if(draft.isEmpty()){
+      Toast.makeText(this,"Сначала добавьте функцию",Toast.LENGTH_SHORT).show();return;
+    }
+    Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT);
+    intent.addCategory(Intent.CATEGORY_OPENABLE);
+    intent.setType("application/json");
+    intent.putExtra(Intent.EXTRA_TITLE,"mazda6gh-catalog-draft.json");
+    startActivityForResult(intent,EXPORT_DRAFT);
+  }
+  @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){
+    super.onActivityResult(requestCode,resultCode,data);
+    if(requestCode!=EXPORT_DRAFT||resultCode!=RESULT_OK||data==null)return;
+    Uri uri=data.getData();if(uri==null)return;
+    try(OutputStream output=getContentResolver().openOutputStream(uri)){
+      if(output==null)throw new java.io.IOException("Нет доступа к файлу");
+      output.write(draftDocument().toString(2).getBytes(StandardCharsets.UTF_8));
+      Toast.makeText(this,"Черновик сохранён (не опубликован)",Toast.LENGTH_LONG).show();
+    }catch(Exception ex){Toast.makeText(this,"Ошибка экспорта: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
   }
   private void showJson(){
     JSONArray arr=new JSONArray();for(JSONObject f:draft)arr.put(f);

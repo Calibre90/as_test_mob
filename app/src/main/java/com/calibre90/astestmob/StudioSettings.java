@@ -7,13 +7,32 @@ public final class StudioSettings {
   private static final String PREF="run35_settings";
   public static ArrayList<FeatureEngine.Feature> load(Context ctx){
     String data=ctx.getSharedPreferences(PREF,0).getString("features","");
-    if(data.isEmpty())return defaults();
+    if(data.isEmpty())return published(ctx);
     try{
       JSONArray a=new JSONArray(data);ArrayList<FeatureEngine.Feature> out=new ArrayList<>();
       for(int i=0;i<a.length();i++){JSONObject o=a.getJSONObject(i);
         out.add(new FeatureEngine.Feature(o.getString("id"),o.getString("module"),o.getString("row"),o.getString("mode"),o.getString("indices"),o.getString("on"),o.optString("off",""),o.optInt("byte",0),o.optString("label",o.getString("id"))));
       }return out;
-    }catch(Exception e){return defaults();}
+    }catch(Exception e){return published(ctx);}
+  }
+  /** Read-only published catalog cached from a trusted sync. Local admin edits still take precedence. */
+  public static ArrayList<FeatureEngine.Feature> published(Context ctx){
+    String data=ctx.getSharedPreferences("studio_published_catalog",0).getString("features","");
+    if(data.isEmpty())return defaults();
+    try{
+      JSONArray a=new JSONArray(data);ArrayList<FeatureEngine.Feature> out=new ArrayList<>();
+      for(int i=0;i<a.length();i++){
+        JSONObject o=a.getJSONObject(i);
+        out.add(new FeatureEngine.Feature(o.getString("id"),o.getString("module"),o.getString("row"),
+          o.getString("mode"),o.getString("indices"),o.getString("on"),
+          o.optString("off",""),o.optInt("byte",0),o.optString("label",o.getString("id"))));
+      }
+      return out;
+    }catch(Exception ex){return defaults();}
+  }
+  /** Explicit administrator draft stays local until the separate publisher is ready. */
+  public static boolean hasLocalDraft(Context ctx){
+    return !ctx.getSharedPreferences(PREF,0).getString("features","").isEmpty();
   }
   public static ArrayList<FeatureEngine.Feature> defaults(){
     ArrayList<FeatureEngine.Feature> out=new ArrayList<>();

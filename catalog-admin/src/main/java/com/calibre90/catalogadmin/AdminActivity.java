@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.content.Intent;
 import android.net.Uri;
 import java.io.OutputStream;
+import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import android.text.InputType;
 import android.view.View;
@@ -25,6 +27,7 @@ public final class AdminActivity extends Activity {
   private String activeModule="IC";
   private LinearLayout tabs;
   private static final int EXPORT_DRAFT=4001;
+  private static final int IMPORT_DRAFT=4002;
 
   @Override public void onCreate(Bundle saved){
     super.onCreate(saved);
@@ -48,6 +51,8 @@ public final class AdminActivity extends Activity {
     preview.setOnClickListener(v->showJson());
     Button export=new Button(this);export.setText("Экспорт JSON черновика");root.addView(export);
     export.setOnClickListener(v->exportDraft());
+    Button importButton=new Button(this);importButton.setText("Импорт JSON черновика");root.addView(importButton);
+    importButton.setOnClickListener(v->importDraft());
     setContentView(root);
     load();redraw();
   }
@@ -164,10 +169,71 @@ public final class AdminActivity extends Activity {
     intent.putExtra(Intent.EXTRA_TITLE,"mazda6gh-catalog-draft.json");
     startActivityForResult(intent,EXPORT_DRAFT);
   }
+  private void importDraft(){
+    Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);
+    intent.addCategory(Intent.CATEGORY_OPENABLE);
+    intent.setType("application/json");
+    startActivityForResult(intent,IMPORT_DRAFT);
+  }
+  private void readDraft(Uri uri){
+    try{
+      ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+      try(InputStream input=getContentResolver().openInputStream(uri)){
+        if(input==null)throw new java.io.IOException("Не удалось открыть файл");
+        byte[] buffer=new byte[4096];int count;
+        while((count=input.read(buffer))!=-1){
+          if(bytes.size()+count>262144)throw new java.io.IOException("Файл больше 256 КБ");
+          bytes.write(buffer,0,count);
+        }
+      }
+      JSONObject document=new JSONObject(new String(bytes.toByteArray(),StandardCharsets.UTF_8));
+      if(document.getInt("schema")!=1||document.getInt("version")<1)
+        throw new IllegalArgumentException("Неизвестный формат каталога");
+      JSONArray incoming=document.getJSONArray("features");
+      if(incoming.length()>500)throw new IllegalArgumentException("Слишком много функций");
+      ArrayList<JSONObject> candidate=new ArrayList<>();
+      java.util.HashSet<String> ids=new java.util.HashSet<>();
+      for(int i=0;i<incoming.length();i++){
+        JSONObject f=incoming.getJSONObject(i);
+        String id=f.getString("id"),module=f.getString("module"),address=f.getString("row");
+        String mode=f.getString("mode"),indices=f.getString("indices");
+        String on=f.getString("on"),off=f.getString("off");
+        if(id.isEmpty()||id.length()>80||!ids.add(id)||!f.has("label")
+          ||!(module.equals("IC")||module.equals("BCM")||module.equals("RKE")||module.equals("ABS"))
+          ||!address.matches("[0-9A-Fa-f]{3}-[0-9A-Fa-f]{2}-[0-9A-Fa-f]{2}")
+          ||!(mode.equals("HEX")||mode.equals("BITS"))||!indices.matches("[0-9]+(,[0-9]+)*")
+          ||!on.matches("[0-9A-Fa-f]{1,64}")||(!off.isEmpty()&&!off.matches("[0-9A-Fa-f]{1,64}")))
+          throw new IllegalArgumentException("Ошибка функции "+(i+1));
+        String prefix=module.equals("IC")?"720":module.equals("BCM")?"726":module.equals("RKE")?"731":"760";
+        if(!address.toUpperCase(java.util.Locale.US).startsWith(prefix+"-"))
+          throw new IllegalArgumentException("Адрес не соответствует блоку: "+id);
+        String[] positions=indices.split(",");
+        java.util.HashSet<String> unique=new java.util.HashSet<>(java.util.Arrays.asList(positions));
+        if(unique.size()!=positions.length)throw new IllegalArgumentException("Повтор индекса: "+id);
+        for(String position:positions){int n=Integer.parseInt(position);
+          if(n>127||(mode.equals("BITS")&&n>7))throw new IllegalArgumentException("Индекс вне диапазона: "+id);
+        }
+        if(mode.equals("HEX")&&(on.length()!=positions.length||(!off.isEmpty()&&off.length()!=positions.length)))
+          throw new IllegalArgumentException("HEX не совпадает с индексами: "+id);
+        int byteIndex=f.getInt("byte");
+        if(byteIndex<0||byteIndex>63)throw new IllegalArgumentException("Неверный байт: "+id);
+        candidate.add(f);
+      }
+      new AlertDialog.Builder(this).setTitle("Заменить локальный черновик?")
+        .setMessage("Импортировано функций: "+candidate.size()+". Текущий черновик будет заменён.")
+        .setNegativeButton("Отмена",null)
+        .setPositiveButton("Заменить",(d,w)->{
+          draft.clear();draft.addAll(candidate);save();redraw();
+          Toast.makeText(this,"Черновик импортирован",Toast.LENGTH_SHORT).show();
+        }).show();
+    }catch(Exception ex){Toast.makeText(this,"Ошибка импорта: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
+  }
   @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){
     super.onActivityResult(requestCode,resultCode,data);
-    if(requestCode!=EXPORT_DRAFT||resultCode!=RESULT_OK||data==null)return;
+    if(resultCode!=RESULT_OK||data==null)return;
     Uri uri=data.getData();if(uri==null)return;
+    if(requestCode==IMPORT_DRAFT){readDraft(uri);return;}
+    if(requestCode!=EXPORT_DRAFT)return;
     try(OutputStream output=getContentResolver().openOutputStream(uri)){
       if(output==null)throw new java.io.IOException("Нет доступа к файлу");
       output.write(draftDocument().toString(2).getBytes(StandardCharsets.UTF_8));

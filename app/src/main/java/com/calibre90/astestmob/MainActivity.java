@@ -52,6 +52,8 @@ public class MainActivity extends Activity {
     for(int i=0;i<4;i++)rows[i]=new ArrayList<>();
     features.addAll(StudioSettings.load(this));restoreCustomTabPositions();restoreSelectedModule();seedBuiltInRows();restoreAdminRows();
     if(getClass().getName().equals("com.calibre90.astestmob.StandaloneAdminActivity")){
+      // The original admin callbacks depend on StudioView even when the editor is hidden.
+      view=new StudioView();
       LinearLayout adminHome=new LinearLayout(this);
       adminHome.setOrientation(LinearLayout.VERTICAL);
       adminHome.setBackgroundColor(Color.rgb(44,44,44));

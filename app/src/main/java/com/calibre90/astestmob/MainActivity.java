@@ -42,6 +42,22 @@ public class MainActivity extends Activity {
     return true;
   }
 
+  private void styleAdminHomeButton(Button button,String symbol){
+    // Real native buttons: no click targets are baked into the background artwork.
+    String label=button.getText().toString().toUpperCase(java.util.Locale.forLanguageTag("ru"));
+    button.setText(symbol+"   "+label+"   ›");
+    button.setTextColor(Color.rgb(22,28,38));
+    button.setTextSize(13);
+    button.setAllCaps(false);
+    button.setTypeface(android.graphics.Typeface.DEFAULT,android.graphics.Typeface.BOLD);
+    button.setGravity(Gravity.CENTER_VERTICAL|Gravity.LEFT);
+    button.setPadding(dp(18),0,dp(12),0);
+    button.setBackgroundResource(R.drawable.admin_metal_button);
+    LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(64));
+    lp.setMargins(0,0,0,dp(9));
+    button.setLayoutParams(lp);
+  }
+
   final String[] modules={"IC","BCM","RKE","ABS"};
   final String[] ids={"720","726","731","760"};
   final String[] names={"Instrument Cluster","Body Control Module","Remote Keyless Entry","Anti-lock Brake System"};
@@ -57,11 +73,13 @@ public class MainActivity extends Activity {
       view=new StudioView();
       LinearLayout adminHome=new LinearLayout(this);
       adminHome.setOrientation(LinearLayout.VERTICAL);
-      adminHome.setBackgroundColor(Color.rgb(44,44,44));
-       adminHome.setPadding(0,dp(56),0,0);
+      // Admin-only dark automotive theme. Studio screens and their behavior remain untouched.
+      adminHome.setBackgroundResource(R.drawable.admin_home_background);
+      adminHome.setPadding(dp(14),dp(42),dp(14),dp(12));
       Button reopen=new Button(this);
       reopen.setText("Администрирование интерфейса");
       reopen.setOnClickListener(v->showAdminTabs());
+      styleAdminHomeButton(reopen, "⚙");
       adminHome.addView(reopen);
       Button exportSnapshot=new Button(this);
       exportSnapshot.setText("Экспорт настроек Studio");
@@ -94,6 +112,7 @@ public class MainActivity extends Activity {
           Toast.makeText(this,"Ошибка экспорта: "+ex.getMessage(),Toast.LENGTH_LONG).show();
         }
       });
+      styleAdminHomeButton(exportSnapshot, "↓");
       adminHome.addView(exportSnapshot);
       Button importSnapshot=new Button(this);
       importSnapshot.setText("Импорт настроек Studio");
@@ -103,6 +122,7 @@ public class MainActivity extends Activity {
         intent.setType("application/json");
         startActivityForResult(intent,9088);
       });
+      styleAdminHomeButton(importSnapshot, "↑");
       adminHome.addView(importSnapshot);
       Button restoreOnline=new Button(this);
       restoreOnline.setText("Восстановить настройки из сервера");
@@ -162,6 +182,7 @@ public class MainActivity extends Activity {
           }
         }).start();
       });
+      styleAdminHomeButton(restoreOnline, "↓");
       adminHome.addView(restoreOnline);
       Button publishOnline=new Button(this);
       publishOnline.setText("Отправить настройки на сервер");
@@ -237,6 +258,7 @@ public class MainActivity extends Activity {
           Toast.makeText(this,"Ошибка подготовки: "+ex.getMessage(),Toast.LENGTH_LONG).show();
         }
       });
+      styleAdminHomeButton(publishOnline, "↑");
       adminHome.addView(publishOnline);
       Button tokenSettings=new Button(this);
       tokenSettings.setText("Токен сервера: изменить / удалить");
@@ -266,6 +288,7 @@ public class MainActivity extends Activity {
             }
           }).show();
       });
+      styleAdminHomeButton(tokenSettings, "◆");
       adminHome.addView(tokenSettings);
       setContentView(adminHome);
       adminHome.post(()->showAdminTabs());

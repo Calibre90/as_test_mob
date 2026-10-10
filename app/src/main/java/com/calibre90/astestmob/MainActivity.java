@@ -490,6 +490,23 @@ public class MainActivity extends Activity {
     LinearLayout layout=new LinearLayout(this);layout.setOrientation(LinearLayout.VERTICAL);layout.setPadding(dp(12),dp(8),dp(12),dp(8));
     TextView info=new TextView(this);info.setText("Адрес: "+address+"\nРедактирование и импорт/экспорт ABT");
     layout.addView(info);
+    // Published row templates are read-only. Never copy them into a customer's
+    // editable ABT rows: doing so could silently replace vehicle-specific HEX.
+    org.json.JSONArray publishedTemplates=PublishedFullSettings.customRowTemplates(this,id);
+    if(publishedTemplates!=null && publishedTemplates.length()>0){
+      TextView templateHeader=new TextView(this);
+      templateHeader.setText("Онлайн-шаблоны строк (только просмотр)");
+      templateHeader.setPadding(0,dp(8),0,dp(4));
+      layout.addView(templateHeader);
+      for(int p=0;p<publishedTemplates.length();p++){
+        org.json.JSONObject template=publishedTemplates.optJSONObject(p);
+        if(template==null)continue;
+        TextView templateRow=new TextView(this);
+        templateRow.setText(template.optString("address")+"    "+template.optString("value"));
+        templateRow.setPadding(dp(8),dp(3),dp(8),dp(3));
+        layout.addView(templateRow);
+      }
+    }
     ScrollView scroll=new ScrollView(this);LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);
     scroll.addView(list);layout.addView(scroll,new LinearLayout.LayoutParams(-1,dp(150)));
     Runnable[] refresh={null};

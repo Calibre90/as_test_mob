@@ -103,10 +103,14 @@ public final class AdminActivity extends Activity {
     EditText[] inputs=new EditText[keys.length];
     JSONObject existing=index<0?new JSONObject():draft.get(index);
     for(int i=0;i<keys.length;i++){
+      TextView fieldLabel=new TextView(this);fieldLabel.setText(keys[i].toUpperCase(java.util.Locale.US));
+      fieldLabel.setTextSize(12);fields.addView(fieldLabel);
       EditText input=new EditText(this);inputs[i]=input;
       input.setSingleLine(true);input.setHint(hints[i]);
       input.setText(existing.optString(keys[i],keys[i].equals("byte")?"0":keys[i].equals("module")?activeModule:""));
       if(keys[i].equals("byte"))input.setInputType(InputType.TYPE_CLASS_NUMBER);
+      if(keys[i].equals("row")||keys[i].equals("on")||keys[i].equals("off"))input.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+      if(keys[i].equals("indices"))input.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
       fields.addView(input);
     }
     AlertDialog.Builder builder=new AlertDialog.Builder(this).setTitle(index<0?"Новая функция":"Изменить функцию")
@@ -123,7 +127,7 @@ public final class AdminActivity extends Activity {
         }
         if(!obj.getString("row").matches("[0-9A-Fa-f]{3}-[0-9A-Fa-f]{2}-[0-9A-Fa-f]{2}"))
           throw new IllegalArgumentException("Неверный адрес строки");
-        if(obj.getString("id").isEmpty()||obj.getString("label").isEmpty())
+        if(obj.getString("id").isEmpty()||obj.getString("id").length()>80||obj.getString("label").isEmpty()||obj.getString("label").length()>120)
           throw new IllegalArgumentException("Нужны ID и название");
         String module=obj.getString("module");
         if(!(module.equals("IC")||module.equals("BCM")||module.equals("RKE")||module.equals("ABS")))
@@ -134,7 +138,7 @@ public final class AdminActivity extends Activity {
         String mode=obj.getString("mode");
         String indices=obj.getString("indices");
         String on=obj.getString("on"),off=obj.getString("off");
-        if(!(mode.equals("HEX")||mode.equals("BITS"))||!indices.matches("[0-9]+(,[0-9]+)*"))
+        if(!(mode.equals("HEX")||mode.equals("BITS"))||indices.length()>80||!indices.matches("[0-9]+(,[0-9]+)*"))
           throw new IllegalArgumentException("Неверный режим или индексы");
         String[] positions=indices.split(",");
         java.util.HashSet<String> unique=new java.util.HashSet<>(java.util.Arrays.asList(positions));

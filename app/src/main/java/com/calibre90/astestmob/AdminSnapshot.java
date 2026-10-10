@@ -39,6 +39,21 @@ public final class AdminSnapshot {
       stores.put(name, values);
     }
     root.put("stores", stores);
+    // Separate Android app IDs have isolated private SharedPreferences.
+    // Do not create a misleading 160-byte backup with no saved configuration.
+    boolean hasData = false;
+    for (String name : STORES) {
+      if (stores.getJSONObject(name).length() > 0) {
+        hasData = true;
+        break;
+      }
+    }
+    if (!hasData) {
+      throw new IllegalStateException(
+          "Нет сохранённых настроек в этой установке. " +
+          "Проверьте, что изменения сделаны именно в этом приложении; " +
+          "данные другого приложения Android автоматически не переносит.");
+    }
     return root;
   }
 

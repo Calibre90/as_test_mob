@@ -111,7 +111,7 @@ public final class AdminActivity extends Activity {
     }
     AlertDialog.Builder builder=new AlertDialog.Builder(this).setTitle(index<0?"Новая функция":"Изменить функцию")
       .setView(scroller).setNegativeButton("Отмена",null);
-    if(index>=0)builder.setNeutralButton("Удалить",(d,w)->{draft.remove(index);save();redraw();});
+    if(index>=0)builder.setNeutralButton("Удалить",(d,w)->confirmDelete(index));
     AlertDialog dialog=builder.setPositiveButton("Сохранить",null).create();
     dialog.setOnShowListener(ignored->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
       try{
@@ -157,6 +157,15 @@ public final class AdminActivity extends Activity {
       }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
     }));
     dialog.show();
+  }
+  private void confirmDelete(int index){
+    if(index<0||index>=draft.size())return;
+    String name=draft.get(index).optString("label",draft.get(index).optString("id"));
+    new AlertDialog.Builder(this).setTitle("Удалить функцию?")
+      .setMessage("Функция «"+name+"» будет удалена из локального черновика.")
+      .setNegativeButton("Отмена",null)
+      .setPositiveButton("Удалить",(d,w)->{draft.remove(index);save();redraw();})
+      .show();
   }
   private void editVersion(){
     EditText input=new EditText(this);input.setInputType(InputType.TYPE_CLASS_NUMBER);
@@ -257,8 +266,9 @@ public final class AdminActivity extends Activity {
     }catch(Exception ex){Toast.makeText(this,"Ошибка экспорта: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
   }
   private void showJson(){
-    JSONArray arr=new JSONArray();for(JSONObject f:draft)arr.put(f);
-    new AlertDialog.Builder(this).setTitle("Локальный черновик")
-      .setMessage(arr.toString()).setPositiveButton("Закрыть",null).show();
+    try{
+      new AlertDialog.Builder(this).setTitle("Локальный черновик")
+        .setMessage(draftDocument().toString(2)).setPositiveButton("Закрыть",null).show();
+    }catch(Exception ex){Toast.makeText(this,"Ошибка просмотра JSON",Toast.LENGTH_LONG).show();}
   }
 }

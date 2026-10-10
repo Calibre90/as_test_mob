@@ -1592,7 +1592,11 @@ public class MainActivity extends Activity {
       };
       for(int i=0;i<2;i++){
         final String url=creatorUrls[i].trim();
-        String role=i==0?"Разработчик: ":"Помощник: ";
+        String role=i==0
+          ?StudioSettings.appearance(this,"creator1_role","Разработчик")
+          :StudioSettings.appearance(this,"creator2_role","Помощник");
+        role=role.trim();
+        if(!role.isEmpty())role+=": ";
         TextView person=caption(role+creatorNames[i]+"   D  Drive2",13,Color.BLACK,true);
         android.text.SpannableString styled=new android.text.SpannableString(person.getText());
         int iconStart=styled.toString().lastIndexOf("D  Drive2");
@@ -1628,8 +1632,7 @@ public class MainActivity extends Activity {
       }catch(Exception ignored){}
       TextView versionInfo=caption("◉  Версия: "+appVersion,10,Color.rgb(98,106,116),false);
       place(root,versionInfo,.095f,.777f,.78f,.030f,width,height);
-      TextView buildInfo=caption("◷  Сборка: Run #"+appBuild,10,Color.rgb(98,106,116),false);
-      place(root,buildInfo,.095f,.810f,.78f,.030f,width,height);
+
       TextView ok=caption("Закрыть",16,Color.WHITE,true);ok.setGravity(Gravity.CENTER);
       ok.setBackground(panel(Color.rgb(245,69,69),Color.rgb(170,0,10),9,Color.rgb(255,103,109)));
       place(root,ok,.09f,.86f,.82f,.095f,width,height);ok.setOnClickListener(v->dialog.dismiss());
@@ -2469,9 +2472,9 @@ public class MainActivity extends Activity {
         });
       }
       if(selected[0]==3){
-        final String[] keys={"title","background","panel","feature_columns","open_text","save_text","about_description","creator1_name","creator1_url","creator2_name","creator2_url"};
-        final String[] labels={"Название окна","Фон приложения","Фон HEX-блока","Колонки функций","Кнопка открытия","Кнопка сохранения","Описание программы","Автор 1 — имя","Автор 1 — ссылка","Автор 2 — имя","Автор 2 — ссылка"};
-        final String[] defaults={"Mazda 6 GH As-Built Studio","","","3","Открыть ABT","Сохранить ABT","Редактор As-Built для Mazda 6 GH","Dim304","https://www.drive2.ru/users/dim304/","Wolis11","https://www.drive2.ru/users/wolis11/"};
+        final String[] keys={"title","background","panel","feature_columns","open_text","save_text","about_description","creator1_role","creator1_name","creator1_url","creator2_role","creator2_name","creator2_url"};
+        final String[] labels={"Название окна","Фон приложения","Фон HEX-блока","Колонки функций","Кнопка открытия","Кнопка сохранения","Описание программы","Автор 1 — подпись","Автор 1 — имя","Автор 1 — ссылка","Автор 2 — подпись","Автор 2 — имя","Автор 2 — ссылка"};
+        final String[] defaults={"Mazda 6 GH As-Built Studio","","","3","Открыть ABT","Сохранить ABT","Редактор As-Built для Mazda 6 GH","Разработчик","Dim304","https://www.drive2.ru/users/dim304/","Помощник","Wolis11","https://www.drive2.ru/users/wolis11/"};
         android.widget.ScrollView appearanceScroll=new android.widget.ScrollView(this);
         LinearLayout appearanceFields=new LinearLayout(this);appearanceFields.setOrientation(LinearLayout.VERTICAL);
         appearanceScroll.addView(appearanceFields);panel.addView(appearanceScroll,new LinearLayout.LayoutParams(-1,0,1));

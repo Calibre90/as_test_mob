@@ -125,11 +125,42 @@ public class MainActivity extends Activity {
               new Thread(()->{
                 try{
                   String sha=GitHubSnapshotUploader.upload(snapshot,token);
-                  runOnUiThread(()->new AlertDialog.Builder(this)
-                    .setTitle("Настройки загружены")
-                    .setMessage("Коммит "+sha.substring(0,Math.min(8,sha.length()))+
-                      ". Данные находятся в ветке проверки. Для обновления Studio нужна отдельная подписанная публикация.")
-                    .setPositiveButton("OK",null).show());
+                  runOnUiThread(()->{
+                    final EditText versionInput=new EditText(this);
+                    versionInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+                    versionInput.setSingleLine(true);
+                    versionInput.setHint("Новая версия каталога");
+                    new AlertDialog.Builder(this)
+                      .setTitle("Настройки загружены в GitHub")
+                      .setMessage("Коммит "+sha.substring(0,Math.min(8,sha.length()))+
+                        ". Можно запросить подписанный выпуск. Введите номер версии выше текущей. "+
+                        "Для запуска нужны права Actions: write, а workflow должен быть в main. "+
+                        "Подтверждение GitHub означает только постановку в очередь.")
+                      .setView(versionInput)
+                      .setNegativeButton("Позже",null)
+                      .setPositiveButton("Запустить выпуск",(dialog,which)->{
+                        final int version;
+                        try{
+                          version=Integer.parseInt(versionInput.getText().toString().trim());
+                          if(version<1)throw new NumberFormatException();
+                        }catch(NumberFormatException invalid){
+                          Toast.makeText(this,"Укажи положительный номер версии",Toast.LENGTH_LONG).show();
+                          return;
+                        }
+                        new Thread(()->{
+                          try{
+                            GitHubSnapshotUploader.requestRelease(token,sha,version);
+                            runOnUiThread(()->new AlertDialog.Builder(this)
+                              .setTitle("Запрос отправлен")
+                              .setMessage("GitHub принял запрос на выпуск v"+version+
+                                ". Это ещё НЕ подтверждение публикации. Проверь результат GitHub Actions.")
+                              .setPositiveButton("OK",null).show());
+                          }catch(Exception ex){
+                            runOnUiThread(()->Toast.makeText(this,"Выпуск: "+ex.getMessage(),Toast.LENGTH_LONG).show());
+                          }
+                        },"AdminReleaseDispatch").start();
+                      }).show();
+                  });
                 }catch(Exception ex){
                   runOnUiThread(()->Toast.makeText(this,"GitHub: "+ex.getMessage(),Toast.LENGTH_LONG).show());
                 }

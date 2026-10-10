@@ -62,13 +62,26 @@ public class MainActivity extends Activity {
       if(isFinishing() || isDestroyed())return;
       if(LicenseGate.isActivated(this)){
         setContentView(view);
+        refreshPublishedCatalog();
       }else{
         // Keep the splash behind the activation dialog until a valid license is entered.
         LicenseGate.enforce(this,()->{
-          if(!isFinishing() && !isDestroyed())setContentView(view);
+          if(!isFinishing() && !isDestroyed()){
+            setContentView(view);
+            refreshPublishedCatalog();
+          }
         });
       }
     },1500);
+  }
+  /** Refresh only published feature definitions; never replace a locally edited draft. */
+  void refreshPublishedCatalog(){
+    CatalogSync.refresh(this,()->{
+      if(isFinishing()||isDestroyed()||StudioSettings.hasLocalDraft(this))return;
+      features.clear();
+      features.addAll(StudioSettings.load(this));
+      if(view!=null)view.invalidate();
+    });
   }
   /** Built-in sample configuration: available before importing any vehicle ABT. */
   void seedBuiltInRows(){

@@ -18,6 +18,8 @@ public final class AdminActivity extends Activity {
   private final ArrayList<JSONObject> draft=new ArrayList<>();
   private LinearLayout list;
   private TextView status;
+  private String activeModule="IC";
+  private LinearLayout tabs;
 
   @Override public void onCreate(Bundle saved){
     super.onCreate(saved);
@@ -30,6 +32,8 @@ public final class AdminActivity extends Activity {
     root.addView(heading);
     status=new TextView(this);
     root.addView(status);
+    tabs=new LinearLayout(this);tabs.setOrientation(LinearLayout.HORIZONTAL);
+    root.addView(tabs);
     Button add=new Button(this);add.setText("Добавить функцию");root.addView(add);
     add.setOnClickListener(v->edit(-1));
     ScrollView scroll=new ScrollView(this);
@@ -54,11 +58,20 @@ public final class AdminActivity extends Activity {
       Toast.makeText(this,"Ошибка сохранения",Toast.LENGTH_LONG).show();
   }
   private void redraw(){
+    tabs.removeAllViews();
+    for(String module:new String[]{"IC","BCM","RKE","ABS"}){
+      Button tab=new Button(this);
+      tab.setAllCaps(false);tab.setText(module);tab.setTextSize(11);
+      tab.setEnabled(!module.equals(activeModule));
+      tab.setOnClickListener(v->{activeModule=module;redraw();});
+      tabs.addView(tab,new LinearLayout.LayoutParams(0,-2,1));
+    }
     list.removeAllViews();
-    status.setText("Функций в локальном черновике: "+draft.size()+"\nПубликация в интернет пока отключена.");
+    status.setText("Блок "+activeModule+" | Всего функций: "+draft.size()+"\nПубликация в интернет пока отключена.");
     for(int i=0;i<draft.size();i++){
       final int index=i;
       JSONObject f=draft.get(i);
+      if(!activeModule.equals(f.optString("module")))continue;
       Button button=new Button(this);
       button.setAllCaps(false);
       button.setText(f.optString("module")+" | "+f.optString("label")+" | "+f.optString("row"));
@@ -76,7 +89,7 @@ public final class AdminActivity extends Activity {
     for(int i=0;i<keys.length;i++){
       EditText input=new EditText(this);inputs[i]=input;
       input.setSingleLine(true);input.setHint(hints[i]);
-      input.setText(existing.optString(keys[i],keys[i].equals("byte")?"0":""));
+      input.setText(existing.optString(keys[i],keys[i].equals("byte")?"0":keys[i].equals("module")?activeModule:""));
       if(keys[i].equals("byte"))input.setInputType(InputType.TYPE_CLASS_NUMBER);
       fields.addView(input);
     }
@@ -100,6 +113,7 @@ public final class AdminActivity extends Activity {
         if(!(module.equals("IC")||module.equals("BCM")||module.equals("RKE")||module.equals("ABS")))
           throw new IllegalArgumentException("Неизвестный блок");
         if(index<0)draft.add(obj);else draft.set(index,obj);
+        activeModule=module;
         save();redraw();dialog.dismiss();
       }catch(Exception ex){Toast.makeText(this,"Ошибка: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
     }));

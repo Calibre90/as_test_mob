@@ -105,23 +105,36 @@ public class MainActivity extends Activity {
       });
       adminHome.addView(importSnapshot);
       Button publishOnline=new Button(this);
-      publishOnline.setText("Опубликовать онлайн");
+      publishOnline.setText("Отправить настройки в GitHub");
       publishOnline.setOnClickListener(v->{
         try{
           org.json.JSONObject snapshot=AdminSnapshot.exportLocal(this);
           AdminSnapshot.validate(snapshot);
-          org.json.JSONObject stores=snapshot.getJSONObject("stores");
-          int featureCount=new org.json.JSONArray(stores.getJSONObject("run35_settings").optString("features","[]")).length();
-          int moduleCount=new org.json.JSONArray(stores.getJSONObject("studio_custom_modules").optString("catalog","[]")).length();
+          final EditText tokenInput=new EditText(this);
+          tokenInput.setSingleLine(true);
+          tokenInput.setHint("Fine-grained GitHub token");
+          tokenInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
           new AlertDialog.Builder(this)
-            .setTitle("Онлайн-публикация Studio")
-            .setMessage("Подготовлено функций: "+featureCount+"\\nДополнительных блоков: "+moduleCount+
-              "\\n\\nДля безопасной отправки необходима авторизация владельца через сервер публикации. "+
-              "До подключения сервера настройки останутся только на этом телефоне. "+
-              "Закрытый ключ подписи никогда не хранится в приложении.")
-            .setNegativeButton("Закрыть",null)
-            .setPositiveButton("Экспортировать пока вручную",(d,w)->exportSnapshot.performClick())
-            .show();
+            .setTitle("Отправить в GitHub")
+            .setMessage("Настройки будут отправлены в ветку проверки, но НЕ опубликованы для клиентов до подписи и выпуска. Введите временный токен с правом Contents: Read and write для этого репозитория. Токен не сохраняется.")
+            .setView(tokenInput)
+            .setNegativeButton("Отмена",null)
+            .setPositiveButton("Отправить",(d,w)->{
+              final String token=tokenInput.getText().toString();
+              tokenInput.setText("");
+              new Thread(()->{
+                try{
+                  String sha=GitHubSnapshotUploader.upload(snapshot,token);
+                  runOnUiThread(()->new AlertDialog.Builder(this)
+                    .setTitle("Настройки загружены")
+                    .setMessage("Коммит "+sha.substring(0,Math.min(8,sha.length()))+
+                      ". Данные находятся в ветке проверки. Для обновления Studio нужна отдельная подписанная публикация.")
+                    .setPositiveButton("OK",null).show());
+                }catch(Exception ex){
+                  runOnUiThread(()->Toast.makeText(this,"GitHub: "+ex.getMessage(),Toast.LENGTH_LONG).show());
+                }
+              },"AdminGitHubUpload").start();
+            }).show();
         }catch(Exception ex){
           Toast.makeText(this,"Ошибка подготовки: "+ex.getMessage(),Toast.LENGTH_LONG).show();
         }

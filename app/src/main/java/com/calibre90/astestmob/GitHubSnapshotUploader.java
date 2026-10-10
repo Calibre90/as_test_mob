@@ -38,6 +38,28 @@ final class GitHubSnapshotUploader {
       return readJson(put).getJSONObject("commit").getString("sha");
     }finally{put.disconnect();}
   }
+  /** Request the protected release workflow. A successful 204 means queued, not published. */
+  static void requestRelease(String token, String snapshotSha, int version) throws Exception {
+    if(snapshotSha==null||!snapshotSha.matches("[0-9a-fA-F]{40}"))throw new IOException("Неверный SHA снимка");
+    if(version<1)throw new IOException("Неверная версия каталога");
+    JSONObject inputs=new JSONObject();
+    inputs.put("snapshot_sha",snapshotSha);
+    inputs.put("version",Integer.toString(version));
+    JSONObject payload=new JSONObject();
+    payload.put("ref","main");
+    payload.put("inputs",inputs);
+    HttpURLConnection post=connect("https://api.github.com/repos/Calibre90/as_test_mob/actions/workflows/studio-release.yml/dispatches","POST",token);
+    try{
+      post.setDoOutput(true);
+      post.setRequestProperty("Content-Type","application/json");
+      try(OutputStream out=post.getOutputStream()){
+        out.write(payload.toString().getBytes(StandardCharsets.UTF_8));
+      }
+      int status=post.getResponseCode();
+      if(status!=204)throw new IOException("GitHub: HTTP "+status+" при запуске публикации. Проверь workflow в main и Actions: write.");
+    }finally{post.disconnect();}
+  }
+
   private static HttpURLConnection connect(String url,String method,String token) throws Exception{
     HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();
     c.setRequestMethod(method);

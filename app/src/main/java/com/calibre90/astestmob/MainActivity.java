@@ -51,6 +51,18 @@ public class MainActivity extends Activity {
   @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(Color.BLACK);getWindow().setNavigationBarColor(Color.BLACK);getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
     for(int i=0;i<4;i++)rows[i]=new ArrayList<>();
     features.addAll(StudioSettings.load(this));restoreCustomTabPositions();restoreSelectedModule();seedBuiltInRows();restoreAdminRows();
+    if(getClass().getName().equals("com.calibre90.astestmob.StandaloneAdminActivity")){
+      LinearLayout adminHome=new LinearLayout(this);
+      adminHome.setOrientation(LinearLayout.VERTICAL);
+      adminHome.setBackgroundColor(Color.rgb(44,44,44));
+      Button reopen=new Button(this);
+      reopen.setText("Администрирование интерфейса");
+      reopen.setOnClickListener(v->showAdminTabs());
+      adminHome.addView(reopen);
+      setContentView(adminHome);
+      adminHome.post(()->showAdminTabs());
+      return;
+    }
     setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));view=new StudioView();view.moduleTabOffset=Math.max(0,active*90f-280f);// Studio splash is shown before the editor and the existing RSA license gate.
     // No ABT, feature, or license verification logic is changed here.
     ImageView splash=new ImageView(this);

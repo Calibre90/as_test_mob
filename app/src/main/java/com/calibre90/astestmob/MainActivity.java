@@ -93,6 +93,15 @@ public class MainActivity extends Activity {
         }
       });
       adminHome.addView(exportSnapshot);
+      Button importSnapshot=new Button(this);
+      importSnapshot.setText("Импорт настроек Studio");
+      importSnapshot.setOnClickListener(v->{
+        Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/json");
+        startActivityForResult(intent,9088);
+      });
+      adminHome.addView(importSnapshot);
       setContentView(adminHome);
       adminHome.post(()->showAdminTabs());
       return;
@@ -1051,6 +1060,42 @@ public class MainActivity extends Activity {
     startActivityForResult(i,11);
   }
   @Override protected void onActivityResult(int req,int result,Intent data){super.onActivityResult(req,result,data);
+    if(req==9088){
+      if(result==RESULT_OK && data!=null && data.getData()!=null){
+        try{
+          java.io.ByteArrayOutputStream buffer=new java.io.ByteArrayOutputStream();
+          try(java.io.InputStream input=getContentResolver().openInputStream(data.getData())){
+            if(input==null)throw new java.io.IOException("Файл недоступен");
+            byte[] chunk=new byte[4096];int count;
+            while((count=input.read(chunk))!=-1){
+              if(buffer.size()+count>1048576)throw new java.io.IOException("Файл больше 1 МБ");
+              buffer.write(chunk,0,count);
+            }
+          }
+          org.json.JSONObject snapshot=new org.json.JSONObject(
+            new String(buffer.toByteArray(),java.nio.charset.StandardCharsets.UTF_8));
+          AdminSnapshot.validate(snapshot);
+          org.json.JSONObject stores=snapshot.getJSONObject("stores");
+          int functions=new org.json.JSONArray(stores.getJSONObject("run35_settings").optString("features","[]")).length();
+          new AlertDialog.Builder(this).setTitle("Импорт настроек Studio")
+            .setMessage("Функций в файле: "+functions+
+              "\nБудут заменены сохранённые настройки блоков, строк, функций и оформления. "+
+              "Сначала сохраните резервную копию текущих настроек. Продолжить?")
+            .setNegativeButton("Отмена",null)
+            .setPositiveButton("Импортировать",(dialog,which)->{
+              try{
+                AdminSnapshot.importLocal(this,snapshot);
+                Toast.makeText(this,"Импорт завершён. Перезапустите приложение.",Toast.LENGTH_LONG).show();
+              }catch(Exception ex){
+                Toast.makeText(this,"Ошибка импорта: "+ex.getMessage(),Toast.LENGTH_LONG).show();
+              }
+            }).show();
+        }catch(Exception ex){
+          Toast.makeText(this,"Неверный файл: "+ex.getMessage(),Toast.LENGTH_LONG).show();
+        }
+      }
+      return;
+    }
     if(req==9087){
       int requestCode=req, resultCode=result;
     if(requestCode==9087 && resultCode==RESULT_OK && data!=null &&

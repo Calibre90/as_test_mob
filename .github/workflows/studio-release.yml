@@ -36,7 +36,7 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$SNAPSHOT_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "Expected full 40-character commit SHA"; exit 1; }
-          git fetch --no-tags --depth=100 origin feature/studio-catalog-integration
+          git fetch --no-tags origin feature/studio-catalog-integration
           git cat-file -e "$SNAPSHOT_SHA^{commit}"
           git merge-base --is-ancestor "$SNAPSHOT_SHA" FETCH_HEAD || {
             echo "Snapshot commit is not in the approved review branch"; exit 1;

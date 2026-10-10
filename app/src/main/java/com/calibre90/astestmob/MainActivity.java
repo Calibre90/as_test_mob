@@ -66,13 +66,28 @@ public class MainActivity extends Activity {
       exportSnapshot.setText("Экспорт настроек Studio");
       exportSnapshot.setOnClickListener(v->{
         try{
-          pendingAdminSnapshot=AdminSnapshot.exportLocal(this).toString(2);
-          AdminSnapshot.validate(new org.json.JSONObject(pendingAdminSnapshot));
-          Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT);
-          intent.addCategory(Intent.CATEGORY_OPENABLE);
-          intent.setType("application/json");
-          intent.putExtra(Intent.EXTRA_TITLE,"mazda6gh-admin-settings.json");
-          startActivityForResult(intent,9087);
+          org.json.JSONObject snapshot=AdminSnapshot.exportLocal(this);
+          AdminSnapshot.validate(snapshot);
+          pendingAdminSnapshot=snapshot.toString(2);
+          org.json.JSONObject stores=snapshot.getJSONObject("stores");
+          org.json.JSONObject settings=stores.getJSONObject("run35_settings");
+          org.json.JSONObject rowStore=stores.getJSONObject("studio_admin_rows");
+          org.json.JSONObject moduleStore=stores.getJSONObject("studio_custom_modules");
+          int featureCount=new org.json.JSONArray(settings.optString("features","[]")).length();
+          int moduleCount=new org.json.JSONArray(moduleStore.optString("catalog","[]")).length();
+          String details="Функций: "+featureCount+"\\nДополнительных блоков: "+moduleCount+
+            "\\nСохранённых наборов строк: "+rowStore.length()+
+            "\\nПараметров оформления и блоков: "+Math.max(0,settings.length()-(settings.has("features")?1:0));
+          new AlertDialog.Builder(this).setTitle("Проверка полного экспорта")
+            .setMessage(details+"\\n\\nЭкспортируются все сохранённые настройки, а не только текущий блок.")
+            .setNegativeButton("Отмена",null)
+            .setPositiveButton("Сохранить JSON",(dialog,which)->{
+              Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT);
+              intent.addCategory(Intent.CATEGORY_OPENABLE);
+              intent.setType("application/json");
+              intent.putExtra(Intent.EXTRA_TITLE,"mazda6gh-admin-settings.json");
+              startActivityForResult(intent,9087);
+            }).show();
         }catch(Exception ex){
           Toast.makeText(this,"Ошибка экспорта: "+ex.getMessage(),Toast.LENGTH_LONG).show();
         }

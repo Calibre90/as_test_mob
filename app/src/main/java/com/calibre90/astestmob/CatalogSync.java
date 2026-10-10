@@ -44,7 +44,7 @@ final class CatalogSync {
         int version=document.getInt("version");
         if(version<1)return;
         JSONArray features=document.getJSONArray("features");
-        if(features.length()>500)return;
+        if(features.length()==0||features.length()>500)return; // Never replace built-ins with an empty draft catalog.
         for(int i=0;i<features.length();i++){
           JSONObject f=features.getJSONObject(i);
           String id=f.getString("id"),module=f.getString("module");
@@ -54,7 +54,11 @@ final class CatalogSync {
             ||!address.matches("[0-9A-Fa-f]{3}-[0-9A-Fa-f]{2}-[0-9A-Fa-f]{2}")
             ||!(mode.equals("HEX")||mode.equals("BITS"))||indices.length()>80
             ||!indices.matches("[0-9]+(,[0-9]+)*")||!on.matches("[0-9A-Fa-f]{1,64}"))return;
-          f.getString("off");
+          String off=f.getString("off");
+          if(!off.isEmpty()&&!off.matches("[0-9A-Fa-f]{1,64}"))return;
+          if(mode.equals("HEX") && on.length()!=indices.split(",").length)return;
+          if(mode.equals("HEX") && !off.isEmpty() && off.length()!=indices.split(",").length)return;
+          if(f.optInt("byte",0)<0 || f.optInt("byte",0)>256)return;
         }
         int current=app.getSharedPreferences("studio_published_catalog",0).getInt("version",0);
         if(version<=current)return;

@@ -49,19 +49,6 @@ public class MainActivity extends Activity {
   ArrayList<String>[] rows=new ArrayList[4];
   boolean[][] checks=new boolean[4][3];
   int active=0;
-  @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){
-    super.onActivityResult(requestCode,resultCode,data);
-    if(requestCode==9087 && resultCode==RESULT_OK && data!=null &&
-       data.getData()!=null && pendingAdminSnapshot!=null){
-      try(java.io.OutputStream out=getContentResolver().openOutputStream(data.getData())){
-        if(out==null)throw new java.io.IOException("No output stream");
-        out.write(pendingAdminSnapshot.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        Toast.makeText(this,"Настройки экспортированы",Toast.LENGTH_LONG).show();
-      }catch(Exception ex){
-        Toast.makeText(this,"Ошибка записи: "+ex.getMessage(),Toast.LENGTH_LONG).show();
-      }finally{pendingAdminSnapshot=null;}
-    }
-  }
   @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(Color.BLACK);getWindow().setNavigationBarColor(Color.BLACK);getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
     for(int i=0;i<4;i++)rows[i]=new ArrayList<>();
     features.addAll(StudioSettings.load(this));restoreCustomTabPositions();restoreSelectedModule();seedBuiltInRows();restoreAdminRows();
@@ -1048,7 +1035,21 @@ public class MainActivity extends Activity {
     i.setType("application/octet-stream");i.putExtra(Intent.EXTRA_TITLE,modules[active]+".abt");
     startActivityForResult(i,11);
   }
-  @Override protected void onActivityResult(int req,int result,Intent data){super.onActivityResult(req,result,data);if(req==12||req==13){if(result==RESULT_OK&&data!=null&&data.getData()!=null){try{handleCustomAbt(req,data.getData());}catch(Exception ex){Toast.makeText(this,"Ошибка ABT: "+ex.getMessage(),Toast.LENGTH_LONG).show();}}else pendingCustomId="";return;}if(req!=10&&req!=11)return;if(result!=RESULT_OK||data==null||data.getData()==null){pendingModule=-1;return;}
+  @Override protected void onActivityResult(int req,int result,Intent data){super.onActivityResult(req,result,data);
+    if(req==9087){
+      int requestCode=req, resultCode=result;
+    if(requestCode==9087 && resultCode==RESULT_OK && data!=null &&
+       data.getData()!=null && pendingAdminSnapshot!=null){
+      try(java.io.OutputStream out=getContentResolver().openOutputStream(data.getData())){
+        if(out==null)throw new java.io.IOException("No output stream");
+        out.write(pendingAdminSnapshot.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        Toast.makeText(this,"Настройки экспортированы",Toast.LENGTH_LONG).show();
+      }catch(Exception ex){
+        Toast.makeText(this,"Ошибка записи: "+ex.getMessage(),Toast.LENGTH_LONG).show();
+      }finally{pendingAdminSnapshot=null;}
+    }
+      return;
+    }if(req==12||req==13){if(result==RESULT_OK&&data!=null&&data.getData()!=null){try{handleCustomAbt(req,data.getData());}catch(Exception ex){Toast.makeText(this,"Ошибка ABT: "+ex.getMessage(),Toast.LENGTH_LONG).show();}}else pendingCustomId="";return;}if(req!=10&&req!=11)return;if(result!=RESULT_OK||data==null||data.getData()==null){pendingModule=-1;return;}
     Uri uri=data.getData();
     if(req==10&&handleAdminKey(uri)){pendingModule=-1;return;}
     int previous=active;

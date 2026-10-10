@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.INTERNET"/>
   <application android:label="Mazda 6 GH Studio Admin" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false">
     <activity android:name="com.calibre90.astestmob.StandaloneAdminActivity" android:exported="true">
       <intent-filter>

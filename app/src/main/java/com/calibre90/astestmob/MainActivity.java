@@ -131,7 +131,23 @@ public class MainActivity extends Activity {
     },1500);
   }
   /** Refresh only published feature definitions; never replace a locally edited draft. */
+  private static final String FULL_CATALOG_URL = "";
   void refreshPublishedCatalog(){
+    if(!FULL_CATALOG_URL.isEmpty()){
+      android.content.Context app=getApplicationContext();
+      new Thread(()->{
+        if(!FullCatalogSync.refresh(app,FULL_CATALOG_URL))return;
+        runOnUiThread(()->{
+          if(isFinishing()||isDestroyed())return;
+          if(!StudioSettings.hasLocalDraft(this)){
+            features.clear();
+            features.addAll(StudioSettings.load(this));
+          }
+          if(view!=null)view.invalidate();
+        });
+      },"MazdaFullCatalogSync").start();
+      return;
+    }
     CatalogSync.refresh(this,()->{
       if(isFinishing()||isDestroyed()||StudioSettings.hasLocalDraft(this))return;
       features.clear();

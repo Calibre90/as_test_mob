@@ -1,4 +1,4 @@
-name: Prepare signed Studio catalog
+name: Prepare signed Studio catalog for approval
 
 on:
   workflow_dispatch:
@@ -44,6 +44,19 @@ jobs:
             --output studio-published-settings.json \
             --version "$VERSION" \
             --private-key "$key_file"
+      - name: Validate signed output against the published version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          with open("studio-published-settings.json", encoding="utf-8") as f:
+              candidate=json.load(f)
+          assert candidate["version"]==int(os.environ["VERSION"])
+          assert candidate["schema"]==2 and candidate["kind"]=="mazda6gh-published-settings"
+          assert isinstance(candidate["signature"],str) and candidate["signature"]
+          PY
+          echo "Signed candidate is ready for owner approval; main catalog was NOT modified."
       - name: Upload signed publication for owner review
         uses: actions/upload-artifact@v4
         with:

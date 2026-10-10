@@ -1,0 +1,55 @@
+name: Validate Studio Admin snapshot
+
+on:
+  push:
+    branches:
+      - feature/studio-catalog-integration
+    paths:
+      - publication/admin-settings.json
+      - .github/workflows/studio-snapshot-check.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout submitted snapshot
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate Admin schema and nested stores
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("publication/admin-settings.json")
+          if not p.is_file():
+              raise SystemExit("No Admin snapshot has been uploaded yet")
+          data=p.read_bytes()
+          if len(data)>262144:
+              raise SystemExit("Admin snapshot exceeds 256 KiB")
+          obj=json.loads(data.decode("utf-8"))
+          if obj.get("schema")!=2 or obj.get("kind")!="mazda6gh-admin-settings":
+              raise SystemExit("Invalid Admin snapshot schema/kind")
+          stores=obj.get("stores")
+          required=("run35_settings","studio_admin_rows","studio_custom_modules")
+          if not isinstance(stores,dict) or any(not isinstance(stores.get(k),dict) for k in required):
+              raise SystemExit("Missing required Admin stores")
+          for key in ("features",):
+              raw=stores["run35_settings"].get(key,"[]")
+              if not isinstance(raw,str) or not isinstance(json.loads(raw),list):
+                  raise SystemExit("Invalid feature list")
+          raw=stores["studio_custom_modules"].get("catalog","[]")
+          if not isinstance(raw,str) or not isinstance(json.loads(raw),list):
+              raise SystemExit("Invalid custom module list")
+          for name,entries in stores.items():
+              if not isinstance(entries,dict):
+                  raise SystemExit("Invalid store: "+name)
+              for k,v in entries.items():
+                  if not isinstance(k,str) or not isinstance(v,str):
+                      raise SystemExit("Invalid stored preference type")
+          print("Snapshot validated. Nothing has been published to Studio.")
+          PY

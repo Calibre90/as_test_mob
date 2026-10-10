@@ -66,9 +66,13 @@ public final class StudioSettings {
   }
   public static String appearance(Context ctx,String key,String fallback){
     String local=ctx.getSharedPreferences(PREF,0).getString("appearance_"+key,null);
-    if(local!=null)return local;
-    String published=PublishedFullSettings.moduleSetting(ctx,"appearance_"+key);
-    return published==null?fallback:published;
+    // In Studio, signed server appearance overrides stale local values left by older builds.
+    // In the separate Admin app, locally edited draft values must remain editable.
+    if(!"com.calibre90.catalogadmin".equals(ctx.getPackageName())){
+      String published=PublishedFullSettings.moduleSetting(ctx,"appearance_"+key);
+      if(published!=null)return published;
+    }
+    return local==null?fallback:local;
   }
   public static void saveAppearance(Context ctx,Map<String,String> values){
     android.content.SharedPreferences.Editor edit=ctx.getSharedPreferences(PREF,0).edit();

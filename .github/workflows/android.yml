@@ -1,7 +1,7 @@
 name: Build APK
 on:
   push:
-    branches: [ main, run35-functional-port, fix-run203-module-picker, feature/run296-studio-splash ]
+    branches: [ main, run35-functional-port, fix-run203-module-picker, feature/run296-studio-splash, feature/online-function-catalog ]
   workflow_dispatch:
 jobs:
   build:
@@ -47,6 +47,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - name: Test RSA catalog signing and tamper rejection
+        run: python3 catalog/test_signing.py
       - name: Run ABT and feature engine regression tests
         run: |
           mkdir -p /tmp/abt-test-classes

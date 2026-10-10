@@ -77,8 +77,42 @@ public final class AdminSnapshot {
           throw new IllegalArgumentException("Setting too large");
       }
     }
-    new JSONArray(stores.getJSONObject("run35_settings").optString("features", "[]"));
-    new JSONArray(stores.getJSONObject("studio_custom_modules").optString("catalog", "[]"));
+    JSONObject settings=stores.getJSONObject("run35_settings");
+    JSONObject rows=stores.getJSONObject("studio_admin_rows");
+    JSONObject custom=stores.getJSONObject("studio_custom_modules");
+    boolean any=settings.length()>0||rows.length()>0||custom.length()>0;
+    if(!any)throw new IllegalArgumentException("Пустой файл настроек");
+    JSONArray features=new JSONArray(settings.optString("features","[]"));
+    JSONArray modules=new JSONArray(custom.optString("catalog","[]"));
+    if(features.length()>500||modules.length()>100)
+      throw new IllegalArgumentException("Слишком много функций или блоков");
+    for(int i=0;i<features.length();i++){
+      JSONObject f=features.getJSONObject(i);
+      for(String field:new String[]{"id","module","row","mode","indices","on"})
+        if(f.optString(field,"").trim().isEmpty())
+          throw new IllegalArgumentException("Неполная функция: "+field);
+    }
+    for(int i=0;i<modules.length();i++){
+      JSONObject m=modules.getJSONObject(i);
+      if(m.optString("id","").trim().isEmpty()||m.optString("name","").trim().isEmpty())
+        throw new IllegalArgumentException("Неполный дополнительный блок");
+    }
+    JSONArray rowKeys=rows.names();
+    if(rowKeys!=null)for(int i=0;i<rowKeys.length();i++)
+      new JSONArray(rows.getString(rowKeys.getString(i)));
+    JSONArray keys=settings.names();
+    if(keys!=null)for(int i=0;i<keys.length();i++){
+      String key=keys.getString(i);
+      if(!("features".equals(key)||key.startsWith("module_name_")||
+        key.startsWith("module_version_")||key.startsWith("appearance_")))
+        throw new IllegalArgumentException("Недопустимая настройка: "+key);
+    }
+    JSONArray customKeys=custom.names();
+    if(customKeys!=null)for(int i=0;i<customKeys.length();i++){
+      String key=customKeys.getString(i);
+      if(!"catalog".equals(key))
+        throw new IllegalArgumentException("Недопустимый ключ блока: "+key);
+    }
   }
   /** Replace only the three allowlisted admin stores after validating the complete file.
    * License state and ABT files are never modified. */

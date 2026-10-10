@@ -141,7 +141,7 @@ public class MainActivity extends Activity {
                               .setMessage("GitHub принял запрос на выпуск. Номер версии будет рассчитан автоматически. "+
                                 "Это ещё НЕ подтверждение публикации.")
                               .setNegativeButton("Закрыть",null)
-                              .setPositiveButton("Открыть GitHub Actions",(d,w)->{
+                              .setPositiveButton("Открыть GitHub Actions",(actionsDialog,actionsButton)->{
                                 Intent browser=new Intent(Intent.ACTION_VIEW,
                                   Uri.parse("https://github.com/Calibre90/as_test_mob/actions/workflows/studio-release.yml"));
                                 startActivity(browser);

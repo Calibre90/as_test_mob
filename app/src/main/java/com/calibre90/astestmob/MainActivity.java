@@ -58,6 +58,7 @@ public class MainActivity extends Activity {
       LinearLayout adminHome=new LinearLayout(this);
       adminHome.setOrientation(LinearLayout.VERTICAL);
       adminHome.setBackgroundColor(Color.rgb(44,44,44));
+       adminHome.setPadding(0,dp(56),0,0);
       Button reopen=new Button(this);
       reopen.setText("Администрирование интерфейса");
       reopen.setOnClickListener(v->showAdminTabs());

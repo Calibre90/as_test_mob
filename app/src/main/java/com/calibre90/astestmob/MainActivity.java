@@ -212,8 +212,12 @@ public class MainActivity extends Activity {
     }
   }
   org.json.JSONArray customModuleCatalog(){
-    try{return new org.json.JSONArray(getSharedPreferences("studio_custom_modules",MODE_PRIVATE).getString("catalog","[]"));}
-    catch(Exception ex){return new org.json.JSONArray();}
+    try{
+      String local=getSharedPreferences("studio_custom_modules",MODE_PRIVATE).getString("catalog",null);
+      if(local!=null)return new org.json.JSONArray(local);
+      org.json.JSONArray published=PublishedFullSettings.modules(this);
+      return published==null?new org.json.JSONArray():published;
+    }catch(Exception ex){return new org.json.JSONArray();}
   }
   void showCustomModulePicker(){
     org.json.JSONArray catalog=customModuleCatalog();

@@ -105,7 +105,7 @@ public class MainActivity extends Activity {
       });
       adminHome.addView(importSnapshot);
       Button restoreOnline=new Button(this);
-      restoreOnline.setText("Восстановить настройки из GitHub");
+      restoreOnline.setText("Восстановить настройки с сервера");
       restoreOnline.setOnClickListener(v->{
         restoreOnline.setEnabled(false);
         Toast.makeText(this,"Загружаем опубликованные настройки…",Toast.LENGTH_SHORT).show();
@@ -120,7 +120,7 @@ public class MainActivity extends Activity {
             runOnUiThread(()->{
               restoreOnline.setEnabled(true);
               new AlertDialog.Builder(this)
-                .setTitle("Восстановить из GitHub — версия "+published.version)
+                .setTitle("Восстановить с сервера — версия "+published.version)
                 .setMessage("Найдено функций: "+functions+
                   "\\nДополнительных блоков: "+modules+
                   "\\n\\nБудут заменены локальные настройки администратора: функции, строки, блоки и оформление. Данные ABT и лицензии не затрагиваются. Перед заменой текущие настройки будут сохранены в резервную копию внутри приложения. Продолжить?")
@@ -144,7 +144,7 @@ public class MainActivity extends Activity {
                     if(view!=null)view.invalidate();
                     new AlertDialog.Builder(this)
                       .setTitle("Настройки восстановлены")
-                      .setMessage("Каталог GitHub версии "+published.version+
+                      .setMessage("Каталог сервера версии "+published.version+
                         " импортирован. Откройте «Администрирование интерфейса», чтобы проверить блоки и функции.")
                       .setPositiveButton("Понятно",null).show();
                   }catch(Exception ex){
@@ -156,7 +156,7 @@ public class MainActivity extends Activity {
           }catch(Exception ex){
             runOnUiThread(()->{
               restoreOnline.setEnabled(true);
-              new AlertDialog.Builder(this).setTitle("Не удалось загрузить из GitHub")
+              new AlertDialog.Builder(this).setTitle("Не удалось загрузить с сервера")
                 .setMessage(ex.getMessage()).setPositiveButton("Закрыть",null).show();
             });
           }
@@ -164,7 +164,7 @@ public class MainActivity extends Activity {
       });
       adminHome.addView(restoreOnline);
       Button publishOnline=new Button(this);
-      publishOnline.setText("Отправить настройки в GitHub");
+      publishOnline.setText("Отправить настройки на сервер");
       publishOnline.setOnClickListener(v->{
         try{
           org.json.JSONObject snapshot=AdminSnapshot.exportLocal(this);
@@ -172,13 +172,13 @@ public class MainActivity extends Activity {
           final boolean saved=GitHubTokenStore.hasToken(this);
           final EditText tokenInput=new EditText(this);
           tokenInput.setSingleLine(true);
-          tokenInput.setHint("Fine-grained GitHub token");
+          tokenInput.setHint("Токен доступа к серверу (GitHub)");
           tokenInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
           new AlertDialog.Builder(this)
-            .setTitle("Отправить в GitHub")
+            .setTitle("Отправить на сервер")
             .setMessage(saved
-              ?"Использовать сохранённый зашифрованный токен? Для замены или удаления нажмите «Токен GitHub» на главном экране. Настройки сначала отправятся на проверку."
-              :"Введите GitHub-токен с правами Contents и Actions: Read and write. После успешной отправки он будет сохранён в зашифрованном виде на этом устройстве. Настройки сначала отправятся на проверку.")
+              ?"Использовать сохранённый зашифрованный токен? Для замены или удаления нажмите «Токен сервера» на главном экране. Настройки сначала отправятся на проверку."
+              :"Введите токен сервера (GitHub) с правами Contents и Actions: Read and write. После успешной отправки он будет сохранён в зашифрованном виде на этом устройстве. Настройки сначала отправятся на проверку.")
             .setView(saved?null:tokenInput)
             .setNegativeButton("Отмена",null)
             .setPositiveButton("Отправить",(d,w)->{
@@ -203,9 +203,9 @@ public class MainActivity extends Activity {
                   }
                   runOnUiThread(()->{
                     new AlertDialog.Builder(this)
-                      .setTitle("Настройки загружены в GitHub")
+                      .setTitle("Настройки отправлены на сервер")
                       .setMessage("Коммит "+sha.substring(0,Math.min(8,sha.length()))+
-                        ". Запустить защищённый выпуск? Следующий номер версии определит GitHub автоматически. "+
+                        ". Запустить защищённый выпуск? Следующий номер версии определится автоматически. "+
                         "Для запуска нужны права Actions: write и workflow в main.")
                       .setNegativeButton("Позже",null)
                       .setPositiveButton("Запустить выпуск",(dialog,which)->{
@@ -214,10 +214,10 @@ public class MainActivity extends Activity {
                             GitHubSnapshotUploader.requestRelease(token,sha);
                             runOnUiThread(()->new AlertDialog.Builder(this)
                               .setTitle("Запрос отправлен")
-                              .setMessage("GitHub принял запрос на выпуск. Номер версии будет рассчитан автоматически. "+
+                              .setMessage("Сервер принял запрос на выпуск. Номер версии будет рассчитан автоматически. "+
                                 "Это ещё НЕ подтверждение публикации.")
                               .setNegativeButton("Закрыть",null)
-                              .setPositiveButton("Открыть GitHub Actions",(actionsDialog,actionsButton)->{
+                              .setPositiveButton("Проверить публикацию",(actionsDialog,actionsButton)->{
                                 Intent browser=new Intent(Intent.ACTION_VIEW,
                                   Uri.parse("https://github.com/Calibre90/as_test_mob/actions/workflows/studio-release.yml"));
                                 startActivity(browser);
@@ -229,7 +229,7 @@ public class MainActivity extends Activity {
                       }).show();
                   });
                 }catch(Exception ex){
-                  runOnUiThread(()->Toast.makeText(this,"GitHub: "+ex.getMessage(),Toast.LENGTH_LONG).show());
+                  runOnUiThread(()->Toast.makeText(this,"Сервер: "+ex.getMessage(),Toast.LENGTH_LONG).show());
                 }
               },"AdminGitHubUpload").start();
             }).show();
@@ -239,14 +239,14 @@ public class MainActivity extends Activity {
       });
       adminHome.addView(publishOnline);
       Button tokenSettings=new Button(this);
-      tokenSettings.setText("Токен GitHub: изменить / удалить");
+      tokenSettings.setText("Токен сервера: изменить / удалить");
       tokenSettings.setOnClickListener(v->{
         final EditText replacement=new EditText(this);
         replacement.setSingleLine(true);
-        replacement.setHint("Новый GitHub-токен");
+        replacement.setHint("Новый токен сервера");
         replacement.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
         new AlertDialog.Builder(this)
-          .setTitle("Токен GitHub")
+          .setTitle("Токен сервера")
           .setMessage(GitHubTokenStore.hasToken(this)
             ?"Токен сохранён в зашифрованном виде. Можно заменить или удалить его."
             :"Токен пока не сохранён. Введите его для будущих отправок.")

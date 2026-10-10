@@ -25,6 +25,7 @@ public final class AdminActivity extends Activity {
   private LinearLayout list;
   private TextView status;
   private String activeModule="IC";
+  private int catalogVersion=1;
   private LinearLayout tabs;
   private static final int EXPORT_DRAFT=4001;
   private static final int IMPORT_DRAFT=4002;
@@ -47,6 +48,8 @@ public final class AdminActivity extends Activity {
     ScrollView scroll=new ScrollView(this);
     list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);
     scroll.addView(list);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+    Button versionButton=new Button(this);versionButton.setText("Изменить версию каталога");root.addView(versionButton);
+    versionButton.setOnClickListener(v->editVersion());
     Button preview=new Button(this);preview.setText("Показать JSON черновика");root.addView(preview);
     preview.setOnClickListener(v->showJson());
     Button export=new Button(this);export.setText("Экспорт JSON черновика");root.addView(export);
@@ -60,13 +63,14 @@ public final class AdminActivity extends Activity {
   private void load(){
     try{
       String stored=getSharedPreferences("catalog_admin_draft",0).getString("features","[]");
+      catalogVersion=getSharedPreferences("catalog_admin_draft",0).getInt("version",1);
       JSONArray arr=new JSONArray(stored);
       for(int i=0;i<arr.length();i++)draft.add(arr.getJSONObject(i));
     }catch(Exception ignored){draft.clear();}
   }
   private void save(){
     JSONArray arr=new JSONArray();for(JSONObject f:draft)arr.put(f);
-    if(!getSharedPreferences("catalog_admin_draft",0).edit().putString("features",arr.toString()).commit())
+    if(!getSharedPreferences("catalog_admin_draft",0).edit().putString("features",arr.toString()).putInt("version",catalogVersion).commit())
       Toast.makeText(this,"Ошибка сохранения",Toast.LENGTH_LONG).show();
   }
   private void redraw(){
@@ -79,7 +83,7 @@ public final class AdminActivity extends Activity {
       tabs.addView(tab,new LinearLayout.LayoutParams(0,-2,1));
     }
     list.removeAllViews();
-    status.setText("Блок "+activeModule+" | Всего функций: "+draft.size()+"\nПубликация в интернет пока отключена.");
+    status.setText("Блок "+activeModule+" | Версия каталога: "+catalogVersion+" | Функций: "+draft.size()+"\nПубликация в интернет пока отключена.");
     for(int i=0;i<draft.size();i++){
       final int index=i;
       JSONObject f=draft.get(i);
@@ -154,9 +158,20 @@ public final class AdminActivity extends Activity {
     }));
     dialog.show();
   }
+  private void editVersion(){
+    EditText input=new EditText(this);input.setInputType(InputType.TYPE_CLASS_NUMBER);
+    input.setText(String.valueOf(catalogVersion));
+    new AlertDialog.Builder(this).setTitle("Версия каталога").setView(input)
+      .setNegativeButton("Отмена",null).setPositiveButton("Сохранить",(d,w)->{
+        try{int value=Integer.parseInt(input.getText().toString());
+          if(value<1)throw new IllegalArgumentException();
+          catalogVersion=value;save();redraw();
+        }catch(Exception ex){Toast.makeText(this,"Версия должна быть целым числом от 1",Toast.LENGTH_LONG).show();}
+      }).show();
+  }
   private JSONObject draftDocument() throws org.json.JSONException {
     JSONArray arr=new JSONArray();for(JSONObject f:draft)arr.put(f);
-    JSONObject doc=new JSONObject();doc.put("schema",1);doc.put("version",1);doc.put("features",arr);
+    JSONObject doc=new JSONObject();doc.put("schema",1);doc.put("version",catalogVersion);doc.put("features",arr);
     return doc;
   }
   private void exportDraft(){
@@ -187,7 +202,8 @@ public final class AdminActivity extends Activity {
         }
       }
       JSONObject document=new JSONObject(new String(bytes.toByteArray(),StandardCharsets.UTF_8));
-      if(document.getInt("schema")!=1||document.getInt("version")<1)
+      int importedVersion=document.getInt("version");
+      if(document.getInt("schema")!=1||importedVersion<1)
         throw new IllegalArgumentException("Неизвестный формат каталога");
       JSONArray incoming=document.getJSONArray("features");
       if(incoming.length()>500)throw new IllegalArgumentException("Слишком много функций");
@@ -223,7 +239,7 @@ public final class AdminActivity extends Activity {
         .setMessage("Импортировано функций: "+candidate.size()+". Текущий черновик будет заменён.")
         .setNegativeButton("Отмена",null)
         .setPositiveButton("Заменить",(d,w)->{
-          draft.clear();draft.addAll(candidate);save();redraw();
+          draft.clear();draft.addAll(candidate);catalogVersion=importedVersion;save();redraw();
           Toast.makeText(this,"Черновик импортирован",Toast.LENGTH_SHORT).show();
         }).show();
     }catch(Exception ex){Toast.makeText(this,"Ошибка импорта: "+ex.getMessage(),Toast.LENGTH_LONG).show();}

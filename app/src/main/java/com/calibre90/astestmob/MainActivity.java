@@ -826,8 +826,27 @@ public class MainActivity extends Activity {
       card(c,10,376,380,337,13,true);
       int hexPanelColor=appearanceColor("panel",Color.TRANSPARENT);
       if(hexPanelColor!=Color.TRANSPARENT){p.setColor(hexPanelColor);p.setStyle(Paint.Style.FILL);c.drawRoundRect(13,379,387,710,10,10,p);}
+      // Published administrator rows are read-only reference templates, not vehicle ABT.
+      // Never copy them into abtRows, rows, original, or the Save ABT path.
+      org.json.JSONArray onlineRows=null;
+      if(!loaded[active]&&rows[active].isEmpty())
+        onlineRows=PublishedFullSettings.builtInRowTemplates(MainActivity.this,modules[active]);
+      boolean onlineReference=onlineRows!=null&&onlineRows.length()>0;
+      if(onlineReference){
+        txt(c,"Онлайн-шаблоны · только просмотр",22,392,11,Color.DKGRAY,false);
+        int onlineCount=Math.min(9,onlineRows.length());
+        for(int i=0;i<onlineCount;i++){
+          org.json.JSONObject item=onlineRows.optJSONObject(i);
+          if(item==null)continue;
+          float y=400+i*36.5f;card(c,15,y,370,35,8,false);
+          p.setColor(Color.rgb(202,209,219));p.setStrokeWidth(1);
+          c.drawLine(165,y+4,165,y+31,p);
+          txtFit(c,item.optString("address"),28,y+23,14,Color.BLACK,132);
+          txtFit(c,item.optString("value"),177,y+23,13,Color.BLACK,197);
+        }
+      }
       int count=Math.min(Math.max(0,rows[active].size()-scrollOffset[active]),9);
-      if(rows[active].isEmpty())txt(c,"Нет данных — откройте ABT блока "+modules[active],22,420,12,Color.DKGRAY,false);
+      if(rows[active].isEmpty()&&!onlineReference)txt(c,"Нет данных — откройте ABT блока "+modules[active],22,420,12,Color.DKGRAY,false);
       for(int i=0;i<count;i++){
         int rowIndex=i+scrollOffset[active];float y=380+i*36.5f;card(c,15,y,370,35,8,false);
         p.setColor(Color.rgb(202,209,219));p.setStrokeWidth(1);c.drawLine(165,y+4,165,y+31,p);

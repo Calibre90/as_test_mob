@@ -2540,10 +2540,41 @@ public class MainActivity extends Activity {
             for(int k=0;k<keys.length;k++)changes.put(keys[k],appearanceInputs[k].getText().toString());
             int columns=Integer.parseInt(changes.get("feature_columns").trim());
             if(columns<1||columns>10)throw new IllegalArgumentException("Колонки функций: от 1 до 10");
-            StudioSettings.saveAppearance(this,changes);
-            setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));
-            view.invalidate();
-            Toast.makeText(this,"Оформление сохранено",Toast.LENGTH_SHORT).show();
+            final java.util.HashMap<String,String> confirmedChanges=new java.util.HashMap<>(changes);
+            final EditText pinInput=new EditText(this);
+            pinInput.setSingleLine(true);
+            pinInput.setHint("4 цифры");
+            pinInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+            pinInput.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(4)});
+            final LinearLayout pinContainer=new LinearLayout(this);
+            pinContainer.setOrientation(LinearLayout.VERTICAL);
+            pinContainer.setPadding(dp(22),dp(8),dp(22),dp(4));
+            pinContainer.addView(pinInput,new LinearLayout.LayoutParams(-1,dp(52)));
+            final AlertDialog confirmDialog=new AlertDialog.Builder(this)
+              .setTitle("Подтверждение сохранения")
+              .setMessage("Введите PIN-код для сохранения оформления")
+              .setView(pinContainer)
+              .setNegativeButton("Отмена",null)
+              .setPositiveButton("Подтвердить",null)
+              .create();
+            confirmDialog.setOnShowListener(ignored->{
+              confirmDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(button->{
+                if(!"0898".equals(pinInput.getText().toString())){
+                  pinInput.setError("Неверный PIN-код");
+                  return;
+                }
+                try{
+                  StudioSettings.saveAppearance(this,confirmedChanges);
+                  setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));
+                  view.invalidate();
+                  Toast.makeText(this,"Оформление сохранено",Toast.LENGTH_SHORT).show();
+                  confirmDialog.dismiss();
+                }catch(Exception saveError){
+                  Toast.makeText(this,"Ошибка оформления: "+saveError.getMessage(),Toast.LENGTH_LONG).show();
+                }
+              });
+            });
+            confirmDialog.show();
           }catch(Exception ex){Toast.makeText(this,"Ошибка оформления: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
         });
       }

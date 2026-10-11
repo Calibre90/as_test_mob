@@ -6,6 +6,10 @@ import java.util.*;
 public final class StudioSettings {
   private static final String PREF="run35_settings";
   public static ArrayList<FeatureEngine.Feature> load(Context ctx){
+    // Customer Studio always uses the latest verified server definitions when available.
+    // Keep local administrator drafts authoritative only in the standalone Admin app.
+    if(!"com.calibre90.catalogadmin".equals(ctx.getPackageName()) && PublishedFullSettings.features(ctx)!=null)
+      return published(ctx);
     String data=ctx.getSharedPreferences(PREF,0).getString("features","");
     if(data.isEmpty())return published(ctx);
     try{

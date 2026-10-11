@@ -19,7 +19,9 @@
       "appearance_background": ""
     },
     "studio_admin_rows": {},
-    "studio_custom_modules": {},
+    "studio_custom_modules": {
+      "catalog": "[{\"id\":\"AFS\",\"name\":\"блок света\",\"address\":\"737\",\"version\":\"\"}]"
+    },
     "studio_admin_custom_rows": {}
   }
 }

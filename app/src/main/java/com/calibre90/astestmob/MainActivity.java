@@ -376,10 +376,10 @@ public class MainActivity extends Activity {
         if(!FullCatalogSync.refresh(app,FULL_CATALOG_URL))return;
         runOnUiThread(()->{
           if(isFinishing()||isDestroyed())return;
-          if(!StudioSettings.hasLocalDraft(this)){
-            features.clear();
-            features.addAll(StudioSettings.load(this));
-          }
+          // A signed server publication must refresh Studio feature definitions even
+          // when an older build left a local feature draft behind.
+          features.clear();
+          features.addAll(StudioSettings.load(this));
           if(view!=null)view.invalidate();
         });
       },"MazdaFullCatalogSync").start();

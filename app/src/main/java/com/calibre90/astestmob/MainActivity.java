@@ -535,6 +535,18 @@ public class MainActivity extends Activity {
     }catch(Exception ignored){}
     return false;
   }
+  boolean hasActiveCustomFeature(String id,String address){
+    for(FeatureEngine.Feature feature:features)
+      if(id.equalsIgnoreCase(feature.module)&&address.equalsIgnoreCase(feature.address)&&customChecked(feature))
+        return true;
+    return false;
+  }
+  void clearInactiveCustomBaseline(String id,String address){
+    if(hasActiveCustomFeature(id,address))return;
+    String key=id+"|"+address;
+    customRowBaseline.remove(key);
+    getSharedPreferences("studio_custom_baselines",MODE_PRIVATE).edit().remove(key).apply();
+  }
   boolean customFeatureOverlap(FeatureEngine.Feature a,FeatureEngine.Feature b){
     if(!a.address.equalsIgnoreCase(b.address))return false;
     try{
@@ -606,6 +618,7 @@ public class MainActivity extends Activity {
         }
         rememberCustomBaseline(id,feature.address,before);
         customChecks.put(featureKey(feature),next);
+        if(!next)clearInactiveCustomBaseline(id,feature.address);
         view.invalidate();return;
       }
       org.json.JSONArray templates=PublishedFullSettings.customRowTemplates(this,id);
@@ -1061,7 +1074,7 @@ public class MainActivity extends Activity {
           String hex=item.optString("value");
           java.util.HashSet<Integer> marked=new java.util.HashSet<>();
           String baseline=customBaseline(id,item.optString("address"));
-          if(workingAddresses.contains(item.optString("address").trim().toUpperCase(java.util.Locale.ROOT))&&baseline!=null){
+          if(workingAddresses.contains(item.optString("address").trim().toUpperCase(java.util.Locale.ROOT))&&baseline!=null&&hasActiveCustomFeature(id,item.optString("address"))){
             String oldHex=AbtCodec.norm(baseline),currentHex=AbtCodec.norm(hex);
             for(int k=0;k<currentHex.length();k++)
               if(k>=oldHex.length()||oldHex.charAt(k)!=currentHex.charAt(k))marked.add(k);

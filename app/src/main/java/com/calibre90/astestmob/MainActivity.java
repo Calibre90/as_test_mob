@@ -1211,9 +1211,11 @@ public class MainActivity extends Activity {
         card(c,205,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"save_text","Сохранить ABT"),205,720,185,52,15,Color.BLACK);
         card(c,10,782,260,57,12,true);
         String customStatus=customFeatureStatuses.containsKey(id)?customFeatureStatuses.get(id):"Изменений нет";
-        txtFitBold(c,customStatus,22,816,14,Color.BLACK,290);
-        card(c,277,782,52,57,12,true);centered(c,"FAQ",277,782,52,57,14,Color.BLACK);
-      card(c,336,782,54,57,12,true);txt(c,"♙",350,821,32,Color.BLACK,true);
+        txtFitBold(c,customStatus,22,816,14,Color.BLACK,235);
+        // One shared bottom-bar FAQ button, next to the existing About button.
+        card(c,277,782,52,57,12,true);
+        centered(c,"FAQ",277,782,52,57,14,Color.BLACK);
+        card(c,336,782,54,57,12,true);txt(c,"♙",350,821,32,Color.BLACK,true);
         actual.restore();return;
       }
       card(c,10,190,380,82,13,true);

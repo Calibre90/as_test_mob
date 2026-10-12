@@ -2615,6 +2615,10 @@ public class MainActivity extends Activity {
       tabs.addView(tabBox,new LinearLayout.LayoutParams(tabWidth,dp(49)));
       buttons[i]=b;underlines[i]=underline;b.setOnClickListener(v->{selected[0]=tab;redrawRef[0].run();});
     }
+    Button faqTab=new Button(this);
+    faqTab.setText("FAQ");faqTab.setAllCaps(false);faqTab.setTextSize(11);
+    faqTab.setOnClickListener(v->FaqEditor.open(this));
+    tabs.addView(faqTab,new LinearLayout.LayoutParams(dp(72),dp(49)));
     LinearLayout footer=new LinearLayout(this);
     footerCloseLayout[0]=footer;
     Button save=new Button(this);save.setText("Сохранить изменения");save.setAllCaps(false);

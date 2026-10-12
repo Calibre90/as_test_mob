@@ -364,12 +364,6 @@ public class MainActivity extends Activity {
                       "Studio получит их после успешного завершения публикации.")
                     .setPositiveButton("Закрыть",null).show());
                 }catch(Exception ex){
-                            runOnUiThread(()->Toast.makeText(this,"Выпуск: "+ex.getMessage(),Toast.LENGTH_LONG).show());
-                          }
-                        },"AdminReleaseDispatch").start();
-                      }).show();
-                  });
-                }catch(Exception ex){
                   runOnUiThread(()->Toast.makeText(this,"Сервер: "+ex.getMessage(),Toast.LENGTH_LONG).show());
                 }
               },"AdminGitHubUpload").start();

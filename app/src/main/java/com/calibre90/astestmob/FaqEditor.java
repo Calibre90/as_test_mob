@@ -22,7 +22,15 @@ public final class FaqEditor {
         final int index=i;
         Button button=new Button(activity);
         button.setAllCaps(false);button.setText((i+1)+". "+item.optString("name","Без названия"));
-        list.addView(button);button.setOnClickListener(v->edit(activity,entries,index,refresh[0]));
+        LinearLayout row=new LinearLayout(activity);row.setOrientation(LinearLayout.HORIZONTAL);
+        row.addView(button,new LinearLayout.LayoutParams(0,-2,1));
+        Button up=new Button(activity);up.setText("↑");up.setEnabled(index>0);
+        row.addView(up,new LinearLayout.LayoutParams(0,-2,.20f));
+        up.setOnClickListener(v->move(activity,entries,index,index-1,refresh[0]));
+        Button down=new Button(activity);down.setText("↓");down.setEnabled(index<entries.length()-1);
+        row.addView(down,new LinearLayout.LayoutParams(0,-2,.20f));
+        down.setOnClickListener(v->move(activity,entries,index,index+1,refresh[0]));
+        list.addView(row);button.setOnClickListener(v->edit(activity,entries,index,refresh[0]));
       }
     };
     LinearLayout root=new LinearLayout(activity);root.setOrientation(LinearLayout.VERTICAL);
@@ -69,6 +77,12 @@ public final class FaqEditor {
       }catch(Exception e){Toast.makeText(a,"Ошибка: "+e.getMessage(),Toast.LENGTH_LONG).show();}
     }));
     dialog.show();
+  }
+  private static void move(Activity a,JSONArray rows,int from,int to,Runnable refresh){
+    if(from<0||to<0||from>=rows.length()||to>=rows.length())return;
+    JSONObject first=rows.optJSONObject(from),second=rows.optJSONObject(to);
+    try{rows.put(from,second);rows.put(to,first);persist(a,rows);refresh.run();}
+    catch(Exception e){Toast.makeText(a,"Ошибка порядка FAQ",Toast.LENGTH_LONG).show();}
   }
   private static void replace(JSONArray target,JSONArray source){
     while(target.length()>0)target.remove(target.length()-1);

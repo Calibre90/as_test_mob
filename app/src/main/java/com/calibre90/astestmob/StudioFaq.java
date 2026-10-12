@@ -25,6 +25,9 @@ public final class StudioFaq {
     if(bold)t.setTypeface(null,1);return t;
   }
   public static JSONArray entries(Activity a){
+    // The standalone Admin Release must display its editable local draft,
+    // not the last published FAQ. Studio readers use the signed publication.
+    if("com.calibre90.catalogadmin".equals(a.getPackageName()))return localEntries(a);
     JSONArray published=PublishedFullSettings.faq(a);
     if(published!=null)return published;
     return localEntries(a);

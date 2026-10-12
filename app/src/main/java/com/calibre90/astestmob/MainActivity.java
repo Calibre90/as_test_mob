@@ -189,8 +189,15 @@ public class MainActivity extends Activity {
                     try{
                       org.json.JSONObject backup=AdminSnapshot.exportLocal(this);
                       AdminSnapshot.validate(backup);
-                      if(!getSharedPreferences("studio_admin_restore_backup",MODE_PRIVATE)
-                          .edit().putString("previous_snapshot",backup.toString()).commit())
+                      android.content.SharedPreferences backups=
+                          getSharedPreferences("studio_admin_restore_backup",MODE_PRIVATE);
+                      // Keep the previous backup as well: a second restore must not
+                      // destroy the only copy of the earlier administrator draft.
+                      String previous=backups.getString("previous_snapshot",null);
+                      android.content.SharedPreferences.Editor backupEdit=backups.edit();
+                      if(previous!=null)backupEdit.putString("older_snapshot",previous);
+                      backupEdit.putString("previous_snapshot",backup.toString());
+                      if(!backupEdit.commit())
                         throw new IllegalStateException("Не удалось сохранить резервную копию");
                     }catch(IllegalStateException empty){
                       if(!empty.getMessage().startsWith("Нет сохранённых настроек"))throw empty;

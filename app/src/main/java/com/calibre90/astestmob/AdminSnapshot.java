@@ -14,7 +14,7 @@ import java.util.Map;
 public final class AdminSnapshot {
   private static final String[] STORES = {
     "run35_settings", "studio_admin_rows", "studio_custom_modules",
-    "studio_admin_custom_rows"
+    "studio_admin_custom_rows", "studio_faq"
   };
   private AdminSnapshot() {}
 
@@ -65,7 +65,7 @@ public final class AdminSnapshot {
     JSONObject stores = snapshot.getJSONObject("stores");
     for (String name : STORES) {
       JSONObject values = stores.optJSONObject(name);
-      if(values==null && "studio_admin_custom_rows".equals(name))continue;
+      if(values==null && ("studio_admin_custom_rows".equals(name)||"studio_faq".equals(name)))continue;
       if(values==null)throw new IllegalArgumentException("Missing store "+name);
       if (values.length() > 512) throw new IllegalArgumentException("Too many settings");
       JSONArray names = values.names();
@@ -79,6 +79,21 @@ public final class AdminSnapshot {
         if (value instanceof String && ((String)value).length() > 262144)
           throw new IllegalArgumentException("Setting too large");
       }
+    }
+    JSONObject faq=stores.optJSONObject("studio_faq");
+    if(faq!=null){
+      JSONArray entries=new JSONArray(faq.optString("entries","[]"));
+      if(entries.length()>200)throw new IllegalArgumentException("Слишком много записей FAQ");
+      for(int i=0;i<entries.length();i++){
+        JSONObject entry=entries.getJSONObject(i);
+        String name=entry.optString("name","").trim();
+        String description=entry.optString("description","");
+        if(name.isEmpty()||name.length()>120||description.length()>12000)
+          throw new IllegalArgumentException("Неверная запись FAQ №"+(i+1));
+      }
+      JSONArray faqKeys=faq.names();
+      if(faqKeys!=null)for(int i=0;i<faqKeys.length();i++)
+        if(!"entries".equals(faqKeys.getString(i)))throw new IllegalArgumentException("Неизвестный ключ FAQ");
     }
     JSONObject settings=stores.getJSONObject("run35_settings");
     JSONObject rows=stores.getJSONObject("studio_admin_rows");
@@ -221,6 +236,7 @@ public final class AdminSnapshot {
       return "features".equals(key)||key.startsWith("module_name_")||
         key.startsWith("module_version_")||key.startsWith("appearance_");
     if("studio_custom_modules".equals(name))return "catalog".equals(key);
+    if("studio_faq".equals(name))return "entries".equals(key);
     return "studio_admin_rows".equals(name)||"studio_admin_custom_rows".equals(name);
   }
 }

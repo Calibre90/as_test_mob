@@ -326,21 +326,28 @@ public class MainActivity extends Activity {
               tokenInput.setText("");
               new Thread(()->{
                 try{
-                  // Reject stale drafts when this administrator has previously restored a
-                  // signed publication. A different admin may have published meanwhile.
-                  int baseline=getSharedPreferences("studio_admin_sync",MODE_PRIVATE)
-                      .getInt("restored_publication_version",0);
-                  // A fresh installation has no established server baseline.
-                  // Never let it overwrite a published configuration blindly.
+                  // Automatically obtain the signed server configuration, preserving
+                  // server-only settings while applying this admin's edited values.
                   FullCatalogEnvelope current=AdminOnlineRestore.download();
-                  if(baseline==0)
-                    throw new IllegalStateException("Эта админка ещё не получала настройки с сервера (там версия "+
-                      current.version+"). Сначала выберите «Восстановить настройки из сервера», "+
-                      "проверьте данные и затем внесите свои изменения.");
-                  if(current.version!=baseline)
-                    throw new IllegalStateException("На сервере версия "+current.version+
-                      ", а настройки этой админки основаны на версии "+baseline+
-                      ". Сначала получите новые настройки с сервера и проверьте изменения.");
+                  org.json.JSONObject remoteStores=current.snapshot.getJSONObject("stores");
+                  org.json.JSONObject localStores=snapshot.getJSONObject("stores");
+                  org.json.JSONObject mergedStores=new org.json.JSONObject(remoteStores.toString());
+                  java.util.Iterator<String> storeNames=localStores.keys();
+                  while(storeNames.hasNext()){
+                    String storeName=storeNames.next();
+                    org.json.JSONObject localValues=localStores.optJSONObject(storeName);
+                    if(localValues==null)continue;
+                    org.json.JSONObject mergedValues=mergedStores.optJSONObject(storeName);
+                    if(mergedValues==null)mergedValues=new org.json.JSONObject();
+                    java.util.Iterator<String> keys=localValues.keys();
+                    while(keys.hasNext()){
+                      String key=keys.next();
+                      mergedValues.put(key,localValues.get(key));
+                    }
+                    mergedStores.put(storeName,mergedValues);
+                  }
+                  snapshot.put("stores",mergedStores);
+                  AdminSnapshot.validate(snapshot);
                   String sha=GitHubSnapshotUploader.upload(snapshot,token,current.snapshot);
                   if(!saved){
                     try{GitHubTokenStore.save(this,token);}
@@ -349,28 +356,14 @@ public class MainActivity extends Activity {
                         "Отправлено, но токен не сохранён: "+storeError.getMessage(),Toast.LENGTH_LONG).show());
                     }
                   }
-                  runOnUiThread(()->{
-                    new AlertDialog.Builder(this)
-                      .setTitle("Настройки отправлены на сервер")
-                      .setMessage("Коммит "+sha.substring(0,Math.min(8,sha.length()))+
-                        ". Запустить защищённый выпуск? Следующий номер версии определится автоматически. "+
-                        "Для запуска нужны права Actions: write и workflow в main.")
-                      .setNegativeButton("Позже",null)
-                      .setPositiveButton("Запустить выпуск",(dialog,which)->{
-                        new Thread(()->{
-                          try{
-                            GitHubSnapshotUploader.requestRelease(token,sha);
-                            runOnUiThread(()->new AlertDialog.Builder(this)
-                              .setTitle("Запрос отправлен")
-                              .setMessage("Сервер принял запрос на выпуск. Номер версии будет рассчитан автоматически. "+
-                                "Это ещё НЕ подтверждение публикации.")
-                              .setNegativeButton("Закрыть",null)
-                              .setPositiveButton("Проверить публикацию",(actionsDialog,actionsButton)->{
-                                Intent browser=new Intent(Intent.ACTION_VIEW,
-                                  Uri.parse("https://github.com/Calibre90/as_test_mob/actions/workflows/studio-release.yml"));
-                                startActivity(browser);
-                              }).show());
-                          }catch(Exception ex){
+                  // Request signed publication automatically after successful upload.
+                  GitHubSnapshotUploader.requestRelease(token,sha);
+                  runOnUiThread(()->new AlertDialog.Builder(this)
+                    .setTitle("Настройки отправлены")
+                    .setMessage("Изменения загружены на сервер, выпуск подписанной конфигурации запрошен автоматически. "+
+                      "Studio получит их после успешного завершения публикации.")
+                    .setPositiveButton("Закрыть",null).show());
+                }catch(Exception ex){
                             runOnUiThread(()->Toast.makeText(this,"Выпуск: "+ex.getMessage(),Toast.LENGTH_LONG).show());
                           }
                         },"AdminReleaseDispatch").start();

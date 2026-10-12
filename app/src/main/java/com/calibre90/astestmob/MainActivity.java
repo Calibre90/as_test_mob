@@ -232,6 +232,29 @@ public class MainActivity extends Activity {
       });
       styleAdminHomeButton(restoreOnline, "↓");
       adminHome.addView(restoreOnline);
+      // Check the common published configuration whenever Admin starts.
+      // Never silently overwrite locally edited settings: the existing restore
+      // flow previews the server version and creates a backup before import.
+      new Thread(()->{
+        try{
+          FullCatalogEnvelope remote=AdminOnlineRestore.download();
+          int applied=getSharedPreferences("studio_admin_sync",MODE_PRIVATE)
+              .getInt("restored_publication_version",0);
+          if(remote.version>applied){
+            runOnUiThread(()->new AlertDialog.Builder(this)
+              .setTitle("Обновления общей админки")
+              .setMessage("На сервере опубликована версия "+remote.version+
+                ". Ваша админка использует версию "+applied+
+                ". Получить общие настройки, блоки, функции и FAQ? "+
+                "Перед заменой будет создана локальная резервная копия.")
+              .setNegativeButton("Позже",null)
+              .setPositiveButton("Синхронизировать",(d,w)->restoreOnline.performClick())
+              .show());
+          }
+        }catch(Exception ex){
+          android.util.Log.w("AdminSync","Не удалось проверить общую конфигурацию",ex);
+        }
+      },"AdminSyncCheck").start();
       Button restoreBackup=new Button(this);
       restoreBackup.setText("Восстановить локальную копию");
       restoreBackup.setOnClickListener(v->{

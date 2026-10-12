@@ -29,6 +29,9 @@ class FaqTests(unittest.TestCase):
         with self.assertRaises(ValueError):module.validate(snapshot([{"name":"A","description":""}]*201))
     def test_unexpected_field(self):
         with self.assertRaises(ValueError):module.validate(snapshot([{"name":"RVM","description":"","secret":"x"}]))
+    def test_duplicate_title_case_insensitive(self):
+        with self.assertRaises(ValueError):
+            module.validate(snapshot([{"name":"RVM","description":"one"},{"name":"rvm ","description":"two"}]))
     def test_non_list(self):
         doc=snapshot([]);doc["stores"]["studio_faq"]["entries"]="{}"
         with self.assertRaises(ValueError):module.validate(doc)

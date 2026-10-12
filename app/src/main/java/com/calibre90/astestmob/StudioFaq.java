@@ -90,7 +90,7 @@ public final class StudioFaq {
       final int index=i;
       TextView item=text(a,row.optString("name","Функция"),13,Color.WHITE,true);
       item.setGravity(Gravity.CENTER);item.setSingleLine(true);item.setEllipsize(android.text.TextUtils.TruncateAt.END);
-      LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(a,42));lp.setMargins(0,0,dp(a,4),dp(a,5));names.addView(item,lp);
+      LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(a,32));lp.setMargins(0,0,dp(a,4),dp(a,5));names.addView(item,lp);
       items.add(item);item.setOnClickListener(v->{selected[0]=index;redraw.run();});
     }
     Runnable arrows=()->{

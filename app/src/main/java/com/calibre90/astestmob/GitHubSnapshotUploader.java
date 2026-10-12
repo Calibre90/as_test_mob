@@ -12,14 +12,24 @@ final class GitHubSnapshotUploader {
   static final String API="https://api.github.com/repos/Calibre90/as_test_mob/contents/publication/admin-settings.json";
   private GitHubSnapshotUploader(){}
 
-  static String upload(JSONObject snapshot, String token) throws Exception {
+  static String upload(JSONObject snapshot, String token, JSONObject publishedSnapshot) throws Exception {
     AdminSnapshot.validate(snapshot);
     if(token==null||token.trim().length()<12)throw new IOException("Нужен GitHub-токен с правом Contents: Read and write");
+    if(publishedSnapshot==null)throw new IOException("Нет проверенной серверной конфигурации");
     String existingSha=null;
     HttpURLConnection get=connect(API+"?ref="+URLEncoder.encode(BRANCH,"UTF-8"),"GET",token);
     try{
       int status=get.getResponseCode();
-      if(status==200)existingSha=readJson(get).getString("sha");
+      if(status==200){
+        JSONObject file=readJson(get);
+        existingSha=file.getString("sha");
+        String encoded=file.getString("content").replace("\\n","").replace("\\r","");
+        JSONObject pending=new JSONObject(new String(Base64.decode(encoded,Base64.DEFAULT),StandardCharsets.UTF_8));
+        AdminSnapshot.validate(pending);
+        if(!canonical(pending).equals(canonical(publishedSnapshot)))
+          throw new IOException("В ветке проверки уже есть неопубликованные изменения другой админки. "+
+            "Отправка остановлена, чтобы не перезаписать их. Проверьте ожидающую публикацию.");
+      }
       else if(status!=404)throw new IOException("GitHub: HTTP "+status+" при чтении файла");
     }finally{get.disconnect();}
     JSONObject payload=new JSONObject();
@@ -37,6 +47,26 @@ final class GitHubSnapshotUploader {
       if(status!=200&&status!=201)throw new IOException("GitHub: HTTP "+status+" при загрузке (проверь права токена и ветку)");
       return readJson(put).getJSONObject("commit").getString("sha");
     }finally{put.disconnect();}
+  }
+  private static String canonical(Object value) throws Exception {
+    if(value instanceof JSONObject){
+      JSONObject object=(JSONObject)value;
+      java.util.ArrayList<String> keys=new java.util.ArrayList<>();
+      java.util.Iterator<String> it=object.keys();
+      while(it.hasNext())keys.add(it.next());
+      java.util.Collections.sort(keys);
+      StringBuilder out=new StringBuilder("{");
+      for(String key:keys)out.append(JSONObject.quote(key)).append(":")
+        .append(canonical(object.get(key))).append(",");
+      return out.append("}").toString();
+    }
+    if(value instanceof org.json.JSONArray){
+      org.json.JSONArray array=(org.json.JSONArray)value;
+      StringBuilder out=new StringBuilder("[");
+      for(int i=0;i<array.length();i++)out.append(canonical(array.get(i))).append(",");
+      return out.append("]").toString();
+    }
+    return JSONObject.valueToString(value);
   }
   /** Request the protected release workflow. A successful 204 means queued, not published. */
   static void requestRelease(String token, String snapshotSha) throws Exception {

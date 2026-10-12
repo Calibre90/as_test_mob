@@ -12,23 +12,12 @@ public final class AdminFaq {
   private AdminFaq(){}
   public static void show(Activity a){
     JSONArray entries;
-    try{entries=new JSONArray(a.getSharedPreferences("admin_faq",0).getString("entries","[]"));}
+    try{entries=new JSONArray(a.getSharedPreferences("studio_faq",0).getString("entries","[]"));}
     catch(Exception e){entries=new JSONArray();}
     final JSONArray rows=entries;
     LinearLayout root=new LinearLayout(a);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(16,8,16,8);
-    TextView note=new TextView(a);note.setText("FAQ — локальный черновик. Онлайн-публикация пока не подключена.");
+    TextView note=new TextView(a);note.setText("FAQ сохраняется в общих настройках администратора.");
     root.addView(note);
-    Button export=new Button(a);export.setText("Поделиться FAQ JSON");
-    root.addView(export);export.setOnClickListener(v->{
-      try{
-        org.json.JSONObject payload=new org.json.JSONObject();
-        payload.put("schema",1);payload.put("kind","mazda6gh-faq-draft");payload.put("entries",rows);
-        android.content.Intent send=new android.content.Intent(android.content.Intent.ACTION_SEND);
-        send.setType("application/json");
-        send.putExtra(android.content.Intent.EXTRA_TEXT,payload.toString(2));
-        a.startActivity(android.content.Intent.createChooser(send,"Передать черновик FAQ"));
-      }catch(Exception e){Toast.makeText(a,"Ошибка экспорта FAQ",Toast.LENGTH_LONG).show();}
-    });
     Button add=new Button(a);add.setText("Добавить FAQ");root.addView(add);
     LinearLayout list=new LinearLayout(a);list.setOrientation(LinearLayout.VERTICAL);
     ScrollView scroll=new ScrollView(a);scroll.addView(list);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));

@@ -32,6 +32,7 @@ public final class AdminSnapshot {
         if ("run35_settings".equals(name) &&
             !("features".equals(key) || key.startsWith("module_name_") ||
               key.startsWith("module_version_") || key.startsWith("appearance_"))) continue;
+        if ("studio_faq".equals(name) && !"entries".equals(key)) continue;
         Object value = entry.getValue();
         if (value instanceof String || value instanceof Boolean ||
             value instanceof Integer || value instanceof Long || value instanceof Float)

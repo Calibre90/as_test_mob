@@ -60,14 +60,14 @@ public final class StudioFaq {
     up.setGravity(Gravity.CENTER);down.setGravity(Gravity.CENTER);
     left.addView(up,0,new LinearLayout.LayoutParams(-1,dp(a,19)));
     left.addView(down,new LinearLayout.LayoutParams(-1,dp(a,19)));
-    columns.addView(left,new LinearLayout.LayoutParams(0,-1,0.36f));
+    columns.addView(left,new LinearLayout.LayoutParams(0,-1,0.40f));
     LinearLayout right=new LinearLayout(a);right.setOrientation(LinearLayout.VERTICAL);right.setPadding(dp(a,10),0,dp(a,2),0);
     TextView name=text(a,"FAQ",18,Color.BLACK,true);right.addView(name,new LinearLayout.LayoutParams(-1,dp(a,44)));
     View red=new View(a);red.setBackgroundColor(Color.rgb(220,50,55));right.addView(red,new LinearLayout.LayoutParams(-1,dp(a,2)));
     ScrollView descriptionScroll=new ScrollView(a);
     TextView description=text(a,"",14,Color.BLACK,false);description.setPadding(0,dp(a,12),dp(a,4),dp(a,8));
     descriptionScroll.addView(description);right.addView(descriptionScroll,new LinearLayout.LayoutParams(-1,0,1));
-    columns.addView(right,new LinearLayout.LayoutParams(0,-1,0.64f));
+    columns.addView(right,new LinearLayout.LayoutParams(0,-1,0.60f));
     LinearLayout.LayoutParams colsLp=new LinearLayout.LayoutParams(-1,0,1);colsLp.setMargins(0,dp(a,14),0,dp(a,12));root.addView(columns,colsLp);
     JSONArray entries=entries(a);
     if(entries.length()==0){name.setText("Справочник");description.setText("Информация пока не опубликована администратором.");}
@@ -89,8 +89,10 @@ public final class StudioFaq {
       JSONObject row=entries.optJSONObject(i);if(row==null)continue;
       final int index=i;
       TextView item=text(a,row.optString("name","Функция"),13,Color.WHITE,true);
-      item.setGravity(Gravity.CENTER);item.setSingleLine(true);item.setEllipsize(android.text.TextUtils.TruncateAt.END);
-      LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(a,32));lp.setMargins(0,0,dp(a,4),dp(a,5));names.addView(item,lp);
+      item.setGravity(Gravity.CENTER);item.setSingleLine(false);item.setMaxLines(4);
+      item.setEllipsize(null);item.setPadding(dp(a,5),dp(a,7),dp(a,5),dp(a,7));
+      item.setMinHeight(dp(a,36));
+      LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(0,0,dp(a,4),dp(a,5));names.addView(item,lp);
       items.add(item);item.setOnClickListener(v->{selected[0]=index;redraw.run();});
     }
     Runnable arrows=()->{

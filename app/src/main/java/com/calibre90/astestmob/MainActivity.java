@@ -196,6 +196,9 @@ public class MainActivity extends Activity {
                       if(!empty.getMessage().startsWith("Нет сохранённых настроек"))throw empty;
                     }
                     AdminSnapshot.importLocal(this,published.snapshot);
+                    if(!getSharedPreferences("studio_admin_sync",MODE_PRIVATE).edit()
+                        .putInt("restored_publication_version",published.version).commit())
+                      throw new IllegalStateException("Настройки восстановлены, но не удалось сохранить номер серверной версии");
                     features.clear();
                     features.addAll(StudioSettings.load(this));
                     restoreAdminRows();
@@ -252,6 +255,17 @@ public class MainActivity extends Activity {
               tokenInput.setText("");
               new Thread(()->{
                 try{
+                  // Reject stale drafts when this administrator has previously restored a
+                  // signed publication. A different admin may have published meanwhile.
+                  int baseline=getSharedPreferences("studio_admin_sync",MODE_PRIVATE)
+                      .getInt("restored_publication_version",0);
+                  if(baseline>0){
+                    FullCatalogEnvelope current=AdminOnlineRestore.download();
+                    if(current.version!=baseline)
+                      throw new IllegalStateException("На сервере версия "+current.version+
+                        ", а настройки этой админки основаны на версии "+baseline+
+                        ". Сначала получите новые настройки с сервера и проверьте изменения.");
+                  }
                   String sha=GitHubSnapshotUploader.upload(snapshot,token);
                   if(!saved){
                     try{GitHubTokenStore.save(this,token);}

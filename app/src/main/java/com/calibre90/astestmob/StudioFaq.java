@@ -76,8 +76,11 @@ public final class StudioFaq {
     Runnable redraw=()->{
       for(int i=0;i<items.size();i++){
         TextView item=items.get(i);
-        item.setBackground(bg(a,i==selected[0]?Color.rgb(179,182,187):Color.rgb(46,48,52),
-          i==selected[0]?Color.rgb(144,148,154):Color.rgb(22,24,28),Color.rgb(116,118,122),6));
+        boolean active=i==selected[0];
+        item.setTextColor(active?Color.WHITE:Color.rgb(45,49,55));
+        item.setBackground(bg(a,active?Color.rgb(179,182,187):Color.rgb(239,241,244),
+          active?Color.rgb(144,148,154):Color.rgb(209,214,220),
+          active?Color.rgb(116,118,122):Color.rgb(177,184,192),6));
       }
       JSONObject row=entries.optJSONObject(selected[0]);
       if(row!=null){name.setText(row.optString("name","FAQ"));description.setText(row.optString("description",""));descriptionScroll.scrollTo(0,0);}

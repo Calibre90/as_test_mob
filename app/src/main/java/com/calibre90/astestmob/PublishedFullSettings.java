@@ -14,6 +14,17 @@ final class PublishedFullSettings {
     return snapshot.optJSONObject("stores");
   }
 
+  /** FAQ is read only from the verified signed publication, never from untrusted network JSON. */
+  static JSONArray faq(Context context) {
+    try {
+      JSONObject stores=stores(context);
+      if(stores==null)return null;
+      JSONObject faq=stores.optJSONObject("studio_faq");
+      if(faq==null)return null;
+      return new JSONArray(faq.getString("entries"));
+    }catch(Exception ignored){return null;}
+  }
+
   static JSONArray features(Context context) {
     try {
       JSONObject stores = stores(context);

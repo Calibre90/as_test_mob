@@ -66,7 +66,10 @@ final class GitHubSnapshotUploader {
       for(int i=0;i<array.length();i++)out.append(canonical(array.get(i))).append(",");
       return out.append("]").toString();
     }
-    return JSONObject.valueToString(value);
+    if(value==null||value==JSONObject.NULL)return "null";
+    if(value instanceof String||value instanceof Character)return JSONObject.quote(String.valueOf(value));
+    if(value instanceof Number||value instanceof Boolean)return String.valueOf(value);
+    return JSONObject.quote(String.valueOf(value));
   }
   /** Request the protected release workflow. A successful 204 means queued, not published. */
   static void requestRelease(String token, String snapshotSha) throws Exception {

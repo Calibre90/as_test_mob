@@ -43,6 +43,8 @@ public final class AdminActivity extends Activity {
     root.addView(status);
     tabs=new LinearLayout(this);tabs.setOrientation(LinearLayout.HORIZONTAL);
     root.addView(tabs);
+    Button faq=new Button(this);faq.setText("FAQ");faq.setAllCaps(false);
+    tabs.addView(faq);faq.setOnClickListener(v->AdminFaq.show(this));
     Button add=new Button(this);add.setText("Добавить функцию");root.addView(add);
     add.setOnClickListener(v->edit(-1));
     ScrollView scroll=new ScrollView(this);

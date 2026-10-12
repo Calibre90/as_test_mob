@@ -396,8 +396,7 @@ public class MainActivity extends Activity {
                       "Сохраните экспорт настроек и выполните первое восстановление с сервера.");
                   org.json.JSONObject base=new org.json.JSONObject(baseline);
                   org.json.JSONObject merged=AdminThreeWayMerge.merge(base,snapshot,current.snapshot);
-                  snapshot=merged;
-                  String sha=GitHubSnapshotUploader.upload(snapshot,token,current.snapshot);
+                  String sha=GitHubSnapshotUploader.upload(merged,token,current.snapshot);
                   if(!saved){
                     try{GitHubTokenStore.save(this,token);}
                     catch(Exception storeError){

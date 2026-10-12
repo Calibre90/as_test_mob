@@ -90,6 +90,8 @@ public final class AdminSnapshot {
       java.util.HashSet<String> faqNames=new java.util.HashSet<>();
       for(int i=0;i<entries.length();i++){
         JSONObject entry=entries.getJSONObject(i);
+        if(entry.length()!=2 || !entry.has("name") || !entry.has("description"))
+          throw new IllegalArgumentException("Лишние или отсутствующие поля FAQ №"+(i+1));
         if(!(entry.opt("name") instanceof String) ||
            !(entry.opt("description") instanceof String))
           throw new IllegalArgumentException("Неверный формат записи FAQ №"+(i+1));

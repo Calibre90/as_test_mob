@@ -628,7 +628,12 @@ public class MainActivity extends Activity {
             changes.append(from).append(" на ").append(to);
           }
         }
-        customFeatureStatuses.put(id,feature.label+": "+(changes.length()>0?"Изменено "+changes:"Без изменений"));
+        boolean anyChecked=next;
+        if(!anyChecked)for(FeatureEngine.Feature sibling:available){
+          if(sibling!=feature&&customChecked(sibling)){anyChecked=true;break;}
+        }
+        if(anyChecked)customFeatureStatuses.put(id,feature.label+": "+(changes.length()>0?"Изменено "+changes:"Без изменений"));
+        else customFeatureStatuses.remove(id);
         rememberCustomBaseline(id,feature.address,before);
         customChecks.put(featureKey(feature),next);
         if(!next)clearInactiveCustomBaseline(id,feature.address);
@@ -732,6 +737,7 @@ public class MainActivity extends Activity {
         item.put("address",row.address);item.put("value",row.value);entries.put(item);
       }
       prefs.edit().putString(id,entries.toString()).apply();
+      customFeatureStatuses.remove(id);
       // A custom block is marked as loaded only after a successful ABT import.
       getSharedPreferences("studio_custom_abt_loaded",MODE_PRIVATE).edit().putBoolean(id,true).apply();
       resetCustomFeatureState(id);view.invalidate();
@@ -1111,7 +1117,9 @@ public class MainActivity extends Activity {
         card(c,10,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"open_text","Открыть ABT"),10,720,185,52,15,Color.BLACK);
         card(c,205,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"save_text","Сохранить ABT"),205,720,185,52,15,Color.BLACK);
         card(c,10,782,319,57,12,true);
-        txtFit(c,customFeatureStatuses.containsKey(id)?customFeatureStatuses.get(id):id+" · "+localRowCount+" лок. + "+(customRows.length()-localRowCount)+" шабл. · "+customRows.length()+" строк",22,816,12,Color.BLACK,290);
+        String customStatus=customFeatureStatuses.containsKey(id)?customFeatureStatuses.get(id):"Изменений нет";
+        p.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));
+        txtFit(c,customStatus,22,816,14,Color.BLACK,290);
         card(c,336,782,54,57,12,true);txt(c,"♙",350,821,32,Color.BLACK,true);
         actual.restore();return;
       }

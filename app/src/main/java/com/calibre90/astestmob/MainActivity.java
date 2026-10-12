@@ -267,6 +267,16 @@ public class MainActivity extends Activity {
               .setNegativeButton("Отмена",null)
               .setPositiveButton("Восстановить",(confirm,which)->{
                 try{
+                  // Back up the current draft before replacing it with a historical one.
+                  org.json.JSONObject currentDraft=AdminSnapshot.exportLocal(this);
+                  AdminSnapshot.validate(currentDraft);
+                  android.content.SharedPreferences backupPrefs=
+                      getSharedPreferences("studio_admin_restore_backup",MODE_PRIVATE);
+                  String last=backupPrefs.getString("previous_snapshot",null);
+                  android.content.SharedPreferences.Editor backupWrite=backupPrefs.edit();
+                  if(last!=null)backupWrite.putString("older_snapshot",last);
+                  if(!backupWrite.putString("previous_snapshot",currentDraft.toString()).commit())
+                    throw new IllegalStateException("Не удалось сохранить текущий черновик");
                   AdminSnapshot.importLocal(this,candidate);
                   // A historical draft must never retain the current server baseline.
                   if(!getSharedPreferences("studio_admin_sync",MODE_PRIVATE).edit()

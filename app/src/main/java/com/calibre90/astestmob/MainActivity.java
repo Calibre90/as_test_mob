@@ -246,7 +246,7 @@ public class MainActivity extends Activity {
             String baseline=sync.getString("last_synced_snapshot",null);
             String local=null;
             try{local=AdminSnapshot.exportLocal(this).toString();}catch(Exception ignored){}
-            if(baseline!=null && baseline.equals(local)){
+            if(baseline!=null && local!=null && AdminSyncSnapshot.same(baseline,local)){
               // A clean editor can accept the newer signed publication silently.
               // Keep a rollback snapshot before changing any settings.
               try{

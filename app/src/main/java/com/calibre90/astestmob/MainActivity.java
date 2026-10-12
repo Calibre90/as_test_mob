@@ -616,6 +616,19 @@ public class MainActivity extends Activity {
           customChecks.clear();
           throw editFailure;
         }
+        String after=row.value;
+        StringBuilder changes=new StringBuilder();
+        // Match the built-in blocks: report changed data HEX digits, excluding checksum.
+        int dataEnd=Math.max(0,Math.min(before.length(),after.length())-2);
+        for(int k=0;k<dataEnd;k++){
+          char from=Character.toUpperCase(before.charAt(k));
+          char to=Character.toUpperCase(after.charAt(k));
+          if(from!=to){
+            if(changes.length()>0)changes.append(", ");
+            changes.append(from).append(" на ").append(to);
+          }
+        }
+        customFeatureStatuses.put(id,feature.label+": "+(changes.length()>0?"Изменено "+changes:"Без изменений"));
         rememberCustomBaseline(id,feature.address,before);
         customChecks.put(featureKey(feature),next);
         if(!next)clearInactiveCustomBaseline(id,feature.address);
@@ -915,6 +928,7 @@ public class MainActivity extends Activity {
   float featureX(int index){return 23f+(index/3)*122f;}
   float featureY(int index){return 285f+(index%3)*28f;}
   String lastFeatureStatus="Изменений нет";
+  final HashMap<String,String> customFeatureStatuses=new HashMap<>();
   class StudioView extends View {
     Paint p=new Paint(3); HashMap<String,Bitmap> bitmaps=new HashMap<>();
     float sx=1,sy=1,offX=0,offY=0;
@@ -1097,7 +1111,7 @@ public class MainActivity extends Activity {
         card(c,10,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"open_text","Открыть ABT"),10,720,185,52,15,Color.BLACK);
         card(c,205,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"save_text","Сохранить ABT"),205,720,185,52,15,Color.BLACK);
         card(c,10,782,319,57,12,true);
-        txtFit(c,id+" · "+localRowCount+" лок. + "+(customRows.length()-localRowCount)+" шабл. · "+customRows.length()+" строк",22,816,12,Color.BLACK,290);
+        txtFit(c,customFeatureStatuses.containsKey(id)?customFeatureStatuses.get(id):id+" · "+localRowCount+" лок. + "+(customRows.length()-localRowCount)+" шабл. · "+customRows.length()+" строк",22,816,12,Color.BLACK,290);
         card(c,336,782,54,57,12,true);txt(c,"♙",350,821,32,Color.BLACK,true);
         actual.restore();return;
       }

@@ -259,13 +259,17 @@ public class MainActivity extends Activity {
                   // signed publication. A different admin may have published meanwhile.
                   int baseline=getSharedPreferences("studio_admin_sync",MODE_PRIVATE)
                       .getInt("restored_publication_version",0);
-                  if(baseline>0){
-                    FullCatalogEnvelope current=AdminOnlineRestore.download();
-                    if(current.version!=baseline)
-                      throw new IllegalStateException("На сервере версия "+current.version+
-                        ", а настройки этой админки основаны на версии "+baseline+
-                        ". Сначала получите новые настройки с сервера и проверьте изменения.");
-                  }
+                  // A fresh installation has no established server baseline.
+                  // Never let it overwrite a published configuration blindly.
+                  FullCatalogEnvelope current=AdminOnlineRestore.download();
+                  if(baseline==0)
+                    throw new IllegalStateException("Эта админка ещё не получала настройки с сервера (там версия "+
+                      current.version+"). Сначала выберите «Восстановить настройки из сервера», "+
+                      "проверьте данные и затем внесите свои изменения.");
+                  if(current.version!=baseline)
+                    throw new IllegalStateException("На сервере версия "+current.version+
+                      ", а настройки этой админки основаны на версии "+baseline+
+                      ". Сначала получите новые настройки с сервера и проверьте изменения.");
                   String sha=GitHubSnapshotUploader.upload(snapshot,token);
                   if(!saved){
                     try{GitHubTokenStore.save(this,token);}

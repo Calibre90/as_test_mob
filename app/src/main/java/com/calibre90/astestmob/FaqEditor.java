@@ -73,7 +73,7 @@ public final class FaqEditor {
       String title=name.getText().toString().trim();
       if(title.isEmpty()){name.setError("Введите название");return;}
       if(title.length()>120){name.setError("Не более 120 символов");return;}
-      if(description.length()>12000){description.setError("Не более 12000 символов");return;}
+      if(description.getText().length()>12000){description.setError("Не более 12000 символов");return;}
       if(index<0 && entries.length()>=200){
         Toast.makeText(a,"Максимум 200 записей FAQ",Toast.LENGTH_LONG).show();return;
       }
@@ -96,8 +96,12 @@ public final class FaqEditor {
   private static void move(Activity a,JSONArray rows,int from,int to,Runnable refresh){
     if(from<0||to<0||from>=rows.length()||to>=rows.length())return;
     JSONObject first=rows.optJSONObject(from),second=rows.optJSONObject(to);
-    try{rows.put(from,second);rows.put(to,first);persist(a,rows);refresh.run();}
-    catch(Exception e){Toast.makeText(a,"Ошибка порядка FAQ",Toast.LENGTH_LONG).show();}
+    try{
+      JSONArray next=new JSONArray();
+      for(int i=0;i<rows.length();i++)
+        next.put(i==from?second:i==to?first:rows.getJSONObject(i));
+      if(persist(a,next)){replace(rows,next);refresh.run();}
+    }catch(Exception e){Toast.makeText(a,"Ошибка порядка FAQ",Toast.LENGTH_LONG).show();}
   }
   private static void replace(JSONArray target,JSONArray source){
     while(target.length()>0)target.remove(target.length()-1);

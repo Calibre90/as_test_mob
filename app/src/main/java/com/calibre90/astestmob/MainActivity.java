@@ -232,6 +232,60 @@ public class MainActivity extends Activity {
       });
       styleAdminHomeButton(restoreOnline, "↓");
       adminHome.addView(restoreOnline);
+      Button restoreBackup=new Button(this);
+      restoreBackup.setText("Восстановить локальную копию");
+      restoreBackup.setOnClickListener(v->{
+        android.content.SharedPreferences backups=
+            getSharedPreferences("studio_admin_restore_backup",MODE_PRIVATE);
+        String newest=backups.getString("previous_snapshot",null);
+        String older=backups.getString("older_snapshot",null);
+        if(newest==null && older==null){
+          new AlertDialog.Builder(this).setTitle("Резервных копий нет")
+            .setMessage("Копии создаются перед восстановлением настроек с сервера.")
+            .setPositiveButton("Закрыть",null).show();
+          return;
+        }
+        java.util.ArrayList<String> labels=new java.util.ArrayList<>();
+        java.util.ArrayList<String> values=new java.util.ArrayList<>();
+        if(newest!=null){labels.add("Последняя резервная копия");values.add(newest);}
+        if(older!=null){labels.add("Предыдущая резервная копия");values.add(older);}
+        new AlertDialog.Builder(this).setTitle("Выберите локальную копию")
+          .setItems(labels.toArray(new String[0]),(pick,index)->{
+            final org.json.JSONObject candidate;
+            try{
+              candidate=new org.json.JSONObject(values.get(index));
+              AdminSnapshot.validate(candidate);
+            }catch(Exception ex){
+              new AlertDialog.Builder(this).setTitle("Копия повреждена")
+                .setMessage(ex.getMessage()).setPositiveButton("Закрыть",null).show();
+              return;
+            }
+            new AlertDialog.Builder(this).setTitle("Восстановить локальные настройки?")
+              .setMessage("Текущий локальный черновик будет заменён выбранной копией. "+
+                "Файлы ABT и лицензия не изменятся. После восстановления для публикации "+
+                "потребуется заново сверить настройки с сервером.")
+              .setNegativeButton("Отмена",null)
+              .setPositiveButton("Восстановить",(confirm,which)->{
+                try{
+                  AdminSnapshot.importLocal(this,candidate);
+                  // A historical draft must never retain the current server baseline.
+                  if(!getSharedPreferences("studio_admin_sync",MODE_PRIVATE).edit()
+                      .remove("restored_publication_version").commit())
+                    throw new IllegalStateException("Не удалось сбросить версию синхронизации");
+                  features.clear();
+                  features.addAll(StudioSettings.load(this));
+                  restoreAdminRows();
+                  if(view!=null)view.invalidate();
+                  Toast.makeText(this,"Локальные настройки восстановлены",Toast.LENGTH_LONG).show();
+                }catch(Exception ex){
+                  new AlertDialog.Builder(this).setTitle("Ошибка восстановления")
+                    .setMessage(ex.getMessage()).setPositiveButton("Закрыть",null).show();
+                }
+              }).show();
+          }).show();
+      });
+      styleAdminHomeButton(restoreBackup, "↓");
+      adminHome.addView(restoreBackup);
       Button publishOnline=new Button(this);
       publishOnline.setText("Отправить настройки на сервер");
       publishOnline.setOnClickListener(v->{

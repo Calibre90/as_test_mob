@@ -172,13 +172,16 @@ public class MainActivity extends Activity {
               stores.getJSONObject("run35_settings").optString("features","[]")).length();
             final int modules=new org.json.JSONArray(
               stores.getJSONObject("studio_custom_modules").optString("catalog","[]")).length();
+            final org.json.JSONObject faqStore=stores.optJSONObject("studio_faq");
+            final int faqCount=faqStore==null?0:new org.json.JSONArray(faqStore.optString("entries","[]")).length();
             runOnUiThread(()->{
               restoreOnline.setEnabled(true);
               new AlertDialog.Builder(this)
                 .setTitle("Восстановить из сервера — версия "+published.version)
                 .setMessage("Найдено функций: "+functions+
                   "\nДополнительных блоков: "+modules+
-                  "\n\nБудут заменены локальные настройки администратора: функции, строки, блоки и оформление. Данные ABT и лицензии не затрагиваются. Перед заменой текущие настройки будут сохранены в резервную копию внутри приложения. Продолжить?")
+                  "\nЗаписей FAQ: "+faqCount+
+                  "\n\nБудут заменены локальные настройки администратора: функции, строки, блоки, оформление и FAQ. Данные ABT и лицензии не затрагиваются. Перед заменой текущие настройки будут сохранены в резервную копию внутри приложения. Продолжить?")
                 .setNegativeButton("Отмена",null)
                 .setPositiveButton("Восстановить",(dialog,which)->{
                   try{

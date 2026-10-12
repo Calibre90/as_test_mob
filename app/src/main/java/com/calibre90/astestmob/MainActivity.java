@@ -247,7 +247,34 @@ public class MainActivity extends Activity {
             String local=null;
             try{local=AdminSnapshot.exportLocal(this).toString();}catch(Exception ignored){}
             if(baseline!=null && baseline.equals(local)){
-              runOnUiThread(()->restoreOnline.performClick());
+              // A clean editor can accept the newer signed publication silently.
+              // Keep a rollback snapshot before changing any settings.
+              try{
+                org.json.JSONObject backup=AdminSnapshot.exportLocal(this);
+                android.content.SharedPreferences backups=
+                    getSharedPreferences("studio_admin_restore_backup",MODE_PRIVATE);
+                android.content.SharedPreferences.Editor backupEdit=backups.edit();
+                String previous=backups.getString("previous_snapshot",null);
+                if(previous!=null)backupEdit.putString("older_snapshot",previous);
+                backupEdit.putString("previous_snapshot",backup.toString());
+                if(!backupEdit.commit())throw new IllegalStateException("Ошибка резервной копии");
+                AdminSnapshot.importLocal(this,remote.snapshot);
+                if(!sync.edit().putInt("restored_publication_version",remote.version)
+                    .putString("last_synced_snapshot",remote.snapshot.toString()).commit())
+                  throw new IllegalStateException("Ошибка сохранения версии синхронизации");
+                runOnUiThread(()->{
+                  features.clear();
+                  features.addAll(StudioSettings.load(this));
+                  restoreAdminRows();
+                  if(view!=null)view.invalidate();
+                  Toast.makeText(this,"Общие настройки обновлены: версия "+remote.version,
+                      Toast.LENGTH_LONG).show();
+                });
+              }catch(Exception syncError){
+                android.util.Log.e("AdminSync","Automatic sync failed",syncError);
+                runOnUiThread(()->Toast.makeText(this,
+                    "Синхронизация: "+syncError.getMessage(),Toast.LENGTH_LONG).show());
+              }
             }else{
               runOnUiThread(()->new AlertDialog.Builder(this)
                 .setTitle("Обновления общей админки")

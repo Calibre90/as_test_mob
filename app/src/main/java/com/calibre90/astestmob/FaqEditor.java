@@ -12,7 +12,7 @@ import org.json.JSONObject;
 public final class FaqEditor {
   private FaqEditor(){}
   public static void open(Activity activity){
-    final JSONArray entries=StudioFaq.entries(activity);
+    final JSONArray entries=StudioFaq.localEntries(activity);
     final LinearLayout list=new LinearLayout(activity);list.setOrientation(LinearLayout.VERTICAL);
     final Runnable[] refresh=new Runnable[1];
     refresh[0]=()->{

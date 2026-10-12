@@ -38,6 +38,31 @@ public final class FaqEditor {
     TextView notice=new TextView(activity);
     notice.setText("FAQ: локальный черновик. Онлайн-публикация пока не подключена.");
     notice.setTextColor(Color.DKGRAY);root.addView(notice);
+    Button importButton=new Button(activity);importButton.setText("Вставить FAQ JSON");importButton.setAllCaps(false);
+    root.addView(importButton);importButton.setOnClickListener(v->{
+      EditText json=new EditText(activity);json.setSingleLine(false);json.setMinLines(6);
+      json.setHint("Вставьте JSON, экспортированный из Admin Release");
+      ScrollView inputScroll=new ScrollView(activity);inputScroll.addView(json);
+      AlertDialog dialog=new AlertDialog.Builder(activity).setTitle("Импорт FAQ JSON")
+        .setView(inputScroll).setNegativeButton("Отмена",null).setPositiveButton("Импортировать",null).create();
+      dialog.setOnShowListener(ignored->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(button->{
+        try{
+          JSONObject payload=new JSONObject(json.getText().toString());
+          if(payload.getInt("schema")!=1||!"mazda6gh-faq-draft".equals(payload.getString("kind")))
+            throw new IllegalArgumentException("Неверный формат FAQ");
+          JSONArray imported=payload.getJSONArray("entries");
+          if(imported.length()>200)throw new IllegalArgumentException("Слишком много записей");
+          for(int i=0;i<imported.length();i++){
+            JSONObject row=imported.getJSONObject(i);
+            String name=row.getString("name").trim();
+            String description=row.getString("description");
+            if(name.isEmpty()||name.length()>120||description.length()>12000)
+              throw new IllegalArgumentException("Неверная запись №"+(i+1));
+          }
+          replace(entries,imported);persist(activity,entries);refresh[0].run();dialog.dismiss();
+        }catch(Exception error){Toast.makeText(activity,"Ошибка импорта: "+error.getMessage(),Toast.LENGTH_LONG).show();}
+      }));dialog.show();
+    });
     Button add=new Button(activity);add.setText("Добавить запись FAQ");add.setAllCaps(false);
     root.addView(add);add.setOnClickListener(v->edit(activity,entries,-1,refresh[0]));
     ScrollView scroll=new ScrollView(activity);scroll.addView(list);

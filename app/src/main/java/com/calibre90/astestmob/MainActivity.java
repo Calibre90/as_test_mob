@@ -204,7 +204,8 @@ public class MainActivity extends Activity {
                     }
                     AdminSnapshot.importLocal(this,published.snapshot);
                     if(!getSharedPreferences("studio_admin_sync",MODE_PRIVATE).edit()
-                        .putInt("restored_publication_version",published.version).commit())
+                        .putInt("restored_publication_version",published.version)
+                        .putString("last_synced_snapshot",published.snapshot.toString()).commit())
                       throw new IllegalStateException("Настройки восстановлены, но не удалось сохранить номер серверной версии");
                     features.clear();
                     features.addAll(StudioSettings.load(this));
@@ -241,15 +242,22 @@ public class MainActivity extends Activity {
           int applied=getSharedPreferences("studio_admin_sync",MODE_PRIVATE)
               .getInt("restored_publication_version",0);
           if(remote.version>applied){
-            runOnUiThread(()->new AlertDialog.Builder(this)
-              .setTitle("Обновления общей админки")
-              .setMessage("На сервере опубликована версия "+remote.version+
-                ". Ваша админка использует версию "+applied+
-                ". Получить общие настройки, блоки, функции и FAQ? "+
-                "Перед заменой будет создана локальная резервная копия.")
-              .setNegativeButton("Позже",null)
-              .setPositiveButton("Синхронизировать",(d,w)->restoreOnline.performClick())
-              .show());
+            android.content.SharedPreferences sync=getSharedPreferences("studio_admin_sync",MODE_PRIVATE);
+            String baseline=sync.getString("last_synced_snapshot",null);
+            String local=null;
+            try{local=AdminSnapshot.exportLocal(this).toString();}catch(Exception ignored){}
+            if(baseline!=null && baseline.equals(local)){
+              runOnUiThread(()->restoreOnline.performClick());
+            }else{
+              runOnUiThread(()->new AlertDialog.Builder(this)
+                .setTitle("Обновления общей админки")
+                .setMessage("На сервере версия "+remote.version+
+                  ". Есть локальные настройки, которые могут отличаться от серверных. "+
+                  "Перед заменой будет создана резервная копия.")
+                .setNegativeButton("Позже",null)
+                .setPositiveButton("Синхронизировать",(d,w)->restoreOnline.performClick())
+                .show());
+            }
           }
         }catch(Exception ex){
           android.util.Log.w("AdminSync","Не удалось проверить общую конфигурацию",ex);

@@ -27,6 +27,9 @@ public final class StudioFaq {
   public static JSONArray entries(Activity a){
     JSONArray published=PublishedFullSettings.faq(a);
     if(published!=null)return published;
+    return localEntries(a);
+  }
+  public static JSONArray localEntries(Activity a){
     String json=a.getSharedPreferences("studio_faq",Activity.MODE_PRIVATE).getString("entries","[]");
     try{return new JSONArray(json);}catch(Exception ignored){return new JSONArray();}
   }

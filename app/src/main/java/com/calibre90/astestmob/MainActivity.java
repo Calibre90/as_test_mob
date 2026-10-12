@@ -341,7 +341,7 @@ public class MainActivity extends Activity {
                     throw new IllegalStateException("На сервере версия "+current.version+
                       ", а настройки этой админки основаны на версии "+baseline+
                       ". Сначала получите новые настройки с сервера и проверьте изменения.");
-                  String sha=GitHubSnapshotUploader.upload(snapshot,token);
+                  String sha=GitHubSnapshotUploader.upload(snapshot,token,current.snapshot);
                   if(!saved){
                     try{GitHubTokenStore.save(this,token);}
                     catch(Exception storeError){

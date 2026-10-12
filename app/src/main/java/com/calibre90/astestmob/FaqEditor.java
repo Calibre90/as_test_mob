@@ -47,9 +47,11 @@ public final class FaqEditor {
       .setView(root).setPositiveButton("Закрыть",null).create();
     dialog.show();
   }
-  private static void persist(Activity a,JSONArray entries){
-    if(!a.getSharedPreferences("studio_faq",Activity.MODE_PRIVATE).edit().putString("entries",entries.toString()).commit())
-      Toast.makeText(a,"Ошибка сохранения FAQ",Toast.LENGTH_LONG).show();
+  private static boolean persist(Activity a,JSONArray entries){
+    boolean ok=a.getSharedPreferences("studio_faq",Activity.MODE_PRIVATE).edit()
+      .putString("entries",entries.toString()).commit();
+    if(!ok)Toast.makeText(a,"Ошибка сохранения FAQ",Toast.LENGTH_LONG).show();
+    return ok;
   }
   private static void edit(Activity a,JSONArray entries,int index,Runnable refresh){
     JSONObject existing=index<0?new JSONObject():entries.optJSONObject(index);
@@ -64,16 +66,29 @@ public final class FaqEditor {
       .setView(scroll).setNegativeButton("Отмена",null);
     if(index>=0)builder.setNeutralButton("Удалить",(d,w)->{
       JSONArray next=new JSONArray();for(int i=0;i<entries.length();i++)if(i!=index)next.put(entries.optJSONObject(i));
-      replace(entries,next);persist(a,entries);refresh.run();
+      if(persist(a,next)){replace(entries,next);refresh.run();}
     });
     AlertDialog dialog=builder.setPositiveButton("Сохранить",null).create();
     dialog.setOnShowListener(v->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(b->{
       String title=name.getText().toString().trim();
       if(title.isEmpty()){name.setError("Введите название");return;}
+      if(title.length()>120){name.setError("Не более 120 символов");return;}
+      if(description.length()>12000){description.setError("Не более 12000 символов");return;}
+      if(index<0 && entries.length()>=200){
+        Toast.makeText(a,"Максимум 200 записей FAQ",Toast.LENGTH_LONG).show();return;
+      }
+      for(int i=0;i<entries.length();i++){
+        JSONObject other=entries.optJSONObject(i);
+        if(i!=index && other!=null && title.equalsIgnoreCase(other.optString("name","").trim())){
+          name.setError("Название FAQ уже существует");return;
+        }
+      }
       try{
         JSONObject row=new JSONObject();row.put("name",title);row.put("description",description.getText().toString());
-        if(index<0)entries.put(row);else entries.put(index,row);
-        persist(a,entries);refresh.run();dialog.dismiss();
+        JSONArray next=new JSONArray();
+        for(int i=0;i<entries.length();i++)next.put(i==index?row:entries.getJSONObject(i));
+        if(index<0)next.put(row);
+        if(persist(a,next)){replace(entries,next);refresh.run();dialog.dismiss();}
       }catch(Exception e){Toast.makeText(a,"Ошибка: "+e.getMessage(),Toast.LENGTH_LONG).show();}
     }));
     dialog.show();

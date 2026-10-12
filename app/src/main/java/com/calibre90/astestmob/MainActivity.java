@@ -632,8 +632,9 @@ public class MainActivity extends Activity {
         if(!anyChecked)for(FeatureEngine.Feature sibling:available){
           if(sibling!=feature&&customChecked(sibling)){anyChecked=true;break;}
         }
-        if(anyChecked)customFeatureStatuses.put(id,feature.label+": "+(changes.length()>0?"Изменено "+changes:"Без изменений"));
-        else customFeatureStatuses.remove(id);
+        // Keep the most recent toggle event visible even after the final checkbox is cleared.
+        // The IC/BCM/RKE/ABS status line likewise reports the reverse HEX transition.
+        customFeatureStatuses.put(id,feature.label+": "+(changes.length()>0?"Изменено "+changes:"Без изменений"));
         rememberCustomBaseline(id,feature.address,before);
         customChecks.put(featureKey(feature),next);
         if(!next)clearInactiveCustomBaseline(id,feature.address);
@@ -1118,8 +1119,7 @@ public class MainActivity extends Activity {
         card(c,205,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"save_text","Сохранить ABT"),205,720,185,52,15,Color.BLACK);
         card(c,10,782,319,57,12,true);
         String customStatus=customFeatureStatuses.containsKey(id)?customFeatureStatuses.get(id):"Изменений нет";
-        p.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));
-        txtFit(c,customStatus,22,816,14,Color.BLACK,290);
+        txtFitBold(c,customStatus,22,816,14,Color.BLACK,290);
         card(c,336,782,54,57,12,true);txt(c,"♙",350,821,32,Color.BLACK,true);
         actual.restore();return;
       }

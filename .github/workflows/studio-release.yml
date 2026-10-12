@@ -45,6 +45,7 @@ jobs:
         run: |
           set -euo pipefail
           test -s publication/admin-settings.json
+          python3 tools/validate_faq_snapshot.py publication/admin-settings.json
           python3 - <<'PY'
           import json, os, pathlib
           source = pathlib.Path("publication/admin-settings.json").read_text(encoding="utf-8")
@@ -68,7 +69,7 @@ jobs:
           else:
               version = 1
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
-              env.write(f"VERSION={version}\\n")
+              env.write(f"VERSION={version}\n")
           print("Next catalog version:", version)
           PY
       - name: Sign approved snapshot with protected RSA key

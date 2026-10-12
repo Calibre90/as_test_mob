@@ -83,14 +83,22 @@ public final class AdminSnapshot {
     }
     JSONObject faq=stores.optJSONObject("studio_faq");
     if(faq!=null){
+      if(faq.has("entries") && !(faq.get("entries") instanceof String))
+        throw new IllegalArgumentException("FAQ должен содержать строку JSON");
       JSONArray entries=new JSONArray(faq.optString("entries","[]"));
       if(entries.length()>200)throw new IllegalArgumentException("Слишком много записей FAQ");
+      java.util.HashSet<String> faqNames=new java.util.HashSet<>();
       for(int i=0;i<entries.length();i++){
         JSONObject entry=entries.getJSONObject(i);
-        String name=entry.optString("name","").trim();
-        String description=entry.optString("description","");
+        if(!(entry.opt("name") instanceof String) ||
+           !(entry.opt("description") instanceof String))
+          throw new IllegalArgumentException("Неверный формат записи FAQ №"+(i+1));
+        String name=entry.getString("name").trim();
+        String description=entry.getString("description");
         if(name.isEmpty()||name.length()>120||description.length()>12000)
           throw new IllegalArgumentException("Неверная запись FAQ №"+(i+1));
+        if(!faqNames.add(name.toLowerCase(java.util.Locale.ROOT)))
+          throw new IllegalArgumentException("Повтор названия FAQ: "+name);
       }
       JSONArray faqKeys=faq.names();
       if(faqKeys!=null)for(int i=0;i<faqKeys.length();i++)

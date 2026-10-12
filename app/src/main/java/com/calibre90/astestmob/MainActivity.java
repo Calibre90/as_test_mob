@@ -360,6 +360,14 @@ public class MainActivity extends Activity {
                   // Automatically obtain the signed server configuration, preserving
                   // server-only settings while applying this admin's edited values.
                   FullCatalogEnvelope current=AdminOnlineRestore.download();
+                  int knownVersion=getSharedPreferences("studio_admin_sync",MODE_PRIVATE)
+                      .getInt("restored_publication_version",0);
+                  // Do not upload an old administrator draft over a newer publication.
+                  // Require review/sync first; never silently replace a teammate's work.
+                  if(knownVersion>0 && current.version>knownVersion)
+                    throw new IllegalStateException("На сервере уже версия "+current.version+
+                      ", а админка использует "+knownVersion+
+                      ". Сначала синхронизируйте общие настройки и проверьте изменения.");
                   org.json.JSONObject remoteStores=current.snapshot.getJSONObject("stores");
                   org.json.JSONObject localStores=snapshot.getJSONObject("stores");
                   org.json.JSONObject mergedStores=new org.json.JSONObject(remoteStores.toString());

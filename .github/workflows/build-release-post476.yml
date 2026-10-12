@@ -82,6 +82,8 @@ jobs:
           test -f catalog-admin/src/main/AndroidManifest.xml
       - name: Test RSA catalog signing and tamper rejection
         run: python3 catalog/test_signing.py
+      - name: Validate FAQ publication schema regression tests
+        run: python3 tools/test_faq_snapshot.py
       - name: Run ABT and feature engine regression tests
         run: |
           mkdir -p /tmp/abt-test-classes

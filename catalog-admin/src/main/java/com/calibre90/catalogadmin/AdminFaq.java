@@ -25,7 +25,16 @@ public final class AdminFaq {
     refresh[0]=()->{list.removeAllViews();for(int i=0;i<rows.length();i++){
       JSONObject item=rows.optJSONObject(i);if(item==null)continue;
       final int index=i;Button b=new Button(a);b.setText((i+1)+". "+item.optString("name"));
-      b.setAllCaps(false);list.addView(b);b.setOnClickListener(v->edit(a,rows,index,refresh[0]));
+      b.setAllCaps(false);
+      LinearLayout line=new LinearLayout(a);line.setOrientation(LinearLayout.HORIZONTAL);
+      line.addView(b,new LinearLayout.LayoutParams(0,-2,1));
+      Button up=new Button(a);up.setText("↑");up.setEnabled(index>0);
+      line.addView(up,new LinearLayout.LayoutParams(0,-2,.20f));
+      up.setOnClickListener(v->move(a,rows,index,index-1,refresh[0]));
+      Button down=new Button(a);down.setText("↓");down.setEnabled(index<rows.length()-1);
+      line.addView(down,new LinearLayout.LayoutParams(0,-2,.20f));
+      down.setOnClickListener(v->move(a,rows,index,index+1,refresh[0]));
+      list.addView(line);b.setOnClickListener(v->edit(a,rows,index,refresh[0]));
     }};
     add.setOnClickListener(v->edit(a,rows,-1,refresh[0]));refresh[0].run();
     AlertDialog dialog=new AlertDialog.Builder(a).setTitle("FAQ · Admin Release").setView(root)
@@ -34,6 +43,12 @@ public final class AdminFaq {
   private static void save(Activity a,JSONArray rows){
     boolean ok=a.getSharedPreferences("admin_faq",0).edit().putString("entries",rows.toString()).commit();
     if(!ok)Toast.makeText(a,"Ошибка сохранения",Toast.LENGTH_LONG).show();
+  }
+  private static void move(Activity a,JSONArray rows,int from,int to,Runnable refresh){
+    if(from<0||to<0||from>=rows.length()||to>=rows.length())return;
+    JSONObject first=rows.optJSONObject(from),second=rows.optJSONObject(to);
+    try{rows.put(from,second);rows.put(to,first);save(a,rows);refresh.run();}
+    catch(Exception e){Toast.makeText(a,"Ошибка порядка FAQ",Toast.LENGTH_LONG).show();}
   }
   private static void edit(Activity a,JSONArray rows,int index,Runnable refresh){
     JSONObject old=index<0?new JSONObject():rows.optJSONObject(index);

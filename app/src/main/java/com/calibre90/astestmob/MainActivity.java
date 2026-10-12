@@ -387,33 +387,16 @@ public class MainActivity extends Activity {
                   // Automatically obtain the signed server configuration, preserving
                   // server-only settings while applying this admin's edited values.
                   FullCatalogEnvelope current=AdminOnlineRestore.download();
-                  int knownVersion=getSharedPreferences("studio_admin_sync",MODE_PRIVATE)
-                      .getInt("restored_publication_version",0);
-                  // Do not upload an old administrator draft over a newer publication.
-                  // Require review/sync first; never silently replace a teammate's work.
-                  if(knownVersion>0 && current.version>knownVersion)
-                    throw new IllegalStateException("На сервере уже версия "+current.version+
-                      ", а админка использует "+knownVersion+
-                      ". Сначала синхронизируйте общие настройки и проверьте изменения.");
-                  org.json.JSONObject remoteStores=current.snapshot.getJSONObject("stores");
-                  org.json.JSONObject localStores=snapshot.getJSONObject("stores");
-                  org.json.JSONObject mergedStores=new org.json.JSONObject(remoteStores.toString());
-                  java.util.Iterator<String> storeNames=localStores.keys();
-                  while(storeNames.hasNext()){
-                    String storeName=storeNames.next();
-                    org.json.JSONObject localValues=localStores.optJSONObject(storeName);
-                    if(localValues==null)continue;
-                    org.json.JSONObject mergedValues=mergedStores.optJSONObject(storeName);
-                    if(mergedValues==null)mergedValues=new org.json.JSONObject();
-                    java.util.Iterator<String> keys=localValues.keys();
-                    while(keys.hasNext()){
-                      String key=keys.next();
-                      mergedValues.put(key,localValues.get(key));
-                    }
-                    mergedStores.put(storeName,mergedValues);
-                  }
-                  snapshot.put("stores",mergedStores);
-                  AdminSnapshot.validate(snapshot);
+                  android.content.SharedPreferences syncPrefs=
+                      getSharedPreferences("studio_admin_sync",MODE_PRIVATE);
+                  String baseline=syncPrefs.getString("last_synced_snapshot",null);
+                  int knownVersion=syncPrefs.getInt("restored_publication_version",0);
+                  if(baseline==null || knownVersion<=0)
+                    throw new IllegalStateException("Нет исходной синхронизированной версии. "+
+                      "Сохраните экспорт настроек и выполните первое восстановление с сервера.");
+                  org.json.JSONObject base=new org.json.JSONObject(baseline);
+                  org.json.JSONObject merged=AdminThreeWayMerge.merge(base,snapshot,current.snapshot);
+                  snapshot=merged;
                   String sha=GitHubSnapshotUploader.upload(snapshot,token,current.snapshot);
                   if(!saved){
                     try{GitHubTokenStore.save(this,token);}

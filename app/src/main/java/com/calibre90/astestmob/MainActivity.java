@@ -1117,10 +1117,11 @@ public class MainActivity extends Activity {
         }
         card(c,10,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"open_text","Открыть ABT"),10,720,185,52,15,Color.BLACK);
         card(c,205,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"save_text","Сохранить ABT"),205,720,185,52,15,Color.BLACK);
-        card(c,10,782,319,57,12,true);
+        card(c,10,782,260,57,12,true);
         String customStatus=customFeatureStatuses.containsKey(id)?customFeatureStatuses.get(id):"Изменений нет";
         txtFitBold(c,customStatus,22,816,14,Color.BLACK,290);
-        card(c,336,782,54,57,12,true);txt(c,"♙",350,821,32,Color.BLACK,true);
+        card(c,277,782,52,57,12,true);centered(c,"FAQ",277,782,52,57,14,Color.BLACK);
+      card(c,336,782,54,57,12,true);txt(c,"♙",350,821,32,Color.BLACK,true);
         actual.restore();return;
       }
       card(c,10,190,380,82,13,true);
@@ -1204,7 +1205,7 @@ public class MainActivity extends Activity {
       card(c,10,782,319,57,12,true);
       String status=lastFeatureStatus;
       p.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));p.setTextSize(14);p.setColor(Color.BLACK);
-      final float maxStatusWidth=296f;
+      final float maxStatusWidth=235f;
       if(p.measureText(status)<=maxStatusWidth){
         c.drawText(status,22,816,p);
       }else{
@@ -1264,13 +1265,13 @@ public class MainActivity extends Activity {
         org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
         if(module!=null){String id=module.optString("id");int total=0;for(FeatureEngine.Feature f:features)if(id.equalsIgnoreCase(f.module))total++;int current=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;customFeaturePage.put(id,current+featureSlots()>=total?0:current+featureSlots());saveCustomTabPosition(id);invalidate();}
         return true;
-      }if(y>=282&&y<=370){int col=Math.max(0,Math.min(2,(int)((x-17)/122f)));int row=Math.max(0,Math.min(2,(int)((y-283)/28f)));int slot=col*3+row;org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);if(module!=null){String id=module.optString("id");int offset=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;toggleCustomFeature(offset+slot);}return true;}if(y>=717&&y<=777){org.json.JSONObject item=customModuleCatalog().optJSONObject(active-4);if(item!=null)customAbtPicker(x>=200,item.optString("id"));return true;}if(y>=779&&x>=336){about();return true;}return true;}
+      }if(y>=282&&y<=370){int col=Math.max(0,Math.min(2,(int)((x-17)/122f)));int row=Math.max(0,Math.min(2,(int)((y-283)/28f)));int slot=col*3+row;org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);if(module!=null){String id=module.optString("id");int offset=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;toggleCustomFeature(offset+slot);}return true;}if(y>=717&&y<=777){org.json.JSONObject item=customModuleCatalog().optJSONObject(active-4);if(item!=null)customAbtPicker(x>=200,item.optString("id"));return true;}if(y>=779&&x>=277&&x<333){StudioFaq.show(MainActivity.this);return true;}if(y>=779&&x>=336){about();return true;}return true;}
       if(y>=351&&y<=373&&x>=340&&moduleFeatures(active).size()>featureSlots()){int total=moduleFeatures(active).size();featurePage[active]=featurePage[active]+featureSlots()>=total?0:featurePage[active]+featureSlots();invalidate();return true;}
       if(y>=279&&y<=370){int slots=featureSlots();int col=Math.max(0,Math.min(2,(int)((x-17)/122f)));int row=Math.max(0,Math.min(2,(int)((y-283)/28f)));int i=col*3+row;if(i>=0&&i<slots&&featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}
       // HEX rows on the main screen are read-only; edit via features or admin panel.
       if(y>=380&&y<=713&&Math.abs(y-startY)<=18)return true;
       if(y>=717&&y<=777){if(x<200)open();else save();return true;}
-      if(y>=779){if(x>=336)about();return true;}
+      if(y>=779){if(x>=336)about();else if(x>=277)StudioFaq.show(MainActivity.this);return true;}
       return true;
     }
   }

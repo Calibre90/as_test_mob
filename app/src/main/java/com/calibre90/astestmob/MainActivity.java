@@ -1213,8 +1213,8 @@ public class MainActivity extends Activity {
         String customStatus=customFeatureStatuses.containsKey(id)?customFeatureStatuses.get(id):"Изменений нет";
         txtFitBold(c,customStatus,22,816,14,Color.BLACK,235);
         // One shared bottom-bar FAQ button, next to the existing About button.
-        card(c,277,782,52,57,12,true);
-        centered(c,"FAQ",277,782,52,57,14,Color.BLACK);
+        card(c,277,782,54,57,12,true);
+        centered(c,"FAQ",277,782,54,57,14,Color.BLACK);
         card(c,336,782,54,57,12,true);txt(c,"♙",350,821,32,Color.BLACK,true);
         actual.restore();return;
       }
@@ -1317,8 +1317,8 @@ public class MainActivity extends Activity {
         c.drawText(first,22,806,p);
         c.drawText(second,22,825,p);
       }
-      card(c,277,782,52,57,12,true);
-      centered(c,"FAQ",277,782,52,57,14,Color.BLACK);
+      card(c,277,782,54,57,12,true);
+      centered(c,"FAQ",277,782,54,57,14,Color.BLACK);
       card(c,336,782,54,57,12,true);
       txt(c,"♙",350,821,32,Color.BLACK,true);
       actual.restore();

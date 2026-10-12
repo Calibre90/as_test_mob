@@ -22,6 +22,7 @@ def validate(snapshot):
     entries = json.loads(raw)
     if not isinstance(entries, list) or len(entries) > 200:
         raise ValueError("Too many FAQ entries")
+    seen = set()
     for index, entry in enumerate(entries):
         if not isinstance(entry, dict) or set(entry) != {"name", "description"}:
             raise ValueError(f"Invalid FAQ entry {index}")
@@ -30,6 +31,10 @@ def validate(snapshot):
             raise ValueError(f"Invalid FAQ title {index}")
         if not isinstance(description, str) or len(description) > 12000:
             raise ValueError(f"Invalid FAQ description {index}")
+        normalized = name.strip().casefold()
+        if normalized in seen:
+            raise ValueError(f"Duplicate FAQ title {index}: {name}")
+        seen.add(normalized)
     return len(entries)
 
 if __name__ == "__main__":

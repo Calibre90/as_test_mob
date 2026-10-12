@@ -1121,6 +1121,7 @@ public class MainActivity extends Activity {
         String customStatus=customFeatureStatuses.containsKey(id)?customFeatureStatuses.get(id):"Изменений нет";
         txtFitBold(c,customStatus,22,816,14,Color.BLACK,290);
         card(c,277,782,52,57,12,true);centered(c,"FAQ",277,782,52,57,14,Color.BLACK);
+      card(c,277,782,52,57,12,true);centered(c,"FAQ",277,782,52,57,14,Color.BLACK);
       card(c,336,782,54,57,12,true);txt(c,"♙",350,821,32,Color.BLACK,true);
         actual.restore();return;
       }
@@ -1202,7 +1203,7 @@ public class MainActivity extends Activity {
       }
       card(c,10,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"open_text","Открыть ABT"),10,720,185,52,15,Color.BLACK);
       card(c,205,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"save_text","Сохранить ABT"),205,720,185,52,15,Color.BLACK);
-      card(c,10,782,319,57,12,true);
+      card(c,10,782,260,57,12,true);
       String status=lastFeatureStatus;
       p.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));p.setTextSize(14);p.setColor(Color.BLACK);
       final float maxStatusWidth=235f;

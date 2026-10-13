@@ -20,6 +20,7 @@ public final class ObdConnectionActivity extends Activity {
   private volatile boolean busy;
   private volatile boolean cancelled;
   private volatile boolean vehicleConfirmed;
+  private volatile boolean adapterConfirmed;
   private ElmWifiClient wifi;
   private ElmBluetoothClient bluetooth;
   private Spinner mode, msCanMode;
@@ -173,6 +174,7 @@ public final class ObdConnectionActivity extends Activity {
 
   private void publishConnection(boolean adapterReady, boolean ecuReady) {
     vehicleConfirmed = ecuReady;
+    adapterConfirmed = adapterReady;
     getSharedPreferences("obd_connection", MODE_PRIVATE).edit()
         .putBoolean("adapter_connected", adapterReady)
         .putBoolean("vehicle_confirmed", ecuReady).apply();
@@ -180,7 +182,7 @@ public final class ObdConnectionActivity extends Activity {
   }
 
   private void startConnect() {
-    if(busy)return;
+    if(busy || adapterConfirmed)return;
     final boolean useWifi=mode.getSelectedItemPosition()==0;
     final String ip=host.getText().toString().trim();
     final int tcpPort;
@@ -242,7 +244,17 @@ public final class ObdConnectionActivity extends Activity {
         } else if(normalized.contains("41 00") || normalized.contains("4100")) {
           if(!cancelled) {
             publishConnection(true, true);
-            append("Автомобиль ответил на OBD-II запрос. Только чтение, запись отключена.");
+            append("Автомобиль ответил на OBD-II запрос. Проверяем VIN (09 02)…");
+            try {
+              String vinResponse = useWifi ? wifi.command("0902") : bluetooth.command("0902");
+              String vin = parseVin(vinResponse);
+              if (!cancelled) append(vin == null
+                  ? "VIN не получен стандартным запросом 0902 (это не ошибка подключения)."
+                  : "VIN автомобиля: " + vin);
+            } catch (Exception vinError) {
+              if (!cancelled) append("VIN пока не прочитан: " + vinError.getMessage());
+            }
+            if (!cancelled) append("Связь с автомобилем подтверждена. Опрос отдельных модулей пока не реализован. Запись отключена.");
           }
         } else {
           if(!cancelled)append("Получен нестандартный ответ. Связь с ECU не подтверждена, запись отключена.");
@@ -258,8 +270,30 @@ public final class ObdConnectionActivity extends Activity {
     });
   }
 
+  /** Decode standard OBD mode 09 PID 02 responses, including ELM CAN line prefixes. */
+  private static String parseVin(String response) {
+    if (response == null) return null;
+    StringBuilder ascii = new StringBuilder();
+    String[] lines = response.toUpperCase(Locale.US).split("[\\r\\n]+");
+    for (String line : lines) {
+      String hex = line.replaceAll("[^0-9A-F]", "");
+      int marker = hex.indexOf("4902");
+      if (marker < 0) continue;
+      String payload = hex.substring(marker + 4);
+      // VIN frame index follows the 49 02 header.
+      if (payload.length() >= 2) payload = payload.substring(2);
+      for (int i = 0; i + 1 < payload.length(); i += 2) {
+        int b = Integer.parseInt(payload.substring(i, i + 2), 16);
+        if (b >= 0x20 && b <= 0x7E) ascii.append((char)b);
+      }
+    }
+    String vin = ascii.toString().trim();
+    return vin.matches("[A-HJ-NPR-Z0-9]{17}") ? vin : null;
+  }
+
   private void stopConnection() {
     cancelled=true;
+    busy=false;
     publishConnection(false, false);
     append("Отключение…");
     // Closing sockets on a separate thread can unblock in-flight reads.

@@ -113,6 +113,7 @@ public final class ObdConnectionActivity extends Activity {
     log = new TextView(this);
     log.setText("Журнал связи (без записи в блоки)\n");
     log.setTextIsSelectable(true);
+    log.setText("Журнал связи (без записи в блоки)\n" + ObdSession.journal());
     root.addView(log);
     adapterConfirmed = ObdSession.adapterReady();
     vehicleConfirmed = ObdSession.vehicleReady();
@@ -126,6 +127,7 @@ public final class ObdConnectionActivity extends Activity {
     ui.post(()->{
       if(isFinishing() || isDestroyed())return;
       String line = new java.text.SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date())+"  "+message+"\n";
+      ObdSession.log(line.trim());
       String current = log.getText().toString();
       log.setText((current.length()>14000?current.substring(current.length()-9000):current)+line);
       status.setText(message);

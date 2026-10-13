@@ -26,7 +26,7 @@ public final class ElmWifiClient implements Closeable {
       Socket s = new Socket();
       try {
         s.connect(new InetSocketAddress(host.trim(), port), timeoutMs);
-        s.setSoTimeout(timeoutMs);
+        s.setSoTimeout(Math.max(timeoutMs, 15000));
         socket = s;
         input = s.getInputStream();
         output = s.getOutputStream();
@@ -49,9 +49,13 @@ public final class ElmWifiClient implements Closeable {
       output.write((asciiCommand.trim().toUpperCase(Locale.US) + "\r").getBytes(StandardCharsets.US_ASCII));
       output.flush();
       ByteArrayOutputStream response = new ByteArrayOutputStream();
-      long deadline = System.nanoTime() + 12_000_000_000L;
+      long deadline = System.nanoTime() + 20_000_000_000L;
       while (System.nanoTime() < deadline && response.size() < 16384) {
-        int b = input.read();
+        int b;
+        try { b = input.read(); }
+        catch (SocketTimeoutException ex) {
+          throw new SocketTimeoutException("ELM response timeout for " + asciiCommand + " (partial: " + response.toString("US-ASCII") + ")");
+        }
         if (b == -1) throw new EOFException("ELM disconnected");
         if (b == '>') return new String(response.toByteArray(), StandardCharsets.US_ASCII).trim();
         response.write(b);

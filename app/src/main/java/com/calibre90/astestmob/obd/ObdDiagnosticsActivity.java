@@ -66,7 +66,7 @@ public final class ObdDiagnosticsActivity extends Activity {
           for(int i=0;i<commands.length;i++){
             String raw=ObdSession.command(commands[i]);
             result.append(labels[i]).append(" (").append(commands[i]).append("): ");
-            Double value=decode(raw,commands[i]);
+            Double value=ObdPidParser.decode(raw,commands[i]);
             if(value==null)result.append("Нет подтверждённых данных; ответ: ").append(raw.trim());
             else result.append(String.format(Locale.US,"%.1f",value)).append(i==0?" об/мин":i==1?" °C":i==2?" км/ч":" %");
             result.append("\n");
@@ -82,32 +82,6 @@ public final class ObdDiagnosticsActivity extends Activity {
         busy=false;
       });
     });
-  }
-  /** Only accepts a complete, recognizable mode 01 response; ignores SEARCHING/NO DATA. */
-  private static Double decode(String raw,String request){
-    if(raw==null)return null;
-    String marker="41"+request.substring(2);
-    for(String line:raw.toUpperCase(Locale.US).split("[\\r\\n]+")){
-      String hex=line.replaceAll("[^0-9A-F]","");
-      int at=hex.indexOf(marker);
-      if(at<0)continue;
-      String payload=hex.substring(at+marker.length());
-      if(payload.length()<2)continue;
-      try{
-        int a=Integer.parseInt(payload.substring(0,2),16);
-        switch(request){
-          case "0105":return (double)(a-40);
-          case "010D":return (double)a;
-          case "0104":return a*100.0/255.0;
-          case "010C":
-            if(payload.length()<4)return null;
-            int b=Integer.parseInt(payload.substring(2,4),16);
-            return (256.0*a+b)/4.0;
-          default:return null;
-        }
-      }catch(NumberFormatException ignored){}
-    }
-    return null;
   }
   @Override protected void onDestroy(){worker.shutdownNow();super.onDestroy();}
 }

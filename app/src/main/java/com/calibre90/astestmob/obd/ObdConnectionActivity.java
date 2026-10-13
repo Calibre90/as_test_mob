@@ -25,7 +25,7 @@ public final class ObdConnectionActivity extends Activity {
   private ElmBluetoothClient bluetooth;
   private Spinner mode, msCanMode;
   private EditText host, port;
-  private TextView status, log;
+  private TextView status, log, moduleReport;
   private Button connect, disconnect;
   private BluetoothDevice selected;
   private final ArrayList<BluetoothDevice> paired = new ArrayList<>();
@@ -115,6 +115,9 @@ public final class ObdConnectionActivity extends Activity {
     log.setTextIsSelectable(true);
     log.setText("Журнал связи (без записи в блоки)\n" + ObdSession.journal());
     root.addView(log);
+    moduleReport = new TextView(this);
+    moduleReport.setText(ObdSession.moduleReport());
+    root.addView(moduleReport);
     adapterConfirmed = ObdSession.adapterReady();
     vehicleConfirmed = ObdSession.vehicleReady();
     status.setText(ObdSession.status());
@@ -319,9 +322,12 @@ public final class ObdConnectionActivity extends Activity {
         worker.execute(()->{
           try {
             append("Начат пробный опрос HS-CAN; запись запрещена.");
+            ObdSession.clearModuleResults();
             for (ObdModuleProbe.Result result: ObdModuleProbe.probeHsCan(ObdSession::command)) {
+              ObdSession.saveModuleResult(result.name+" ["+result.requestId+"/"+result.responseId+"]", result.status);
               append(result.name+" ["+result.requestId+"/"+result.responseId+"]: "+result.status);
             }
+            ui.post(() -> { if (!isFinishing() && !isDestroyed()) moduleReport.setText(ObdSession.moduleReport()); });
             append("Пробный опрос завершён. Обнаружение не подтверждает возможность чтения As-Built.");
           } catch(Exception e) {
             append("Ошибка опроса: "+e.getMessage());
@@ -355,6 +361,8 @@ public final class ObdConnectionActivity extends Activity {
     adapterConfirmed = ObdSession.adapterReady();
     vehicleConfirmed = ObdSession.vehicleReady();
     if(status != null)status.setText(ObdSession.status());
+    if(log != null)log.setText("Журнал связи (без записи в блоки)\n"+ObdSession.journal());
+    if(moduleReport != null)moduleReport.setText(ObdSession.moduleReport());
     refreshButtons(adapterConfirmed);
   }
 

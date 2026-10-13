@@ -10,6 +10,12 @@ public final class ObdSession {
   private static boolean adapterReady;
   private static boolean vehicleReady;
   private static String vin = "";
+  private static final StringBuilder journal = new StringBuilder();
+  public static synchronized void log(String line) {
+    journal.append(line).append("\n");
+    if (journal.length() > 18000) journal.delete(0, journal.length() - 12000);
+  }
+  public static synchronized String journal() { return journal.toString(); }
   private ObdSession() {}
   public static synchronized boolean adapterReady() { return adapterReady && transport != null; }
   public static synchronized boolean vehicleReady() { return adapterReady() && vehicleReady; }

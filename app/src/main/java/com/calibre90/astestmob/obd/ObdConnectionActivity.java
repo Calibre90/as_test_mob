@@ -187,7 +187,7 @@ public final class ObdConnectionActivity extends Activity {
   }
 
   private void startConnect() {
-    if(busy || adapterConfirmed)return;
+    if(busy || ObdSession.adapterReady())return;
     final boolean useWifi=mode.getSelectedItemPosition()==0;
     final String ip=host.getText().toString().trim();
     final int tcpPort;
@@ -260,10 +260,13 @@ public final class ObdConnectionActivity extends Activity {
                   ? "VIN не получен стандартным запросом 0902 (это не ошибка подключения)."
                   : "VIN автомобиля: " + vin);
               if (vin != null) ObdSession.confirmVehicle(vin);
-            } catch (Exception vinError) {
-              if (!cancelled) append("VIN пока не прочитан: " + vinError.getMessage());
+            } catch (IOException vinError) {
+              // A transport error invalidates the session: never advertise a live car on a dead socket.
+              ObdSession.disconnect();
+              publishConnection(false, false);
+              throw new IOException("Связь с ELM потеряна при чтении VIN: " + vinError.getMessage(), vinError);
             }
-            if (!cancelled) append("Связь с автомобилем подтверждена. Опрос отдельных модулей пока не реализован. Запись отключена.");
+            if (!cancelled) append("Связь с автомобилем подтверждена. Для проверки блоков запустите пробный опрос HS-CAN. Запись отключена.");
           }
         } else {
           if(!cancelled)append("Получен нестандартный ответ. Связь с ECU не подтверждена, запись отключена.");
@@ -275,7 +278,7 @@ public final class ObdConnectionActivity extends Activity {
         publishConnection(false, false);
       } finally {
         busy=false;
-        ui.post(()->{if(!isFinishing()&&!isDestroyed())refreshButtons((wifi!=null && wifi.isConnected()) || bluetooth!=null);});
+        ui.post(()->{if(!isFinishing()&&!isDestroyed()) { adapterConfirmed=ObdSession.adapterReady(); vehicleConfirmed=ObdSession.vehicleReady(); refreshButtons(adapterConfirmed); }});
       }
     });
   }
@@ -318,8 +321,14 @@ public final class ObdConnectionActivity extends Activity {
               append(result.name+" ["+result.requestId+"/"+result.responseId+"]: "+result.status);
             }
             append("Пробный опрос завершён. Обнаружение не подтверждает возможность чтения As-Built.");
-          } catch(Exception e) { append("Ошибка опроса: "+e.getMessage()); }
-          finally { busy=false;ui.post(()->refreshButtons(ObdSession.adapterReady())); }
+          } catch(Exception e) {
+            append("Ошибка опроса: "+e.getMessage());
+            if (!ObdSession.adapterReady()) {
+              publishConnection(false, false);
+              append("Соединение с ELM потеряно. Нажмите «Подключить» для нового TCP-соединения перед повторным опросом.");
+            }
+          }
+          finally { busy=false;ui.post(()->{ adapterConfirmed=ObdSession.adapterReady(); vehicleConfirmed=ObdSession.vehicleReady(); refreshButtons(adapterConfirmed); }); }
         });
       }).show();
   }

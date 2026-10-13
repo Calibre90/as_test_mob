@@ -13,6 +13,7 @@ import android.widget.*;
 public final class ObdDashboardActivity extends Activity {
   private static final int RED=Color.rgb(211,23,35), DARK=Color.rgb(30,30,34), GREY=Color.rgb(94,98,107);
   private LinearLayout content;
+  private TextView liveStatus, liveAction;
   private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
   private GradientDrawable panel(int stroke,int radius){
     GradientDrawable d=new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
@@ -61,6 +62,7 @@ public final class ObdDashboardActivity extends Activity {
     LinearLayout.LayoutParams stp=new LinearLayout.LayoutParams(-1,-2);
     stp.setMargins(0,0,0,dp(12));content.addView(status,stp);
     TextView statusText=text("●  Адаптер не подключён",14,DARK,true);
+    liveStatus=statusText;
     status.addView(statusText,new LinearLayout.LayoutParams(0,-2,1));
     TextView settings=text("НАСТРОИТЬ ›",12,RED,true);settings.setPadding(dp(4),dp(8),dp(4),dp(8));
     status.addView(settings);status.setOnClickListener(v->openConnection());
@@ -71,6 +73,7 @@ public final class ObdDashboardActivity extends Activity {
     TextView heading=text("ПАНЕЛЬ УПРАВЛЕНИЯ",15,DARK,true);
     actions.addView(heading,new LinearLayout.LayoutParams(0,-2,1));
     TextView connect=text("ПОДКЛЮЧИТЬ  ›",12,Color.WHITE,true);
+    liveAction=connect;
     connect.setGravity(Gravity.CENTER);connect.setPadding(dp(12),dp(13),dp(12),dp(13));
     connect.setBackground(redButton());actions.addView(connect);
     connect.setOnClickListener(v->openConnection());
@@ -81,8 +84,20 @@ public final class ObdDashboardActivity extends Activity {
     addGridRow(new Tile("▦","As-Built Studio","Редактор ABT"),new Tile("◉","Адаптер","Wi-Fi / Bluetooth"));
 
     TextView foot=text("ТЕСТОВАЯ ВЕРСИЯ  •  Диагностика в разработке  •  Запись в ЭБУ отключена",11,GREY,false);
+    updateConnectionState();
     foot.setGravity(Gravity.CENTER);
     LinearLayout.LayoutParams fp=new LinearLayout.LayoutParams(-1,-2);fp.setMargins(0,dp(14),0,0);content.addView(foot,fp);
+  }
+  @Override protected void onResume() {
+    super.onResume();
+    updateConnectionState();
+  }
+  private void updateConnectionState() {
+    if (liveStatus == null || liveAction == null) return;
+    boolean adapter = ObdSession.adapterReady();
+    boolean vehicle = ObdSession.vehicleReady();
+    liveStatus.setText("●  " + ObdSession.status());
+    liveAction.setText(adapter ? (vehicle ? "СВЯЗЬ ЕСТЬ  ›" : "АДАПТЕР  ›") : "ПОДКЛЮЧИТЬ  ›");
   }
   private static final class Tile {
     final String icon,name,detail;
@@ -114,8 +129,10 @@ public final class ObdDashboardActivity extends Activity {
   }
   private void openConnection(){startActivity(new Intent(this,ObdConnectionActivity.class));}
   private void showPreview(String name,String detail){
+    String state = ObdSession.status();
+    String message = detail + "\n\n" + state + "\n\nРаздел диагностики пока не реализован. Даже при успешной связи OBD-II чтение данных отдельных модулей здесь ещё недоступно.";
     new AlertDialog.Builder(this).setTitle(name)
-      .setMessage(detail+"\n\nРаздел готовится. Реальные данные появятся после подключения и проверки диагностического протокола.")
+      .setMessage(message)
       .setPositiveButton("Понятно",null)
       .setNeutralButton("Подключение",(d,w)->openConnection()).show();
   }

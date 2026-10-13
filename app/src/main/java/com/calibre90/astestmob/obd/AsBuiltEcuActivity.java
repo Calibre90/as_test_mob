@@ -55,7 +55,9 @@ public final class AsBuiltEcuActivity extends Activity {
     root.setPadding(dp(9),dp(7),dp(9),dp(15));scroll.addView(root);setContentView(scroll);
 
     ImageView banner=new ImageView(this);banner.setImageResource(R.drawable.splash_studio);
-    banner.setScaleType(ImageView.ScaleType.FIT_XY);
+    banner.setScaleType(ImageView.ScaleType.FIT_CENTER);
+    banner.setAdjustViewBounds(true);
+    banner.setBackgroundColor(Color.BLACK);
     root.addView(banner,new LinearLayout.LayoutParams(-1,dp(112)));
 
     tabs=new LinearLayout(this);tabs.setOrientation(LinearLayout.HORIZONTAL);

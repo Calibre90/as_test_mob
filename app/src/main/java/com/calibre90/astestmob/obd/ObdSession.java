@@ -35,6 +35,12 @@ public final class ObdSession {
     vin = "";
     if (old != null) try { old.close(); } catch (IOException ignored) {}
   }
+  public static synchronized String command(String ascii) throws IOException {
+    if (!adapterReady()) throw new IOException("ELM не подключён");
+    if (transport instanceof ElmWifiClient) return ((ElmWifiClient) transport).command(ascii);
+    if (transport instanceof ElmBluetoothClient) return ((ElmBluetoothClient) transport).command(ascii);
+    throw new IOException("Неподдерживаемый транспорт");
+  }
   public static synchronized String status() {
     if (!adapterReady()) return "Адаптер не подключён";
     if (!vehicleReady) return "ELM подключён; автомобиль не подтверждён";

@@ -45,7 +45,12 @@ public final class ObdModuleProbe {
           String raw=link.command("22F190");
           String normalized=raw.toUpperCase(Locale.US).replaceAll("[^0-9A-F]","");
           boolean positive=normalized.contains("62F190");
-          results.add(new Result(ecu[0],req,resp,positive?"Ответ подтверждён":"Не подтверждён",raw));
+          // A correctly addressed negative response (7F 22 xx) also proves
+          // that a diagnostic ECU answered, even when VIN DID is unsupported.
+          boolean negative=normalized.matches("(?s).*7F22(11|12|13|22|31|33|78).*");
+          String status=positive ? "Ответ подтверждён (VIN DID)" :
+              negative ? "Блок ответил: VIN DID не поддержан/отклонён" : "Не подтверждён";
+          results.add(new Result(ecu[0],req,resp,status,raw));
         } catch(IOException ex) {
           results.add(new Result(ecu[0],req,resp,"Нет ответа: "+ex.getMessage(),""));
         }

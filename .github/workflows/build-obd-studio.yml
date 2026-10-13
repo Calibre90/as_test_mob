@@ -48,7 +48,7 @@ jobs:
               <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
           </activity>'''
-          s = s.replace(original, original + '\\n    ' + launcher, 1)
+          s = s.replace(original, original + '\n    ' + launcher, 1)
           # Preserve the Studio screen for the As-Built tile, but remove its launcher.
           import re
           pattern = r'<activity android:name="\\.MainActivity"[^>]*>\\s*<intent-filter>.*?</intent-filter>\\s*</activity>'

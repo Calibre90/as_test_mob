@@ -1,0 +1,76 @@
+name: Build OBD Studio Test APK
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - obd-studio
+    paths:
+      - 'app/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle/**'
+      - '.github/workflows/build-obd-studio-test.yml'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out isolated OBD test branch
+        uses: actions/checkout@v4
+        with:
+          ref: obd-studio
+          persist-credentials: false
+      - name: Install UI assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p app/src/main/res/drawable-nodpi
+          unzip -q Mazda6GH_WhiteRed_Complete_UI_Assets.zip -d /tmp/mazda_assets
+          find /tmp/mazda_assets/Mazda6GH_WhiteRed_Production_Assets -name '*.png' -exec cp {} app/src/main/res/drawable-nodpi/ \;
+          unzip -q -j Mazda6GH_Header_and_Lock_Assets.zip '*.png' -d app/src/main/res/drawable-nodpi/
+      - name: Install Studio icon and splash
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 "https://raw.githubusercontent.com/Calibre90/Mazda6GH-AsBuilt-Studio-Android/main/assets/splash_studio.png" -o app/src/main/res/drawable-nodpi/splash_studio.png
+          curl --fail --location --retry 3 "https://raw.githubusercontent.com/Calibre90/Mazda6GH-AsBuilt-Studio-Android/main/assets/icon_studio.png" -o app/src/main/res/drawable-nodpi/icon_studio.png
+      - name: Install Admin icon resource required by shared sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 "https://raw.githubusercontent.com/Calibre90/as_test_mob/main/M6_GH_Admin_Icon.zip" -o /tmp/admin-icon.zip
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+          with zipfile.ZipFile('/tmp/admin-icon.zip') as z:
+              names=[n for n in z.namelist() if n.lower().endswith('.png') and not n.startswith('__MACOSX/')]
+              if len(names)!=1: raise SystemExit('Expected one Admin icon PNG')
+              Path('app/src/main/res/drawable-nodpi/admin_icon.png').write_bytes(z.read(names[0]))
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Compile isolated OBD debug APK
+        run: gradle :app:assembleDebug --stacktrace
+      - name: Verify package identifier and output
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -1)"
+          "$AAPT" dump badging "$APK" | head -1 | tee /tmp/obd-package.txt
+          grep -q "name='com.calibre90.astestmob.obdtest'" /tmp/obd-package.txt
+          ls -lh "$APK"
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: OBD-Studio-Test-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

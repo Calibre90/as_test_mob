@@ -26,7 +26,7 @@ public final class ObdDtcParser {
         cursor += 4;
         if (first == 0 && second == 0) continue;
         char type = "PCBU".charAt((first >>> 6) & 3);
-        String code = String.format(Locale.US, "%c%01X%02X%02X", type,
+        String code = String.format(Locale.US, "%c%01X%01X%02X", type,
             (first >>> 4) & 3, first & 0x0F, second);
         codes.add(code);
       }

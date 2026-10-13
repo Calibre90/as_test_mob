@@ -57,7 +57,9 @@ public final class ObdDiagnosticsActivity extends Activity {
           String raw=ObdSession.command("03");
           result.append("Режим 03 — сохранённые ошибки двигателя\n");
           result.append("Ответ ELM: ").append(raw).append("\n");
-          result.append("Неочищенные данные. Интерпретация кодов будет добавлена после проверки ответов на автомобиле.\n");
+          java.util.List<String> codes=ObdDtcParser.parse(raw);
+          if(codes.isEmpty()) result.append("Коды не получены или не распознаны.\n");
+          else for(String code:codes) result.append("DTC: ").append(code).append("\n");
         }else{
           String supported=ObdSession.command("0100");
           result.append("Поддерживаемые PID (0100): ").append(supported).append("\n\n");

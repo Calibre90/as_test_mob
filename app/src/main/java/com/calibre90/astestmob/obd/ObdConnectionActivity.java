@@ -246,7 +246,19 @@ public final class ObdConnectionActivity extends Activity {
         append("Отправляем OBD-II запрос 0100…");
         String pids;
         try {
-          pids=useWifi?wifi.readSupportedEnginePids():bluetooth.command("0100");
+          // Mazda 6 GH HS-CAN: first try ISO 15765-4, 11-bit / 500 kbit.
+          String can = ObdSession.command("ATSP6");
+          append("HS-CAN ATSP6: "+can.trim());
+          ObdSession.command("ATCRA");
+          ObdSession.command("ATSH7DF");
+          pids = ObdSession.command("0100");
+          if (!hasSupportedPids(pids)) {
+            append("HS-CAN did not confirm PID 0100; retrying automatic protocol.");
+            ObdSession.command("ATSP0");
+            ObdSession.command("ATCRA");
+            ObdSession.command("ATSH7DF");
+            pids = ObdSession.command("0100");
+          }
         } catch (java.net.SocketTimeoutException timeout) {
           if(!cancelled)append("ELM отвечает, но автомобиль не ответил вовремя на 0100. Проверьте зажигание ON, HS-CAN и протокол. "+timeout.getMessage());
           throw timeout;
@@ -290,6 +302,13 @@ public final class ObdConnectionActivity extends Activity {
         ui.post(()->{if(!isFinishing()&&!isDestroyed()) { adapterConfirmed=ObdSession.adapterReady(); vehicleConfirmed=ObdSession.vehicleReady(); refreshButtons(adapterConfirmed); }});
       }
     });
+  }
+
+  private static boolean hasSupportedPids(String response) {
+    if (response == null) return false;
+    String value = response.toUpperCase(Locale.US).replaceAll("[^0-9A-F]", "");
+    int at = value.indexOf("4100");
+    return at >= 0 && value.length() >= at + 12;
   }
 
   /** Decode standard OBD mode 09 PID 02 responses, including ELM CAN line prefixes. */

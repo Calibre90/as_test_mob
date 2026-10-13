@@ -1,6 +1,10 @@
 package com.calibre90.astestmob.obd;
 
 import java.io.*;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
@@ -16,14 +20,27 @@ public final class ElmWifiClient implements Closeable {
   private OutputStream output;
   private final Object lock = new Object();
 
-  public void connect(String host, int port, int timeoutMs) throws IOException {
+  public void connect(Context context, String host, int port, int timeoutMs) throws IOException {
     if (host == null || host.trim().isEmpty() || port < 1 || port > 65535)
       throw new IllegalArgumentException("Invalid adapter host/port");
     if (timeoutMs < 500 || timeoutMs > 30000)
       throw new IllegalArgumentException("Timeout must be 500..30000 ms");
     synchronized (lock) {
       close();
-      Socket s = new Socket();
+      ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+      Network wifiNetwork = null;
+      if (cm != null) {
+        for (Network n : cm.getAllNetworks()) {
+          NetworkCapabilities caps = cm.getNetworkCapabilities(n);
+          if (caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+            wifiNetwork = n;
+            break;
+          }
+        }
+      }
+      if (wifiNetwork == null) throw new IOException("Wi-Fi сеть ELM недоступна Android. Подключитесь к Wi-Fi адаптера и подтвердите использование сети без интернета.");
+      // Explicit socket factory prevents Android/VPN/mobile-data routing of ELM TCP traffic.
+      Socket s = wifiNetwork.getSocketFactory().createSocket();
       try {
         s.connect(new InetSocketAddress(host.trim(), port), timeoutMs);
         s.setSoTimeout(3000);

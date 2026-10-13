@@ -37,9 +37,15 @@ public final class ObdSession {
   }
   public static synchronized String command(String ascii) throws IOException {
     if (!adapterReady()) throw new IOException("ELM не подключён");
-    if (transport instanceof ElmWifiClient) return ((ElmWifiClient) transport).command(ascii);
-    if (transport instanceof ElmBluetoothClient) return ((ElmBluetoothClient) transport).command(ascii);
-    throw new IOException("Неподдерживаемый транспорт");
+    try {
+      if (transport instanceof ElmWifiClient) return ((ElmWifiClient) transport).command(ascii);
+      if (transport instanceof ElmBluetoothClient) return ((ElmBluetoothClient) transport).command(ascii);
+      throw new IOException("Неподдерживаемый транспорт");
+    } catch (IOException ex) {
+      // A failed transport must not remain marked as an active vehicle session.
+      disconnect();
+      throw ex;
+    }
   }
   public static synchronized String status() {
     if (!adapterReady()) return "Адаптер не подключён";

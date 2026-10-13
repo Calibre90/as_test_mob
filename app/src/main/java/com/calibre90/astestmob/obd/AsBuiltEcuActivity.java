@@ -89,7 +89,7 @@ public final class AsBuiltEcuActivity extends Activity {
     about.setOnClickListener(v->ObdStudioShared.about(this));
     faq.setOnClickListener(v->StudioFaq.show(this));
     select("IC");
-    ObdStudioShared.refresh(this,()->select(selected));
+    com.calibre90.astestmob.StudioLicenseEntry.requireActivation(this,()->ObdStudioShared.refresh(this,()->select(selected)));
   }
   private void select(String ecu){
     selected=ecu;session.clear();

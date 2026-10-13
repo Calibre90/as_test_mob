@@ -1,0 +1,80 @@
+name: OBD Studio Test APK
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - obd-studio
+    paths:
+      - 'app/**'
+      - '.github/workflows/build-obd-studio.yml'
+permissions:
+  contents: read
+jobs:
+  build-obd:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout OBD development branch
+        uses: actions/checkout@v4
+        with:
+          ref: obd-studio
+      - name: Install existing Studio UI artwork
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p app/src/main/res/drawable-nodpi
+          unzip -q Mazda6GH_WhiteRed_Complete_UI_Assets.zip -d /tmp/mazda_assets
+          find /tmp/mazda_assets/Mazda6GH_WhiteRed_Production_Assets -name '*.png' -exec cp {} app/src/main/res/drawable-nodpi/ \;
+          unzip -q -j Mazda6GH_Header_and_Lock_Assets.zip '*.png' -d app/src/main/res/drawable-nodpi/
+          curl --fail --location --retry 3 'https://raw.githubusercontent.com/Calibre90/Mazda6GH-AsBuilt-Studio-Android/main/assets/splash_studio.png' -o app/src/main/res/drawable-nodpi/splash_studio.png
+          curl --fail --location --retry 3 'https://raw.githubusercontent.com/Calibre90/Mazda6GH-AsBuilt-Studio-Android/main/assets/icon_studio.png' -o app/src/main/res/drawable-nodpi/icon_studio.png
+      - name: Prepare isolated OBD application
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          gradle = Path('app/build.gradle.kts')
+          s = gradle.read_text()
+          assert 'applicationId = "com.calibre90.astestmob"' in s
+          s = s.replace('applicationId = "com.calibre90.astestmob"', 'applicationId = "com.calibre90.obdstudio.test"', 1)
+          gradle.write_text(s)
+          manifest = Path('app/src/main/AndroidManifest.xml')
+          s = manifest.read_text()
+          original = '<activity android:name=".obd.ObdConnectionActivity" android:exported="false" />'
+          assert original in s, 'OBD connection activity declaration missing'
+          launcher = '''<activity android:name=".obd.ObdConnectionActivity" android:exported="true" android:label="OBD Studio Test">
+            <intent-filter>
+              <action android:name="android.intent.action.MAIN"/>
+              <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+          </activity>'''
+          s = s.replace(original, launcher, 1)
+          # Remove the original Studio launcher ONLY in the isolated OBD APK.
+          # Studio activity remains available internally and its source is untouched.
+          old = '''<activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="true">
+              <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+              </intent-filter>
+            </activity>'''
+          assert old in s, 'Expected original Studio launcher not found'
+          s = s.replace(old, '<activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="false" />', 1)
+          s = s.replace('android:label="Mazda 6 GH AS-Built Studio"', 'android:label="Mazda 6 GH OBD Studio Test"', 1)
+          manifest.write_text(s)
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build isolated OBD Studio debug APK
+        run: gradle :app:assembleDebug -PbuildNumber=${{ github.run_number }} --stacktrace
+      - name: Verify APK exists
+        run: test -s app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mazda6GH-OBD-Studio-Test-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

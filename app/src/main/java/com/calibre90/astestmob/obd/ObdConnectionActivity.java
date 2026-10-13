@@ -204,10 +204,28 @@ public final class ObdConnectionActivity extends Activity {
           id=bluetooth.initializeReadOnly();
         }
         append("ELM ответил: "+id.replaceAll("[\\r\\n]+"," ").trim());
-        append("Чтение списка поддерживаемых PID двигателя…");
-        String pids=useWifi?wifi.readSupportedEnginePids():bluetooth.command("0100");
+        append("Связь с ELM327 установлена. Проверяем связь с автомобилем (зажигание ON)…");
+        String protocolBefore = useWifi ? wifi.command("ATDPN") : bluetooth.command("ATDPN");
+        if(!cancelled)append("Протокол до запроса: "+protocolBefore.replaceAll("[\\r\\n]+"," ").trim());
+        append("Отправляем OBD-II запрос 0100…");
+        String pids;
+        try {
+          pids=useWifi?wifi.readSupportedEnginePids():bluetooth.command("0100");
+        } catch (java.net.SocketTimeoutException timeout) {
+          if(!cancelled)append("ELM отвечает, но автомобиль не ответил вовремя на 0100. Проверьте зажигание ON, HS-CAN и протокол. "+timeout.getMessage());
+          throw timeout;
+        }
         if(!cancelled)append("Ответ PID 0100: "+pids.replaceAll("[\\r\\n]+"," ").trim());
-        if(!cancelled)append("Подключение установлено. Запись отключена.");
+        String protocolAfter = useWifi ? wifi.command("ATDP") : bluetooth.command("ATDP");
+        if(!cancelled)append("Определённый протокол: "+protocolAfter.replaceAll("[\\r\\n]+"," ").trim());
+        String normalized = pids.toUpperCase(Locale.US);
+        if(normalized.contains("NO DATA") || normalized.contains("UNABLE TO CONNECT") || normalized.contains("ERROR") || normalized.trim().isEmpty()) {
+          if(!cancelled)append("Адаптер доступен, но ответ ECU не подтверждён. Запись отключена.");
+        } else if(normalized.contains("41 00") || normalized.contains("4100")) {
+          if(!cancelled)append("Автомобиль ответил на OBD-II запрос. Только чтение, запись отключена.");
+        } else {
+          if(!cancelled)append("Получен нестандартный ответ. Связь с ECU не подтверждена, запись отключена.");
+        }
       } catch(Exception e) {
         if(!cancelled)append("Ошибка подключения: "+e.getClass().getSimpleName()+" — "+e.getMessage());
         closeAdapters();

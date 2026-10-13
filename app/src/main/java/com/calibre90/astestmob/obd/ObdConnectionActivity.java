@@ -103,6 +103,10 @@ public final class ObdConnectionActivity extends Activity {
     disconnect = new Button(this);
     disconnect.setText("Отключить");
     root.addView(disconnect);
+    Button scan = new Button(this);
+    scan.setText("Пробный опрос HS-CAN (только чтение)");
+    root.addView(scan);
+    scan.setOnClickListener(v->probeModules());
     status = new TextView(this);
     status.setText("Не подключено");
     root.addView(status);
@@ -295,6 +299,29 @@ public final class ObdConnectionActivity extends Activity {
     }
     String vin = ascii.toString().trim();
     return vin.matches("[A-HJ-NPR-Z0-9]{17}") ? vin : null;
+  }
+
+  private void probeModules() {
+    if (busy) { append("Дождитесь завершения текущего запроса"); return; }
+    if (!ObdSession.vehicleReady()) { append("Сначала подтвердите связь с автомобилем"); return; }
+    new AlertDialog.Builder(this)
+      .setTitle("Пробный опрос HS-CAN")
+      .setMessage("Только чтение. Используются предварительные адреса ECU, ещё не подтверждённые для вашей комплектации Mazda 6 GH. Отсутствие ответа не означает отсутствие блока. Убедитесь, что адаптер переключён на HS-CAN.")
+      .setNegativeButton("Отмена",null)
+      .setPositiveButton("Проверить",(d,w)->{
+        busy=true;
+        refreshButtons(ObdSession.adapterReady());
+        worker.execute(()->{
+          try {
+            append("Начат пробный опрос HS-CAN; запись запрещена.");
+            for (ObdModuleProbe.Result result: ObdModuleProbe.probeHsCan(ObdSession::command)) {
+              append(result.name+" ["+result.requestId+"/"+result.responseId+"]: "+result.status);
+            }
+            append("Пробный опрос завершён. Обнаружение не подтверждает возможность чтения As-Built.");
+          } catch(Exception e) { append("Ошибка опроса: "+e.getMessage()); }
+          finally { busy=false;ui.post(()->refreshButtons(ObdSession.adapterReady())); }
+        });
+      }).show();
   }
 
   private void stopConnection() {

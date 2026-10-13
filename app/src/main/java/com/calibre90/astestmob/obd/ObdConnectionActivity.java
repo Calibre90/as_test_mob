@@ -107,6 +107,10 @@ public final class ObdConnectionActivity extends Activity {
     scan.setText("Пробный опрос HS-CAN (только чтение)");
     root.addView(scan);
     scan.setOnClickListener(v->probeModules());
+    Button diagnostics = new Button(this);
+    diagnostics.setText("Параметры и ошибки двигателя (только чтение)");
+    root.addView(diagnostics);
+    diagnostics.setOnClickListener(v->startActivity(new Intent(this,ObdDiagnosticsActivity.class)));
     status = new TextView(this);
     status.setText("Не подключено");
     root.addView(status);

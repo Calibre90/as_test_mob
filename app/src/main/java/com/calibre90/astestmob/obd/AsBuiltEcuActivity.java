@@ -103,7 +103,7 @@ public final class AsBuiltEcuActivity extends Activity {
     String fallback=ecu.equals("IC")?"Instrument Cluster":ecu.equals("BCM")?"Body Control Module":
       ecu.equals("RKE")?"Remote Keyless Entry":ecu.equals("ABS")?"Anti-lock Braking System":"Adaptive Front-lighting System";
     header.setText(ecu+": "+StudioSettings.moduleName(this,ecu,fallback));
-    status.setText("Состояние: не подключён. Конфигурация не прочитана.");
+    status.setText("Состояние: " + ObdSession.status() + ". Конфигурация блока не прочитана.");
     write.setEnabled(false);
     // Do not display hard-coded features for every module: use published Studio definitions.
     while(options.getChildCount()>2)options.removeViewAt(2);
@@ -127,6 +127,11 @@ public final class AsBuiltEcuActivity extends Activity {
       add(options,empty,14);
     }
   }
+  @Override protected void onResume() {
+    super.onResume();
+    if(status != null)status.setText("Состояние: " + ObdSession.status() + ". Конфигурация блока не прочитана.");
+  }
+
   private void showBusDialog(){
     new AlertDialog.Builder(this).setTitle("Подключение к "+selected)
       .setMessage("Необходимо определить нужную шину HS/MS-CAN по проверенной карте автомобиля и получить ответ выбранного ЭБУ.\n\nПока протокол чтения As-Built не реализован, кнопки изменения и записи остаются заблокированы.")

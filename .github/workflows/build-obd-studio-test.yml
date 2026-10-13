@@ -55,6 +55,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - name: Verify read-only OBD parsers compile
+        run: |
+          mkdir -p /tmp/obd-parser-classes
+          javac -d /tmp/obd-parser-classes app/src/main/java/com/calibre90/astestmob/obd/ObdPidParser.java app/src/main/java/com/calibre90/astestmob/obd/ObdDtcParser.java
       - name: Compile isolated OBD debug APK
         run: gradle :app:assembleDebug --stacktrace
       - name: Verify package identifier and output

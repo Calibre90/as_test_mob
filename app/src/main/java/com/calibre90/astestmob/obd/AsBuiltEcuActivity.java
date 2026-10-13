@@ -75,7 +75,7 @@ public final class AsBuiltEcuActivity extends Activity {
     TextView note=label("Функции из каталога Studio. Галочки станут доступны после чтения блока.",12,false);
     add(options,note,5);
 
-    write=new Button(this);write.setText("ЗАПИСАТЬ В ЭБУ");write.setAllCaps(false);
+    write=new Button(this);write.setText("ЗАПИСАТЬ В БЛОК");write.setAllCaps(false);
     write.setTextSize(16);write.setTextColor(Color.WHITE);write.setBackground(metal(true,12));write.setEnabled(false);add(root,write,12);
 
     LinearLayout footer=new LinearLayout(this);footer.setOrientation(LinearLayout.HORIZONTAL);add(root,footer,12);

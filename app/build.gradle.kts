@@ -9,6 +9,9 @@ android {
         versionCode = (project.findProperty("buildNumber")?.toString()?.toIntOrNull() ?: 1)
         versionName = "1.0." + (project.findProperty("buildNumber")?.toString()?.toIntOrNull() ?: 1).toString()
     }
+    buildTypes {
+        getByName("debug") { applicationIdSuffix = ".obdtest" }
+    }
     // One stable signing key is required for Android in-place upgrades.
     // CI falls back to its ephemeral debug key until the owner configures secrets.
     val signingFile = System.getenv("MAZDA_SIGNING_STORE_FILE")

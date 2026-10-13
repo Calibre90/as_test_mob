@@ -14,6 +14,7 @@ import java.util.*;
 /** Independent read-only connection screen. Launch with Intent(context, ObdConnectionActivity.class). */
 public final class ObdConnectionActivity extends Activity {
   private static final int BT_PERMISSION = 701;
+  private static final String[] BT_PERMISSIONS = {Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN};
   private final Handler ui = new Handler(Looper.getMainLooper());
   private final java.util.concurrent.ExecutorService worker = java.util.concurrent.Executors.newSingleThreadExecutor();
   private volatile boolean busy;
@@ -122,11 +123,29 @@ public final class ObdConnectionActivity extends Activity {
   }
 
   private boolean bluetoothPermission() {
-    if (Build.VERSION.SDK_INT>=31 && checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)!=PackageManager.PERMISSION_GRANTED) {
-      requestPermissions(new String[]{Manifest.permission.BLUETOOTH_CONNECT},BT_PERMISSION);
+    if (Build.VERSION.SDK_INT >= 31 &&
+        (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
+         checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED)) {
+      requestPermissions(BT_PERMISSIONS, BT_PERMISSION);
       return false;
     }
     return true;
+  }
+
+  @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    if (requestCode != BT_PERMISSION) return;
+    if (bluetoothPermissionGranted()) {
+      append("Разрешения Bluetooth получены. Повторите выбор адаптера или подключение.");
+    } else {
+      append("Для подключения ELM327 разрешите приложению доступ к устройствам поблизости в настройках Android.");
+    }
+  }
+
+  private boolean bluetoothPermissionGranted() {
+    return Build.VERSION.SDK_INT < 31 ||
+        (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED &&
+         checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED);
   }
 
   @SuppressWarnings("MissingPermission")

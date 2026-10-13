@@ -12,6 +12,7 @@ import com.calibre90.astestmob.R;
 import com.calibre90.astestmob.FeatureEngine;
 import com.calibre90.astestmob.StudioSettings;
 import com.calibre90.astestmob.StudioFaq;
+import com.calibre90.astestmob.ObdStudioShared;
 import java.util.*;
 
 /** Studio-styled ECU editor. All ECU I/O and writing remain disabled until verified. */
@@ -75,7 +76,7 @@ public final class AsBuiltEcuActivity extends Activity {
     add(options,note,5);
 
     write=new Button(this);write.setText("ЗАПИСАТЬ В ЭБУ");write.setAllCaps(false);
-    write.setTextSize(16);write.setBackground(metal(false,12));write.setEnabled(false);add(root,write,12);
+    write.setTextSize(16);write.setTextColor(Color.WHITE);write.setBackground(metal(true,12));write.setEnabled(false);add(root,write,12);
 
     LinearLayout footer=new LinearLayout(this);footer.setOrientation(LinearLayout.HORIZONTAL);add(root,footer,12);
     TextView about=action("О программе");TextView faq=action("FAQ");
@@ -83,11 +84,10 @@ public final class AsBuiltEcuActivity extends Activity {
     footer.addView(about,l);
     LinearLayout.LayoutParams r=new LinearLayout.LayoutParams(0,dp(58),1);r.leftMargin=dp(5);
     footer.addView(faq,r);
-    about.setOnClickListener(v->new AlertDialog.Builder(this).setTitle("Mazda 6 GH OBD Studio")
-      .setMessage("Диагностика и As-Built. Опции загружаются из каталога Studio.\n\nРеальное чтение и запись конфигурации через ELM327 пока разрабатываются. Изменения в автомобиль не отправляются.")
-      .setPositiveButton("Закрыть",null).show());
+    about.setOnClickListener(v->ObdStudioShared.about(this));
     faq.setOnClickListener(v->StudioFaq.show(this));
     select("IC");
+    ObdStudioShared.refresh(this,()->select(selected));
   }
   private void select(String ecu){
     selected=ecu;session.clear();

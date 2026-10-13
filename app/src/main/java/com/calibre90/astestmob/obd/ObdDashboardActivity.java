@@ -107,7 +107,7 @@ public final class ObdDashboardActivity extends Activity {
     box.addView(text(tile.detail,12,GREY,false));
     box.setOnClickListener(v->{
       if(tile.name.equals("As-Built Studio"))
-        startActivity(new Intent(this,com.calibre90.astestmob.MainActivity.class));
+        startActivity(new Intent(this,AsBuiltEcuActivity.class));
       else if(tile.name.equals("Адаптер"))openConnection();
       else showPreview(tile.name,tile.detail);
     });

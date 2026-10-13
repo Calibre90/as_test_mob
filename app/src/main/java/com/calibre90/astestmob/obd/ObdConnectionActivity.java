@@ -19,6 +19,7 @@ public final class ObdConnectionActivity extends Activity {
   private final java.util.concurrent.ExecutorService worker = java.util.concurrent.Executors.newSingleThreadExecutor();
   private volatile boolean busy;
   private volatile boolean cancelled;
+  private volatile boolean vehicleConfirmed;
   private ElmWifiClient wifi;
   private ElmBluetoothClient bluetooth;
   private Spinner mode, msCanMode;
@@ -108,6 +109,7 @@ public final class ObdConnectionActivity extends Activity {
     log.setText("Журнал связи (без записи в блоки)\n");
     log.setTextIsSelectable(true);
     root.addView(log);
+    refreshButtons(false);
     connect.setOnClickListener(v->startConnect());
     disconnect.setOnClickListener(v->stopConnection());
   }
@@ -164,6 +166,19 @@ public final class ObdConnectionActivity extends Activity {
     }).show();
   }
 
+  private void refreshButtons(boolean connected) {
+    if (connect != null) connect.setEnabled(!busy && !connected);
+    if (disconnect != null) disconnect.setEnabled(busy || connected);
+  }
+
+  private void publishConnection(boolean adapterReady, boolean ecuReady) {
+    vehicleConfirmed = ecuReady;
+    getSharedPreferences("obd_connection", MODE_PRIVATE).edit()
+        .putBoolean("adapter_connected", adapterReady)
+        .putBoolean("vehicle_confirmed", ecuReady).apply();
+    ui.post(() -> { if (!isFinishing() && !isDestroyed()) refreshButtons(adapterReady); });
+  }
+
   private void startConnect() {
     if(busy)return;
     final boolean useWifi=mode.getSelectedItemPosition()==0;
@@ -187,7 +202,9 @@ public final class ObdConnectionActivity extends Activity {
     } else {
       append("MS-CAN: переключайте HS/MS на адаптере вручную при запросе.");
     }
-    busy=true;cancelled=false;connect.setEnabled(false);
+    busy=true;cancelled=false;
+    publishConnection(false, false);
+    refreshButtons(false);
     append("Подключение к адаптеру…");
     worker.execute(()->{
       try {
@@ -204,6 +221,7 @@ public final class ObdConnectionActivity extends Activity {
           id=bluetooth.initializeReadOnly();
         }
         append("ELM ответил: "+id.replaceAll("[\\r\\n]+"," ").trim());
+        publishConnection(true, false);
         append("Связь с ELM327 установлена. Проверяем связь с автомобилем (зажигание ON)…");
         String protocolBefore = useWifi ? wifi.command("ATDPN") : bluetooth.command("ATDPN");
         if(!cancelled)append("Протокол до запроса: "+protocolBefore.replaceAll("[\\r\\n]+"," ").trim());
@@ -222,22 +240,27 @@ public final class ObdConnectionActivity extends Activity {
         if(normalized.contains("NO DATA") || normalized.contains("UNABLE TO CONNECT") || normalized.contains("ERROR") || normalized.trim().isEmpty()) {
           if(!cancelled)append("Адаптер доступен, но ответ ECU не подтверждён. Запись отключена.");
         } else if(normalized.contains("41 00") || normalized.contains("4100")) {
-          if(!cancelled)append("Автомобиль ответил на OBD-II запрос. Только чтение, запись отключена.");
+          if(!cancelled) {
+            publishConnection(true, true);
+            append("Автомобиль ответил на OBD-II запрос. Только чтение, запись отключена.");
+          }
         } else {
           if(!cancelled)append("Получен нестандартный ответ. Связь с ECU не подтверждена, запись отключена.");
         }
       } catch(Exception e) {
         if(!cancelled)append("Ошибка подключения: "+e.getClass().getSimpleName()+" — "+e.getMessage());
         closeAdapters();
+        publishConnection(false, false);
       } finally {
         busy=false;
-        ui.post(()->{if(!isFinishing()&&!isDestroyed())connect.setEnabled(true);});
+        ui.post(()->{if(!isFinishing()&&!isDestroyed())refreshButtons((wifi!=null && wifi.isConnected()) || bluetooth!=null);});
       }
     });
   }
 
   private void stopConnection() {
     cancelled=true;
+    publishConnection(false, false);
     append("Отключение…");
     // Closing sockets on a separate thread can unblock in-flight reads.
     new Thread(this::closeAdapters,"OBD-disconnect").start();
@@ -251,6 +274,7 @@ public final class ObdConnectionActivity extends Activity {
 
   @Override protected void onDestroy() {
     cancelled=true;
+    publishConnection(false, false);
     new Thread(this::closeAdapters,"OBD-close").start();
     worker.shutdownNow();
     super.onDestroy();

@@ -31,3 +31,8 @@ FORScan Lite Android user manual: https://docs.xn--80aajcuv3afm.xn--p1ai/install
 ## Independent builds
 - New workflow must check out `obd-studio` explicitly. Existing `build-release-post476.yml` checks out `release-post476` intentionally and must remain untouched.
 - New Android application ID is required to coexist with existing Studio. Avoid sharing production signing or cloud publication endpoints by default.
+
+
+## Confirmed target scope (2026-10-13)
+
+OBD Studio diagnostic and As-Built implementation is **Mazda 6 GH only**, with first test target Mazda 6 GH 2008. Do not present universal Mazda ECU discovery or compatibility. Transport may be Wi-Fi ELM327 or Bluetooth Classic ELM327; this does not imply diagnostic protocol compatibility. Validate HS/MS-CAN routing and ECU addresses on the actual vehicle. Initial milestones: read-only adapter handshake, vehicle response, confirmed IC identification and full As-Built backup; then decode only validated options using the existing Studio catalog; permit write only after verified ECU-specific protocol, checksum, stable voltage, explicit confirmation and read-back verification. Do not enable write on unsupported ECU or merely because an ELM327 adapter responds. Preserve licensing, UI assets, FAQ and original release-post476 branch.

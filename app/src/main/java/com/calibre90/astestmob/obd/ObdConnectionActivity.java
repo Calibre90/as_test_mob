@@ -29,9 +29,13 @@ public final class ObdConnectionActivity extends Activity {
 
   @Override public void onCreate(Bundle saved) {
     super.onCreate(saved);
+    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    getWindow().setStatusBarColor(android.graphics.Color.rgb(17,22,30));
+    getWindow().setNavigationBarColor(android.graphics.Color.rgb(17,22,30));
+    getWindow().getDecorView().setSystemUiVisibility(0);
     LinearLayout root = new LinearLayout(this);
     root.setOrientation(LinearLayout.VERTICAL);
-    root.setPadding(22,24,22,20);
+    root.setPadding(22,48,22,20);
     ScrollView scroll = new ScrollView(this);
     scroll.addView(root);
     setContentView(scroll);

@@ -46,10 +46,6 @@ public final class StudioFaq {
     header.setBackground(bg(a,Color.WHITE,Color.rgb(235,239,244),Color.rgb(215,222,230),9));
     TextView heading=text(a,"FAQ",20,Color.BLACK,true);heading.setGravity(Gravity.CENTER);
     header.addView(heading,new LinearLayout.LayoutParams(0,dp(a,52),1));
-    TextView x=text(a,"×",30,Color.BLACK,true);x.setGravity(Gravity.CENTER);
-    x.setBackground(bg(a,Color.WHITE,Color.rgb(235,238,242),Color.rgb(200,205,212),8));
-    header.addView(x,new LinearLayout.LayoutParams(dp(a,48),dp(a,46)));
-    x.setOnClickListener(v->dialog.dismiss());
     root.addView(header,new LinearLayout.LayoutParams(-1,dp(a,56)));
     LinearLayout columns=new LinearLayout(a);columns.setOrientation(LinearLayout.HORIZONTAL);
     LinearLayout left=new LinearLayout(a);left.setOrientation(LinearLayout.VERTICAL);

@@ -20,7 +20,7 @@ public final class ObdConnectionActivity extends Activity {
   private volatile boolean cancelled;
   private ElmWifiClient wifi;
   private ElmBluetoothClient bluetooth;
-  private Spinner mode;
+  private Spinner mode, msCanMode;
   private EditText host, port;
   private TextView status, log;
   private Button connect, disconnect;
@@ -48,9 +48,28 @@ public final class ObdConnectionActivity extends Activity {
     root.addView(hint);
     mode = new Spinner(this);
     ArrayAdapter<String> types = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item,
-        new String[]{"Wi-Fi ELM327", "Bluetooth Classic ELM327"});
+        new String[]{"Wi-Fi", "Bluetooth"});
     mode.setAdapter(types);
     root.addView(mode);
+    TextView msLabel = new TextView(this);
+    msLabel.setText("Поддержка MS-CAN");
+    msLabel.setTextSize(16);
+    msLabel.setPadding(0, 16, 0, 0);
+    root.addView(msLabel);
+    msCanMode = new Spinner(this);
+    ArrayAdapter<String> msOptions = new ArrayAdapter<>(this,
+        android.R.layout.simple_spinner_dropdown_item,
+        new String[]{"Авто", "Нет", "Переключатель HS/MS"});
+    msCanMode.setAdapter(msOptions);
+    int savedMsMode = getPreferences(0).getInt("obd_ms_can_mode", 2);
+    msCanMode.setSelection(Math.max(0, Math.min(2, savedMsMode)));
+    root.addView(msCanMode);
+    msCanMode.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+      public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+      public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+        getPreferences(0).edit().putInt("obd_ms_can_mode", position).apply();
+      }
+    });
     host = new EditText(this);
     host.setSingleLine(true);
     host.setHint("IP адаптера");
@@ -140,6 +159,14 @@ public final class ObdConnectionActivity extends Activity {
       tcpPort=0;
       if(!bluetoothPermission())return;
       if(selected==null){append("Сначала выберите Bluetooth адаптер");return;}
+    }
+    final int msSelection = msCanMode.getSelectedItemPosition();
+    if(msSelection == 0) {
+      append("MS-CAN: Авто — аппаратное автопереключение пока не реализовано.");
+    } else if(msSelection == 1) {
+      append("MS-CAN отключена в настройках.");
+    } else {
+      append("MS-CAN: переключайте HS/MS на адаптере вручную при запросе.");
     }
     busy=true;cancelled=false;connect.setEnabled(false);
     append("Подключение к адаптеру…");

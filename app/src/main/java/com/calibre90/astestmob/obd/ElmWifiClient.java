@@ -26,7 +26,8 @@ public final class ElmWifiClient implements Closeable {
       Socket s = new Socket();
       try {
         s.connect(new InetSocketAddress(host.trim(), port), timeoutMs);
-        s.setSoTimeout(Math.max(timeoutMs, 15000));
+        s.setSoTimeout(3000);
+        s.setTcpNoDelay(true);
         socket = s;
         input = s.getInputStream();
         output = s.getOutputStream();
@@ -49,13 +50,16 @@ public final class ElmWifiClient implements Closeable {
       output.write((asciiCommand.trim().toUpperCase(Locale.US) + "\r").getBytes(StandardCharsets.US_ASCII));
       output.flush();
       ByteArrayOutputStream response = new ByteArrayOutputStream();
+      int idleTimeouts = 0;
       long deadline = System.nanoTime() + 20_000_000_000L;
       while (System.nanoTime() < deadline && response.size() < 16384) {
         int b;
         try { b = input.read(); }
         catch (SocketTimeoutException ex) {
+          if (++idleTimeouts < 3) continue;
           throw new SocketTimeoutException("ELM response timeout for " + asciiCommand + " (partial: " + response.toString("US-ASCII") + ")");
         }
+        idleTimeouts = 0;
         if (b == -1) throw new EOFException("ELM disconnected");
         if (b == '>') return new String(response.toByteArray(), StandardCharsets.US_ASCII).trim();
         response.write(b);
@@ -66,7 +70,14 @@ public final class ElmWifiClient implements Closeable {
 
   /** Adapter handshake; no vehicle configuration is changed. */
   public String initializeReadOnly() throws IOException {
-    String reset = command("ATZ");
+    // Some inexpensive Wi-Fi bridges need a short startup pause after TCP opens.
+    try { Thread.sleep(350); } catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new IOException("ELM initialization interrupted", ex); }
+    String reset;
+    try { reset = command("ATZ"); }
+    catch (SocketTimeoutException first) {
+      // Recover once from a delayed bridge boot without hiding a persistent failure.
+      reset = command("ATZ");
+    }
     String echo = command("ATE0");
     String linefeed = command("ATL0");
     String spaces = command("ATS0");

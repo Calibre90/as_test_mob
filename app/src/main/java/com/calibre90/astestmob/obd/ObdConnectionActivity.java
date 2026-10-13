@@ -223,7 +223,7 @@ public final class ObdConnectionActivity extends Activity {
         String id;
         if(useWifi) {
           wifi=new ElmWifiClient();
-          wifi.connect(ip,tcpPort,5000);
+          wifi.connect(getApplicationContext(),ip,tcpPort,5000);
           if(cancelled)return;
           id=wifi.initializeReadOnly();
         } else {

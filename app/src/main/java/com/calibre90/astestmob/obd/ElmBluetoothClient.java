@@ -28,8 +28,9 @@ public final class ElmBluetoothClient implements Closeable {
   public synchronized void connect(Context context, BluetoothDevice pairedDevice) throws IOException {
     if (pairedDevice == null) throw new IllegalArgumentException("Select a paired Bluetooth device");
     if (Build.VERSION.SDK_INT >= 31 &&
-        context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED)
-      throw new SecurityException("BLUETOOTH_CONNECT permission required");
+        (context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
+         context.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED))
+      throw new SecurityException("Bluetooth CONNECT and SCAN permissions required");
     close();
     BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
     if (adapter == null || !adapter.isEnabled()) throw new IOException("Bluetooth disabled");

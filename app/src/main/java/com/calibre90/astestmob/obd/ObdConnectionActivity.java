@@ -110,7 +110,10 @@ public final class ObdConnectionActivity extends Activity {
     log.setText("Журнал связи (без записи в блоки)\n");
     log.setTextIsSelectable(true);
     root.addView(log);
-    refreshButtons(false);
+    adapterConfirmed = ObdSession.adapterReady();
+    vehicleConfirmed = ObdSession.vehicleReady();
+    status.setText(ObdSession.status());
+    refreshButtons(adapterConfirmed);
     connect.setOnClickListener(v->startConnect());
     disconnect.setOnClickListener(v->stopConnection());
   }
@@ -175,9 +178,7 @@ public final class ObdConnectionActivity extends Activity {
   private void publishConnection(boolean adapterReady, boolean ecuReady) {
     vehicleConfirmed = ecuReady;
     adapterConfirmed = adapterReady;
-    getSharedPreferences("obd_connection", MODE_PRIVATE).edit()
-        .putBoolean("adapter_connected", adapterReady)
-        .putBoolean("vehicle_confirmed", ecuReady).apply();
+    // Never persist live connection state: sockets cannot survive process death.
     ui.post(() -> { if (!isFinishing() && !isDestroyed()) refreshButtons(adapterReady); });
   }
 
@@ -223,6 +224,8 @@ public final class ObdConnectionActivity extends Activity {
           id=bluetooth.initializeReadOnly();
         }
         append("ELM ответил: "+id.replaceAll("[\\r\\n]+"," ").trim());
+        if(cancelled)return;
+        ObdSession.attach(useWifi ? wifi : bluetooth);
         publishConnection(true, false);
         append("Связь с ELM327 установлена. Проверяем связь с автомобилем (зажигание ON)…");
         String protocolBefore = useWifi ? wifi.command("ATDPN") : bluetooth.command("ATDPN");
@@ -243,6 +246,7 @@ public final class ObdConnectionActivity extends Activity {
           if(!cancelled)append("Адаптер доступен, но ответ ECU не подтверждён. Запись отключена.");
         } else if(normalized.contains("41 00") || normalized.contains("4100")) {
           if(!cancelled) {
+            ObdSession.confirmVehicle(null);
             publishConnection(true, true);
             append("Автомобиль ответил на OBD-II запрос. Проверяем VIN (09 02)…");
             try {
@@ -251,6 +255,7 @@ public final class ObdConnectionActivity extends Activity {
               if (!cancelled) append(vin == null
                   ? "VIN не получен стандартным запросом 0902 (это не ошибка подключения)."
                   : "VIN автомобиля: " + vin);
+              if (vin != null) ObdSession.confirmVehicle(vin);
             } catch (Exception vinError) {
               if (!cancelled) append("VIN пока не прочитан: " + vinError.getMessage());
             }
@@ -261,6 +266,7 @@ public final class ObdConnectionActivity extends Activity {
         }
       } catch(Exception e) {
         if(!cancelled)append("Ошибка подключения: "+e.getClass().getSimpleName()+" — "+e.getMessage());
+        ObdSession.disconnect();
         closeAdapters();
         publishConnection(false, false);
       } finally {
@@ -297,7 +303,7 @@ public final class ObdConnectionActivity extends Activity {
     publishConnection(false, false);
     append("Отключение…");
     // Closing sockets on a separate thread can unblock in-flight reads.
-    new Thread(this::closeAdapters,"OBD-disconnect").start();
+    new Thread(()->{ObdSession.disconnect();closeAdapters();},"OBD-disconnect").start();
   }
 
   private synchronized void closeAdapters() {
@@ -306,10 +312,21 @@ public final class ObdConnectionActivity extends Activity {
     wifi=null;bluetooth=null;
   }
 
+  @Override protected void onResume() {
+    super.onResume();
+    adapterConfirmed = ObdSession.adapterReady();
+    vehicleConfirmed = ObdSession.vehicleReady();
+    if(status != null)status.setText(ObdSession.status());
+    refreshButtons(adapterConfirmed);
+  }
+
   @Override protected void onDestroy() {
-    cancelled=true;
-    publishConnection(false, false);
-    new Thread(this::closeAdapters,"OBD-close").start();
+    // Keep an established session alive when returning to the main menu.
+    // A connection still in progress is cancelled when its screen is destroyed.
+    if(busy && !ObdSession.adapterReady()) {
+      cancelled=true;
+      new Thread(this::closeAdapters,"OBD-close-pending").start();
+    }
     worker.shutdownNow();
     super.onDestroy();
   }

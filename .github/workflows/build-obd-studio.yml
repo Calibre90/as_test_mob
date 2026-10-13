@@ -51,14 +51,10 @@ jobs:
           s = s.replace(original, launcher, 1)
           # Remove the original Studio launcher ONLY in the isolated OBD APK.
           # Studio activity remains available internally and its source is untouched.
-          old = '''<activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="true">
-              <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-              </intent-filter>
-            </activity>'''
-          assert old in s, 'Expected original Studio launcher not found'
-          s = s.replace(old, '<activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="false" />', 1)
+          import re
+          pattern = r'<activity android:name="\\.MainActivity"[^>]*>\\s*<intent-filter>.*?</intent-filter>\\s*</activity>'
+          s, count = re.subn(pattern, '<activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="false" />', s, count=1, flags=re.S)
+          assert count == 1, 'Expected original Studio launcher not found'
           s = s.replace('android:label="Mazda 6 GH AS-Built Studio"', 'android:label="Mazda 6 GH OBD Studio Test"', 1)
           manifest.write_text(s)
           PY

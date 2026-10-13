@@ -11,6 +11,15 @@ public final class ObdSession {
   private static boolean vehicleReady;
   private static String vin = "";
   private static final StringBuilder journal = new StringBuilder();
+  private static final java.util.LinkedHashMap<String,String> moduleResults = new java.util.LinkedHashMap<>();
+  public static synchronized void clearModuleResults() { moduleResults.clear(); }
+  public static synchronized void saveModuleResult(String name, String result) { moduleResults.put(name, result); }
+  public static synchronized String moduleReport() {
+    if (moduleResults.isEmpty()) return "Модули ещё не опрошены";
+    StringBuilder report = new StringBuilder("Результаты опроса:\n");
+    for (java.util.Map.Entry<String,String> e : moduleResults.entrySet()) report.append(e.getKey()).append(": ").append(e.getValue()).append("\n");
+    return report.toString();
+  }
   public static synchronized void log(String line) {
     journal.append(line).append("\n");
     if (journal.length() > 18000) journal.delete(0, journal.length() - 12000);
@@ -27,6 +36,7 @@ public final class ObdSession {
     adapterReady = true;
     vehicleReady = false;
     vin = "";
+    clearModuleResults();
   }
   public static synchronized void confirmVehicle(String detectedVin) {
     if (!adapterReady()) return;
@@ -39,6 +49,7 @@ public final class ObdSession {
     adapterReady = false;
     vehicleReady = false;
     vin = "";
+    clearModuleResults();
     if (old != null) try { old.close(); } catch (IOException ignored) {}
   }
   public static synchronized String command(String ascii) throws IOException {

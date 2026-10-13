@@ -39,7 +39,11 @@ public final class ObdStudioShared {
     Dialog dialog=new Dialog(a);
     LinearLayout body=new LinearLayout(a);body.setOrientation(LinearLayout.VERTICAL);
     body.setPadding(dp(a,14),dp(a,14),dp(a,14),dp(a,14));body.setBackground(bg(a,false));
-    TextView title=text(a,"О программе",22,true);title.setGravity(Gravity.CENTER);body.addView(title);
+    TextView title=text(a,"О программе",22,true);title.setGravity(Gravity.CENTER);
+    GradientDrawable titleBg=new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,new int[]{Color.WHITE,0xffe7eaf1});
+    titleBg.setCornerRadius(dp(a,10));titleBg.setStroke(dp(a,2),0xffd5dce5);
+    title.setBackground(titleBg);
+    body.addView(title,new LinearLayout.LayoutParams(-1,dp(a,58)));
     TextView name=text(a,"Mazda 6 GH AS-Built Studio",20,true);name.setGravity(Gravity.CENTER);
     LinearLayout.LayoutParams np=new LinearLayout.LayoutParams(-1,-2);np.topMargin=dp(a,20);body.addView(name,np);
     View line=new View(a);line.setBackgroundColor(0xffd02130);

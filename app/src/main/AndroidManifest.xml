@@ -6,6 +6,7 @@
   <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
   <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation"/>
   <application android:theme="@style/AppTheme" android:label="Mazda 6 GH AS-Built Studio" android:icon="@drawable/icon_studio">
+    <activity android:name=".obd.ObdDiagnosticsActivity" android:exported="false" />
     <activity android:name=".obd.AsBuiltEcuActivity" android:exported="false" />
     <activity android:name=".obd.ObdConnectionActivity" android:exported="false" />
     <activity android:name=".CatalogAdminActivity" android:exported="false" />

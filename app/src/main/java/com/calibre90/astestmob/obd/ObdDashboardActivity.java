@@ -9,49 +9,114 @@ import android.graphics.drawable.GradientDrawable;
 import android.view.*;
 import android.widget.*;
 
+/** White/red Mazda Studio inspired home. Original As-Built editor remains separate. */
 public final class ObdDashboardActivity extends Activity {
-  private static final int BG=Color.rgb(17,22,30), PANEL=Color.rgb(31,39,51), ACCENT=Color.rgb(221,51,57);
+  private static final int RED=Color.rgb(211,23,35), DARK=Color.rgb(30,30,34), GREY=Color.rgb(94,98,107);
   private LinearLayout content;
   private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
-  private GradientDrawable bg(int color,int radius){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(radius));return d;}
-  private TextView text(String value,int size,int color,boolean bold){TextView v=new TextView(this);v.setText(value);v.setTextColor(color);v.setTextSize(size);if(bold)v.setTypeface(Typeface.DEFAULT,Typeface.BOLD);return v;}
-  @Override public void onCreate(Bundle state){super.onCreate(state);getWindow().setStatusBarColor(BG);getWindow().setNavigationBarColor(BG);getWindow().getDecorView().setSystemUiVisibility(0);showDashboard();}
+  private GradientDrawable panel(int stroke,int radius){
+    GradientDrawable d=new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+      new int[]{Color.WHITE,Color.rgb(246,247,250),Color.rgb(218,223,232)});
+    d.setCornerRadius(dp(radius));d.setStroke(dp(2),stroke);return d;
+  }
+  private GradientDrawable redButton(){
+    GradientDrawable d=new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+      new int[]{Color.rgb(250,88,94),RED,Color.rgb(145,12,26)});
+    d.setCornerRadius(dp(12));d.setStroke(dp(1),Color.rgb(130,18,26));return d;
+  }
+  private TextView text(String value,int size,int color,boolean bold){
+    TextView v=new TextView(this);v.setText(value);v.setTextColor(color);v.setTextSize(size);
+    if(bold)v.setTypeface(Typeface.DEFAULT,Typeface.BOLD);return v;
+  }
+  @Override public void onCreate(Bundle state){
+    super.onCreate(state);
+    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    getWindow().setStatusBarColor(Color.rgb(242,243,246));
+    getWindow().setNavigationBarColor(Color.BLACK);
+    getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+    showDashboard();
+  }
   private void showDashboard(){
-    ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setBackgroundColor(BG);
-    content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);content.setPadding(dp(18),dp(22),dp(18),dp(24));scroll.addView(content);setContentView(scroll);
-    TextView heading=text("MAZDA 6 GH",27,Color.WHITE,true);content.addView(heading);
-    TextView subtitle=text("OBD STUDIO  •  Диагностика и As-Built",13,Color.LTGRAY,false);content.addView(subtitle);
-    TextView connection=text("●  Адаптер не подключён",14,Color.rgb(245,175,95),true);
-    connection.setPadding(dp(14),dp(16),dp(12),dp(16));LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,-2);cp.setMargins(0,dp(20),0,dp(16));content.addView(connection,cp);connection.setBackground(bg(PANEL,12));
-    LinearLayout header=new LinearLayout(this);header.setOrientation(LinearLayout.HORIZONTAL);header.setGravity(Gravity.CENTER_VERTICAL);content.addView(header);
-    TextView title=text("ПАНЕЛЬ УПРАВЛЕНИЯ",15,Color.WHITE,true);header.addView(title,new LinearLayout.LayoutParams(0,-2,1));
-    TextView connect=text("ПОДКЛЮЧИТЬ  ›",13,Color.WHITE,true);connect.setPadding(dp(10),dp(12),dp(10),dp(12));connect.setBackground(bg(ACCENT,9));header.addView(connect);connect.setOnClickListener(v->startActivity(new Intent(this,ObdConnectionActivity.class)));
+    ScrollView scroll=new ScrollView(this);
+    scroll.setFillViewport(true);scroll.setBackgroundColor(Color.rgb(238,240,244));
+    content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);
+    content.setPadding(dp(12),dp(12),dp(12),dp(22));
+    scroll.addView(content);setContentView(scroll);
+
+    // Existing Studio splash artwork reused as a branded header.
+    ImageView banner=new ImageView(this);
+    banner.setImageResource(com.calibre90.astestmob.R.drawable.splash_studio);
+    banner.setScaleType(ImageView.ScaleType.CENTER_CROP);
+    LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(112));
+    content.addView(banner,bp);
+
+    TextView subtitle=text("OBD STUDIO  •  Диагностика и As-Built",13,RED,true);
+    subtitle.setGravity(Gravity.CENTER);
+    LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,-2);
+    sp.setMargins(0,dp(7),0,dp(11));content.addView(subtitle,sp);
+
+    LinearLayout status=new LinearLayout(this);
+    status.setGravity(Gravity.CENTER_VERTICAL);status.setPadding(dp(15),dp(14),dp(12),dp(14));
+    status.setBackground(panel(RED,13));
+    LinearLayout.LayoutParams stp=new LinearLayout.LayoutParams(-1,-2);
+    stp.setMargins(0,0,0,dp(12));content.addView(status,stp);
+    TextView statusText=text("●  Адаптер не подключён",14,DARK,true);
+    status.addView(statusText,new LinearLayout.LayoutParams(0,-2,1));
+    TextView settings=text("НАСТРОИТЬ ›",12,RED,true);settings.setPadding(dp(4),dp(8),dp(4),dp(8));
+    status.addView(settings);status.setOnClickListener(v->openConnection());
+
+    LinearLayout actions=new LinearLayout(this);actions.setGravity(Gravity.CENTER_VERTICAL);
+    LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(-1,-2);ap.setMargins(0,0,0,dp(3));
+    content.addView(actions,ap);
+    TextView heading=text("ПАНЕЛЬ УПРАВЛЕНИЯ",15,DARK,true);
+    actions.addView(heading,new LinearLayout.LayoutParams(0,-2,1));
+    TextView connect=text("ПОДКЛЮЧИТЬ  ›",12,Color.WHITE,true);
+    connect.setGravity(Gravity.CENTER);connect.setPadding(dp(12),dp(13),dp(12),dp(13));
+    connect.setBackground(redButton());actions.addView(connect);
+    connect.setOnClickListener(v->openConnection());
+
     addGridRow(new Tile("⚠","Ошибки DTC","Чтение и очистка"),new Tile("▥","Параметры","Датчики в реальном времени"));
     addGridRow(new Tile("⌁","Графики","Показания и история"),new Tile("▣","Модули","PCM, IC, BCM, ABS…"));
     addGridRow(new Tile("⚙","Тесты","Исполнительные механизмы"),new Tile("🔧","Сервис","Процедуры и сбросы"));
-    addGridRow(new Tile("▦","As-Built Studio","Твой редактор ABT"),new Tile("◉","Адаптер","Wi-Fi / Bluetooth"));
-    TextView foot=text("Диагностические разделы пока в режиме предварительного просмотра. Запись в автомобиль отключена.",12,Color.LTGRAY,false);
-    LinearLayout.LayoutParams fp=new LinearLayout.LayoutParams(-1,-2);fp.setMargins(0,dp(20),0,0);content.addView(foot,fp);
+    addGridRow(new Tile("▦","As-Built Studio","Редактор ABT"),new Tile("◉","Адаптер","Wi-Fi / Bluetooth"));
+
+    TextView foot=text("ТЕСТОВАЯ ВЕРСИЯ  •  Диагностика в разработке  •  Запись в ЭБУ отключена",11,GREY,false);
+    foot.setGravity(Gravity.CENTER);
+    LinearLayout.LayoutParams fp=new LinearLayout.LayoutParams(-1,-2);fp.setMargins(0,dp(14),0,0);content.addView(foot,fp);
   }
-  private static final class Tile {final String icon,name,detail;Tile(String i,String n,String d){icon=i;name=n;detail=d;}}
+  private static final class Tile {
+    final String icon,name,detail;
+    Tile(String i,String n,String d){icon=i;name=n;detail=d;}
+  }
   private void addGridRow(Tile a,Tile b){
     LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);
-    LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);rp.setMargins(0,dp(13),0,0);content.addView(row,rp);
+    LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);rp.setMargins(0,dp(10),0,0);content.addView(row,rp);
     addTile(row,a,true);addTile(row,b,false);
   }
   private void addTile(LinearLayout row,Tile tile,boolean left){
-    LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(13),dp(14),dp(10),dp(14));box.setMinimumHeight(dp(142));box.setBackground(bg(PANEL,14));
-    LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,-2,1);if(left)lp.setMargins(0,0,dp(6),0);else lp.setMargins(dp(6),0,0,0);row.addView(box,lp);
-    box.addView(text(tile.icon,30,Color.rgb(245,100,100),true));
-    TextView name=text(tile.name,15,Color.WHITE,true);LinearLayout.LayoutParams np=new LinearLayout.LayoutParams(-1,-2);np.setMargins(0,dp(10),0,dp(4));box.addView(name,np);
-    box.addView(text(tile.detail,12,Color.LTGRAY,false));
+    LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);
+    box.setPadding(dp(13),dp(13),dp(9),dp(11));box.setMinimumHeight(dp(130));
+    box.setBackground(panel(RED,14));
+    LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,-2,1);
+    if(left)lp.setMargins(0,0,dp(5),0);else lp.setMargins(dp(5),0,0,0);
+    row.addView(box,lp);
+    box.addView(text(tile.icon,27,RED,true));
+    TextView name=text(tile.name,15,DARK,true);
+    LinearLayout.LayoutParams np=new LinearLayout.LayoutParams(-1,-2);
+    np.setMargins(0,dp(7),0,dp(4));box.addView(name,np);
+    box.addView(text(tile.detail,12,GREY,false));
     box.setOnClickListener(v->{
-      if(tile.name.equals("As-Built Studio"))startActivity(new Intent(this,com.calibre90.astestmob.MainActivity.class));
-      else if(tile.name.equals("Адаптер"))startActivity(new Intent(this,ObdConnectionActivity.class));
+      if(tile.name.equals("As-Built Studio"))
+        startActivity(new Intent(this,com.calibre90.astestmob.MainActivity.class));
+      else if(tile.name.equals("Адаптер"))openConnection();
       else showPreview(tile.name,tile.detail);
     });
   }
+  private void openConnection(){startActivity(new Intent(this,ObdConnectionActivity.class));}
   private void showPreview(String name,String detail){
-    new AlertDialog.Builder(this).setTitle(name).setMessage(detail+"\n\nРаздел интерфейса подготовлен. Реальная диагностика появится после интеграции протоколов и проверки на автомобиле.").setPositiveButton("Понятно",null).setNeutralButton("Подключение",(d,w)->startActivity(new Intent(this,ObdConnectionActivity.class))).show();
+    new AlertDialog.Builder(this).setTitle(name)
+      .setMessage(detail+"\n\nРаздел готовится. Реальные данные появятся после подключения и проверки диагностического протокола.")
+      .setPositiveButton("Понятно",null)
+      .setNeutralButton("Подключение",(d,w)->openConnection()).show();
   }
 }

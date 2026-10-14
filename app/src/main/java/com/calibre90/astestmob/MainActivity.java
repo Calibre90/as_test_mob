@@ -1057,7 +1057,7 @@ public class MainActivity extends Activity {
     try{return Math.max(1,Math.min(10,Integer.parseInt(StudioSettings.appearance(this,"feature_columns","3").trim())));}
     catch(Exception ignored){return 3;}
   }
-  int featureSlots(){return 9;} // Three columns, three touch-friendly rows per column
+  int featureSlots(){return 10;} // Two columns, five rows per page
   float featureCellWidth(){return 119f;}
   float featureX(int index){return 23f+(index/3)*122f;}
   float featureY(int index){return 285f+(index%3)*28f;}
@@ -1112,6 +1112,39 @@ public class MainActivity extends Activity {
       p.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));p.setTextSize(size);p.setColor(color);p.setStyle(Paint.Style.FILL);
       c.drawText(s,x+(w-p.measureText(s))/2,y+h/2-(p.ascent()+p.descent())/2,p);
     }
+    // Post 476 #10: options-only middle panel; never render addresses or HEX.
+    void drawFeatureCards(Canvas c,ArrayList<FeatureEngine.Feature> items,boolean enabled,int page){
+      card(c,10,279,380,434,13,true);
+      txt(c,"ОПЦИИ БЛОКА  •  "+items.size(),20,308,15,Color.BLACK,true);
+      txtFit(c,enabled?"ABT загружен — выберите функции":
+          "Загрузите ABT, чтобы включить функции",20,332,12,
+          enabled?Color.rgb(64,94,74):Color.DKGRAY,355);
+      int slots=10;
+      if(page<0||page>=items.size())page=0;
+      for(int i=0;i<slots&&page+i<items.size();i++){
+        FeatureEngine.Feature feature=items.get(page+i);
+        float x=18+(i%2)*187f,y=350+(i/2)*65f;
+        card(c,x,y,177,57,10,false);
+        float bx=x+12,by=y+17;
+        card(c,bx,by,23,23,4,false);
+        boolean checked=enabled&&(active>=4?customChecked(feature):isChecked(feature));
+        if(checked){
+          rect(c,Color.rgb(210,28,37),bx+4,by+4,15,15,2);
+          p.setColor(Color.WHITE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);
+          Path mark=new Path();mark.moveTo(bx+5,by+12);mark.lineTo(bx+10,by+17);mark.lineTo(bx+19,by+6);
+          c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
+        }
+        txtFit(c,feature.label,bx+29,y+34,12,enabled?Color.BLACK:Color.GRAY,126);
+      }
+      if(items.size()>slots)txt(c,"Следующие функции  ›",225,698,12,Color.rgb(150,0,0),true);
+    }
+    ArrayList<FeatureEngine.Feature> customFeatures(int module){
+      ArrayList<FeatureEngine.Feature> result=new ArrayList<>();
+      org.json.JSONObject entry=customModuleCatalog().optJSONObject(module-4);
+      if(entry!=null)for(FeatureEngine.Feature f:features)
+        if(entry.optString("id").equalsIgnoreCase(f.module))result.add(f);
+      return result;
+    }
     @Override protected void onDraw(Canvas actual){super.onDraw(actual);
       sx=getWidth()/400f;sy=getHeight()/860f;actual.save();actual.scale(sx,sy);
       Canvas c=actual;c.drawColor(appearanceColor("background",Color.BLACK));
@@ -1147,101 +1180,11 @@ public class MainActivity extends Activity {
         String customVersion=getSharedPreferences("studio_custom_abt_loaded",MODE_PRIVATE).getBoolean(id,false)
           ?"ABT загружен":"Образец";
         txt(c,"ID: "+prefix+"  |  Ver: "+customVersion,25,252,12,Color.rgb(91,103,119),false);
-        card(c,10,279,380,91,12,true);
-        card(c,10,376,380,337,13,true);
-        int featureCount=0;
-        int featureTotal=0;
-        for(FeatureEngine.Feature feature:features)if(id.equalsIgnoreCase(feature.module))featureTotal++;
-        int featureStart=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;
-        if(featureStart>=featureTotal)featureStart=0;
-        p.setColor(Color.rgb(190,199,211));p.setStrokeWidth(1);
-        for(int line=1;line<3;line++){float fy=283+line*28f;c.drawLine(15,fy,385,fy,p);}
-        for(int col=1;col<3;col++){float fx=17+col*122f;c.drawLine(fx,282,fx,368,p);}
-        int featureSkip=0;
-        for(FeatureEngine.Feature feature:features){
-          if(!id.equalsIgnoreCase(feature.module))continue;
-          if(featureSkip++<featureStart)continue;
-          if(featureCount>=featureSlots())break;
-          float fx=featureX(featureCount),fy=featureY(featureCount);
-          card(c,fx,fy,17,17,4,false);
-          if(customChecked(feature)){
-            rect(c,Color.rgb(210,28,37),fx+3,fy+3,11,11,2);
-            p.setColor(Color.WHITE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);
-            Path mark=new Path();mark.moveTo(fx+3,fy+9);mark.lineTo(fx+7,fy+13);mark.lineTo(fx+14,fy+4);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
-          }
-          txtFit(c,feature.label,fx+22,fy+13,11,Color.BLACK,featureCellWidth()-25);
-          featureCount++;
-        }
-        if(featureTotal>featureSlots())txt(c,"›",366,365,18,Color.rgb(155,0,0),true);
-        if(featureCount==0)txt(c,"Функции не настроены",24,315,12,Color.DKGRAY,false);
-        
-        org.json.JSONArray customRows;
-        try{customRows=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]"));}
-        catch(Exception ex){customRows=new org.json.JSONArray();}
-        // Merge signed catalog templates into the display only. Locally saved
-        // vehicle rows always take priority; never persist missing templates as ABT.
-        int localRowCount=customRows.length();
-        org.json.JSONArray templates=PublishedFullSettings.customRowTemplates(MainActivity.this,id);
-        java.util.HashSet<String> localAddresses=new java.util.HashSet<>();
-        for(int i=0;i<localRowCount;i++){
-          org.json.JSONObject local=customRows.optJSONObject(i);
-          if(local!=null)localAddresses.add(local.optString("address").trim().toUpperCase(java.util.Locale.ROOT));
-        }
-        if(templates!=null)for(int i=0;i<templates.length();i++){
-          org.json.JSONObject template=templates.optJSONObject(i);
-          if(template==null)continue;
-          String address=template.optString("address").trim().toUpperCase(java.util.Locale.ROOT);
-          if(!address.isEmpty()&&localAddresses.add(address))customRows.put(template);
-        }
-        // Keep row addresses in ascending order even when a checkbox creates a
-        // local working copy of an online template. This is display-only.
-        java.util.ArrayList<org.json.JSONObject> displayRows=new java.util.ArrayList<>();
-        java.util.HashSet<String> workingAddresses=new java.util.HashSet<>();
-        for(int i=0;i<localRowCount;i++){
-          org.json.JSONObject item=customRows.optJSONObject(i);
-          if(item!=null)workingAddresses.add(item.optString("address").trim().toUpperCase(java.util.Locale.ROOT));
-        }
-        for(int i=0;i<customRows.length();i++){
-          org.json.JSONObject item=customRows.optJSONObject(i);
-          if(item!=null)displayRows.add(item);
-        }
-        java.util.Collections.sort(displayRows,(left,right)->
-          left.optString("address").compareToIgnoreCase(right.optString("address")));
-        org.json.JSONArray orderedRows=new org.json.JSONArray();
-        for(org.json.JSONObject item:displayRows)orderedRows.put(item);
-        customRows=orderedRows;
-        boolean showingOnlineTemplates=localRowCount==0&&customRows.length()>0;
-        if(customRows.length()==0)txt(c,"Нет данных — откройте ABT блока "+id,22,420,12,Color.DKGRAY,false);
-        int offset=Math.max(0,Math.min(customScroll.containsKey(id)?customScroll.get(id):0,Math.max(0,customRows.length()-9)));
-        for(int i=0;i<Math.min(9,customRows.length()-offset);i++){
-          org.json.JSONObject item=customRows.optJSONObject(i+offset);if(item==null)continue;
-          float yy=380+i*36.5f;
-          card(c,15,yy,370,35,8,false);
-          p.setColor(Color.rgb(202,209,219));p.setStrokeWidth(1);c.drawLine(165,yy+4,165,yy+31,p);
-          txtFit(c,item.optString("address"),28,yy+23,14,Color.BLACK,132);
-          String hex=item.optString("value");
-          java.util.HashSet<Integer> marked=new java.util.HashSet<>();
-          String baseline=customBaseline(id,item.optString("address"));
-          if(workingAddresses.contains(item.optString("address").trim().toUpperCase(java.util.Locale.ROOT))&&baseline!=null&&hasActiveCustomFeature(id,item.optString("address"))){
-            String oldHex=AbtCodec.norm(baseline),currentHex=AbtCodec.norm(hex);
-            for(int k=0;k<currentHex.length();k++)
-              if(k>=oldHex.length()||oldHex.charAt(k)!=currentHex.charAt(k))marked.add(k);
-          }
-          p.setTextSize(13);p.setStyle(Paint.Style.FILL);
-          c.save();c.clipRect(175,yy+2,381,yy+33);
-          float px=177;int hexIndex=0;
-          for(int k=0;k<hex.length();k++){
-            char ch=hex.charAt(k);
-            boolean highlight=ch!=' '&&marked.contains(hexIndex);
-            p.setTypeface(Typeface.create("monospace",highlight?Typeface.BOLD:Typeface.NORMAL));
-            p.setColor(highlight?Color.rgb(20,105,220):Color.BLACK);
-            if(px+p.measureText(String.valueOf(ch))>381)break;
-            c.drawText(String.valueOf(ch),px,yy+23,p);
-            px+=p.measureText(String.valueOf(ch));
-            if(ch!=' ')hexIndex++;
-          }
-          c.restore();
-        }
+      drawFeatureCards(c,active>=4 ? customFeatures(active) : moduleFeatures(active),
+          active>=4 ? getSharedPreferences("studio_custom_abt_loaded",MODE_PRIVATE).getBoolean(
+              customModuleCatalog().optJSONObject(active-4).optString("id"),false) : loaded[active],
+          active>=4 ? customFeaturePage.getOrDefault(
+              customModuleCatalog().optJSONObject(active-4).optString("id"),0) : featurePage[active]);
         card(c,10,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"open_text","Открыть ABT"),10,720,185,52,15,Color.BLACK);
         card(c,205,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"save_text","Сохранить ABT"),205,720,185,52,15,Color.BLACK);
         card(c,10,782,260,57,12,true);
@@ -1258,77 +1201,11 @@ public class MainActivity extends Activity {
       p.setColor(Color.rgb(224,57,64));p.setStrokeWidth(1);c.drawLine(25,232,316,232,p);
       String configuredVersion=StudioSettings.moduleVersion(MainActivity.this,modules[active]);
       txt(c,"ID: "+ids[active]+"  |  Ver: "+(!configuredVersion.isEmpty()?configuredVersion:(loaded[active]?"ABT загружен":"Образец")),25,252,12,Color.rgb(91,103,119),false);
-      card(c,10,279,380,91,12,true);
-      ArrayList<FeatureEngine.Feature> shown=moduleFeatures(active);
-      int page=featurePage[active],slots=featureSlots();
-      if(page>=shown.size()){page=0;featurePage[active]=0;}
-      p.setColor(Color.rgb(190,199,211));p.setStrokeWidth(1);
-      for(int line=1;line<3;line++){float yy=283+line*28f;c.drawLine(15,yy,385,yy,p);}
-      for(int col=1;col<3;col++){float xx=17+col*122f;c.drawLine(xx,282,xx,368,p);}
-      if(shown.size()>slots)txt(c,"›",366,362,18,Color.rgb(155,0,0),true);
-      for(int i=0;i<slots&&page+i<shown.size();i++){
-        float x=featureX(i),y=featureY(i);
-        card(c,x,y,17,17,4,false);
-        if(isChecked(shown.get(page+i))){
-          rect(c,Color.rgb(210,28,37),x+3,y+3,11,11,2);
-          p.setColor(Color.WHITE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);
-          Path mark=new Path();mark.moveTo(x+3,y+9);mark.lineTo(x+7,y+13);mark.lineTo(x+14,y+4);c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
-        }
-        txtFit(c,shown.get(page+i).label,x+22,y+13,11,Color.BLACK,featureCellWidth()-25);
-      }
-      
-      card(c,10,376,380,337,13,true);
-      int hexPanelColor=appearanceColor("panel",Color.TRANSPARENT);
-      if(hexPanelColor!=Color.TRANSPARENT){p.setColor(hexPanelColor);p.setStyle(Paint.Style.FILL);c.drawRoundRect(13,379,387,710,10,10,p);}
-      // Published administrator rows are read-only reference templates, not vehicle ABT.
-      // Never copy them into abtRows, rows, original, or the Save ABT path.
-      org.json.JSONArray onlineRows=null;
-      if(!loaded[active]&&rows[active].isEmpty())
-        onlineRows=PublishedFullSettings.builtInRowTemplates(MainActivity.this,modules[active]);
-      boolean onlineReference=onlineRows!=null&&onlineRows.length()>0;
-      if(onlineReference){
-        int onlineCount=Math.min(9,onlineRows.length());
-        for(int i=0;i<onlineCount;i++){
-          org.json.JSONObject item=onlineRows.optJSONObject(i);
-          if(item==null)continue;
-          float y=380+i*36.5f;card(c,15,y,370,35,8,false);
-          p.setColor(Color.rgb(202,209,219));p.setStrokeWidth(1);
-          c.drawLine(165,y+4,165,y+31,p);
-          txtFit(c,item.optString("address"),28,y+23,14,Color.BLACK,132);
-          txtFit(c,item.optString("value"),177,y+23,13,Color.BLACK,197);
-        }
-      }
-      int count=Math.min(Math.max(0,rows[active].size()-scrollOffset[active]),9);
-      if(rows[active].isEmpty()&&!onlineReference)txt(c,"Нет данных — откройте ABT блока "+modules[active],22,420,12,Color.DKGRAY,false);
-      for(int i=0;i<count;i++){
-        int rowIndex=i+scrollOffset[active];float y=380+i*36.5f;card(c,15,y,370,35,8,false);
-        p.setColor(Color.rgb(202,209,219));p.setStrokeWidth(1);c.drawLine(165,y+4,165,y+31,p);
-        String index=rowIndex<abtRows[active].size()?abtRows[active].get(rowIndex).address:ids[active]+"-"+String.format(java.util.Locale.US,"01-%02d",rowIndex+1);
-        txt(c,index,28,y+23,14,Color.BLACK,false);
-        String value=rows[active].get(rowIndex);
-        AbtCodec.Row row=rowIndex<abtRows[active].size()?abtRows[active].get(rowIndex):null;
-        String before=row==null?"":original.get(key(row));
-        // Only checked (enabled) features may highlight HEX. An unchecked feature must never show blue OFF values.
-        Set<Integer> changed=row==null?new HashSet<>():activeFeaturePositions(active,row);
-        // When an enabled feature changes the checksum, highlight its changed checksum digits as well.
-        if(!changed.isEmpty()&&before!=null){
-          String oldHex=AbtCodec.norm(before),currentHex=AbtCodec.norm(value);
-          int checksumStart=Math.max(0,currentHex.length()-2);
-          for(int k=checksumStart;k<currentHex.length()&&k<oldHex.length();k++)
-            if(currentHex.charAt(k)!=oldHex.charAt(k))changed.add(k);
-        }
-        p.setTypeface(Typeface.create("monospace",Typeface.NORMAL));p.setTextSize(13);p.setStyle(Paint.Style.FILL);
-        float px=177;int hexIndex=0;
-        c.save();c.clipRect(175,y+2,381,y+33);
-        for(int j=0;j<value.length();j++){
-          char ch=value.charAt(j);boolean marked=ch!=' '&&changed.contains(hexIndex);
-          p.setColor(marked?Color.rgb(20,105,220):Color.BLACK);
-          p.setTypeface(Typeface.create("monospace",marked?Typeface.BOLD:Typeface.NORMAL));
-          if(px>381)break;
-          c.drawText(String.valueOf(ch),px,y+23,p);px+=p.measureText(String.valueOf(ch));if(ch!=' ')hexIndex++;
-        }
-        c.restore();
-      }
+      drawFeatureCards(c,active>=4 ? customFeatures(active) : moduleFeatures(active),
+          active>=4 ? getSharedPreferences("studio_custom_abt_loaded",MODE_PRIVATE).getBoolean(
+              customModuleCatalog().optJSONObject(active-4).optString("id"),false) : loaded[active],
+          active>=4 ? customFeaturePage.getOrDefault(
+              customModuleCatalog().optJSONObject(active-4).optString("id"),0) : featurePage[active]);
       card(c,10,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"open_text","Открыть ABT"),10,720,185,52,15,Color.BLACK);
       card(c,205,720,185,52,12,true);centered(c,StudioSettings.appearance(MainActivity.this,"save_text","Сохранить ABT"),205,720,185,52,15,Color.BLACK);
       card(c,10,782,260,57,12,true);
@@ -1392,15 +1269,41 @@ public class MainActivity extends Activity {
         return true;
       }
       if(adminSession&&x>=346&&y>=8&&y<=70){admin();return true;}
-      if(active>=4){if(y>=351&&y<=373&&x>=340){
-        org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
-        if(module!=null){String id=module.optString("id");int total=0;for(FeatureEngine.Feature f:features)if(id.equalsIgnoreCase(f.module))total++;int current=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;customFeaturePage.put(id,current+featureSlots()>=total?0:current+featureSlots());saveCustomTabPosition(id);invalidate();}
+      if(y>=350&&y<=713){
+        boolean ready=active>=4?getSharedPreferences("studio_custom_abt_loaded",MODE_PRIVATE)
+          .getBoolean(customModuleCatalog().optJSONObject(active-4).optString("id"),false):loaded[active];
+        if(!ready){Toast.makeText(MainActivity.this,"Сначала откройте ABT этого блока",Toast.LENGTH_SHORT).show();return true;}
+        if(y>=676){
+          if(active>=4){
+            String id=customModuleCatalog().optJSONObject(active-4).optString("id");
+            int count=customFeatures(active).size(),old=customFeaturePage.getOrDefault(id,0);
+            customFeaturePage.put(id,old+10>=count?0:old+10);saveCustomTabPosition(id);
+          }else{
+            int count=moduleFeatures(active).size();
+            featurePage[active]=featurePage[active]+10>=count?0:featurePage[active]+10;
+          }
+          invalidate();return true;
+        }
+        int col=x>=205?1:0,row=(int)((y-350)/65f);
+        if(row>=0&&row<5){
+          int slot=row*2+col;
+          if(active>=4){
+            String id=customModuleCatalog().optJSONObject(active-4).optString("id");
+            toggleCustomFeature(customFeaturePage.getOrDefault(id,0)+slot);
+          }else toggleFeature(featurePage[active]+slot);
+        }
         return true;
-      }if(y>=282&&y<=370){int col=Math.max(0,Math.min(2,(int)((x-17)/122f)));int row=Math.max(0,Math.min(2,(int)((y-283)/28f)));int slot=col*3+row;org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);if(module!=null){String id=module.optString("id");int offset=customFeaturePage.containsKey(id)?customFeaturePage.get(id):0;toggleCustomFeature(offset+slot);}return true;}if(y>=717&&y<=777){org.json.JSONObject item=customModuleCatalog().optJSONObject(active-4);if(item!=null)customAbtPicker(x>=200,item.optString("id"));return true;}if(y>=779&&x>=277&&x<333){StudioFaq.show(MainActivity.this);return true;}if(y>=779&&x>=336){about();return true;}return true;}
-      if(y>=351&&y<=373&&x>=340&&moduleFeatures(active).size()>featureSlots()){int total=moduleFeatures(active).size();featurePage[active]=featurePage[active]+featureSlots()>=total?0:featurePage[active]+featureSlots();invalidate();return true;}
-      if(y>=279&&y<=370){int slots=featureSlots();int col=Math.max(0,Math.min(2,(int)((x-17)/122f)));int row=Math.max(0,Math.min(2,(int)((y-283)/28f)));int i=col*3+row;if(i>=0&&i<slots&&featurePage[active]+i<moduleFeatures(active).size())toggleFeature(featurePage[active]+i);return true;}
-      // HEX rows on the main screen are read-only; edit via features or admin panel.
-      if(y>=380&&y<=713&&Math.abs(y-startY)<=18)return true;
+      }
+      if(active>=4){
+        if(y>=717&&y<=777){
+          org.json.JSONObject item=customModuleCatalog().optJSONObject(active-4);
+          if(item!=null)customAbtPicker(x>=200,item.optString("id"));
+          return true;
+        }
+        if(y>=779&&x>=277&&x<333){StudioFaq.show(MainActivity.this);return true;}
+        if(y>=779&&x>=336){about();return true;}
+        return true;
+      }
       if(y>=717&&y<=777){if(x<200)open();else save();return true;}
       if(y>=779){if(x>=336)about();else if(x>=277)StudioFaq.show(MainActivity.this);return true;}
       return true;

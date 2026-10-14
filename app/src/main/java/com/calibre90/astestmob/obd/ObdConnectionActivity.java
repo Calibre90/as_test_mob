@@ -452,19 +452,39 @@ public final class ObdConnectionActivity extends Activity {
         return;
       }
       String traffic = ObdSession.monitorMsCanPassive(2500);
-      java.util.LinkedHashSet<String> ids = new java.util.LinkedHashSet<>();
+      java.util.LinkedHashMap<String, Integer> ids = new java.util.LinkedHashMap<>();
       int lines = 0;
       int frames = 0;
+      int dataErrors = 0;
+      int bufferFull = 0;
+      int malformed = 0;
+      // ATH1 may return "7E8 10 14 ..." or compact "7E81014...".
+      // Never count malformed/ELM error lines as confirmed CAN frames.
       for (String line : traffic.split("[\\r\\n]+")) {
-        String t = line.trim().toUpperCase(Locale.US);
+        String t = line.trim().toUpperCase(Locale.US).replace(">", "");
         if (t.isEmpty() || t.equals("ATMA") || t.equals("OK") || t.startsWith("STOPPED")) continue;
+        if (t.contains("DATA ERROR")) { dataErrors++; continue; }
+        if (t.contains("BUFFER FULL")) { bufferFull++; continue; }
+        if (t.contains("ERROR") || t.contains("NO DATA") || t.contains("SEARCHING")) continue;
         lines++;
-        java.util.regex.Matcher m = java.util.regex.Pattern
-            .compile("^(?:[0-9A-F]{3}|[0-9A-F]{8})(?=[ \\t]|:|$)").matcher(t);
-        if (m.find()) { frames++; ids.add(m.group()); }
+        String compact = t.replaceAll("[ \\t:]", "");
+        String id = null;
+        // Standard 11-bit header plus 0..8 data bytes, with or without spaces.
+        if (compact.matches("[0-7][0-9A-F]{2}(?:[0-9A-F]{2}){1,8}")) {
+          id = compact.substring(0, 3);
+        } else if (compact.matches("[0-1][0-9A-F]{7}(?:[0-9A-F]{2}){1,8}")) {
+          id = compact.substring(0, 8);
+        }
+        if (id != null) {
+          frames++;
+          ids.put(id, ids.containsKey(id) ? ids.get(id) + 1 : 1);
+        } else malformed++;
       }
-      String report = "ATMA: строк " + lines + ", распознано кадров " + frames
-          + ", CAN-ID " + ids + (frames == 0 ? "; активность не подтверждена" : "; приём CAN подтверждён");
+      String report = "ATMA: строк данных " + lines + ", корректных по формату кадров " + frames
+          + ", ошибок DATA ERROR " + dataErrors + ", BUFFER FULL " + bufferFull
+          + ", нераспознано " + malformed + ", CAN-ID/число кадров " + ids
+          + (frames == 0 ? "; достоверный приём кадров не подтверждён"
+              : "; есть кадры корректного формата (проверка CRC адаптером неизвестна)");
       ObdSession.saveModuleResult(bus + " пассивный монитор", report);
       ObdSession.saveModuleRaw(bus + " пассивный монитор", traffic.length() > 1800 ? traffic.substring(0,1800) : traffic);
       append(bus + ": " + report);

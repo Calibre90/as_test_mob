@@ -53,7 +53,22 @@ public final class ObdModuleProbe {
           // A correctly addressed negative response (7F 22 xx) also proves
           // that a diagnostic ECU answered, even when VIN DID is unsupported.
           boolean negative=normalized.matches("(?s).*7F22(11|12|13|22|31|33|78).*");
-          String status=positive ? "Ответ подтверждён (VIN DID)" :
+          // F187 = ECU spare-part number (read-only UDS DID). Try it only
+          // when VIN DID gave no diagnostic answer; keep both raw replies.
+          if (!positive && !negative) {
+            String spare = link.command("22F187");
+            String spareHex = spare == null ? "" : spare.toUpperCase(Locale.US).replaceAll("[^0-9A-F]", "");
+            if (spareHex.contains("62F187")) {
+              positive = true;
+              raw = "F190: " + raw + " | F187: " + spare;
+            } else if (spareHex.matches("(?s).*7F22(11|12|13|22|31|33|78).*")) {
+              negative = true;
+              raw = "F190: " + raw + " | F187: " + spare;
+            } else {
+              raw = "F190: " + raw + " | F187: " + spare;
+            }
+          }
+          String status=positive ? (normalized.contains("62F190") ? "Ответ подтверждён (VIN DID)" : "Ответ подтверждён (DID F187)") :
               negative ? "Блок ответил: VIN DID не поддержан/отклонён" : "Не подтверждён";
           results.add(new Result(ecu[0],req,resp,status,raw));
         } catch(IOException ex) {

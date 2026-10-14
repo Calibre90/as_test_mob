@@ -90,14 +90,14 @@ public final class AdminSnapshot {
       java.util.HashSet<String> faqNames=new java.util.HashSet<>();
       for(int i=0;i<entries.length();i++){
         JSONObject entry=entries.getJSONObject(i);
-        if(entry.length()!=2 || !entry.has("name") || !entry.has("description"))
+        if(entry.length()<2 || entry.length()>3 || !entry.has("name") || !entry.has("description") || (entry.length()==3 && !entry.has("extra_text")))
           throw new IllegalArgumentException("Лишние или отсутствующие поля FAQ №"+(i+1));
         if(!(entry.opt("name") instanceof String) ||
-           !(entry.opt("description") instanceof String))
+           !(entry.opt("description") instanceof String) || (entry.has("extra_text") && !(entry.opt("extra_text") instanceof String)))
           throw new IllegalArgumentException("Неверный формат записи FAQ №"+(i+1));
         String name=entry.getString("name").trim();
         String description=entry.getString("description");
-        if(name.isEmpty()||name.length()>120||description.length()>12000)
+        if(name.isEmpty()||name.length()>120||description.length()>12000||entry.optString("extra_text","").length()>12000)
           throw new IllegalArgumentException("Неверная запись FAQ №"+(i+1));
         if(!faqNames.add(name.toLowerCase(java.util.Locale.ROOT)))
           throw new IllegalArgumentException("Повтор названия FAQ: "+name);

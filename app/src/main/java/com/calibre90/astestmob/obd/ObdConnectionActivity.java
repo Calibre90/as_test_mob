@@ -460,7 +460,7 @@ public final class ObdConnectionActivity extends Activity {
         if (t.isEmpty() || t.equals("ATMA") || t.equals("OK") || t.startsWith("STOPPED")) continue;
         lines++;
         java.util.regex.Matcher m = java.util.regex.Pattern
-            .compile("^(?:[0-9A-F]{3}|[0-9A-F]{8})(?=\\\\s|:|$)").matcher(t);
+            .compile("^(?:[0-9A-F]{3}|[0-9A-F]{8})(?=[ \\t]|:|$)").matcher(t);
         if (m.find()) { frames++; ids.add(m.group()); }
       }
       String report = "ATMA: строк " + lines + ", распознано кадров " + frames
@@ -576,6 +576,8 @@ public final class ObdConnectionActivity extends Activity {
           try {
             append("Начат пробный опрос HS-CAN; запись запрещена.");
             ObdSession.clearModuleResults();
+            append("HS-CAN: контрольный пассивный мониторинг перед диагностическими запросами.");
+            passiveCanCheck("HS-CAN");
             for (ObdModuleProbe.Result result: ObdModuleProbe.probeHsCan(ObdSession::command)) {
               if ("PCM".equals(result.name)) {
                 String detectedVin = ObdModuleProbe.decodeVin(result.response);

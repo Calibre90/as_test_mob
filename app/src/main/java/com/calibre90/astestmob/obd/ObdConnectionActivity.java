@@ -48,10 +48,10 @@ public final class ObdConnectionActivity extends Activity {
     setContentView(scroll);
     if (Build.VERSION.SDK_INT >= 30) {
       // Explicitly keep the scrolling content below Android system bars.
-      getWindow().setDecorFitsSystemWindows(true);
+      getWindow().setDecorFitsSystemWindows(false);
     }
-    if (Build.VERSION.SDK_INT >= 35) {
-      scroll.setClipToPadding(false);
+    if (Build.VERSION.SDK_INT >= 30) {
+      scroll.setClipToPadding(true);
       scroll.setOnApplyWindowInsetsListener((view, insets) -> {
         android.graphics.Insets bars = insets.getInsets(
             android.view.WindowInsets.Type.statusBars() | android.view.WindowInsets.Type.navigationBars());

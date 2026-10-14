@@ -1238,21 +1238,8 @@ public class MainActivity extends Activity {
     float startY,startX,moduleTabOffset=0;
     void revealActiveTab(){moduleTabOffset=0;}
     @Override public boolean onTouchEvent(MotionEvent e){if(e.getAction()==MotionEvent.ACTION_DOWN){startY=e.getY()/sy;startX=e.getX()/sx;return true;}if(e.getAction()!=MotionEvent.ACTION_UP)return true;float x=e.getX()/sx,y=e.getY()/sy;
-      if(active>=4&&startY>=391&&startY<=713&&y>=391&&y<=713&&Math.abs(y-startY)>18){
-        org.json.JSONObject module=customModuleCatalog().optJSONObject(active-4);
-        if(module!=null){
-          String id=module.optString("id");
-          int total=0;
-          try{total=new org.json.JSONArray(getSharedPreferences("studio_custom_rows",MODE_PRIVATE).getString(id,"[]")).length();}catch(Exception ignored){}
-          int old=customScroll.containsKey(id)?customScroll.get(id):0;
-          int delta=Math.round((startY-y)/30f);
-          customScroll.put(id,Math.max(0,Math.min(Math.max(0,total-9),old+delta)));
-          saveCustomTabPosition(id);
-          invalidate();
-        }
-        return true;
-      }
-      if(active<4&&startY>=376&&startY<=713&&y>=376&&y<=713&&Math.abs(y-startY)>18){int delta=Math.round((startY-y)/36.5f);scrollOffset[active]=Math.max(0,Math.min(Math.max(0,rowCount(active)-9),scrollOffset[active]+delta));invalidate();return true;}
+      // Feature cards use taps, not the former HEX-row swipe scrolling.
+      if(startY>=350&&startY<=713&&Math.abs(y-startY)>18)return true;
       if(y>=127&&y<=183){
         int count=visibleTabCount();
         float width=370f/Math.max(1,count);

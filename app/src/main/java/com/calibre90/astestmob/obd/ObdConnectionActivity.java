@@ -40,11 +40,23 @@ public final class ObdConnectionActivity extends Activity {
     LinearLayout root = new LinearLayout(this);
     root.setOrientation(LinearLayout.VERTICAL);
     // Respect Android edge-to-edge status/navigation insets on Android 15+.
-    root.setFitsSystemWindows(true);
+    root.setFitsSystemWindows(false);
     root.setPadding(22,24,22,20);
     ScrollView scroll = new ScrollView(this);
     scroll.addView(root);
+    scroll.setFitsSystemWindows(false);
     setContentView(scroll);
+    if (Build.VERSION.SDK_INT >= 35) {
+      final int baseTop = root.getPaddingTop();
+      final int baseBottom = root.getPaddingBottom();
+      scroll.setOnApplyWindowInsetsListener((view, insets) -> {
+        android.graphics.Insets bars = insets.getInsets(
+            android.view.WindowInsets.Type.statusBars() | android.view.WindowInsets.Type.navigationBars());
+        root.setPadding(22, baseTop + bars.top, 22, baseBottom + bars.bottom);
+        return insets;
+      });
+      scroll.requestApplyInsets();
+    }
     TextView title = new TextView(this);
     title.setText("Mazda 6 GH — OBD подключение");
     title.setTextSize(22);
@@ -107,17 +119,13 @@ public final class ObdConnectionActivity extends Activity {
     disconnect.setText("Отключить");
     root.addView(disconnect);
     Button scan = new Button(this);
-    scan.setText("Пробный опрос HS-CAN (только чтение)");
+    scan.setText("Опрос блоков автомобиля (только чтение)");
     root.addView(scan);
     scan.setOnClickListener(v->ensureHsCanThenProbe());
     Button results = new Button(this);
     results.setText("Результаты обнаружения блоков");
     root.addView(results);
     results.setOnClickListener(v->showModuleResults());
-    Button msScan = new Button(this);
-    msScan.setText("MS-CAN: переключение и проверка готовности");
-    root.addView(msScan);
-    msScan.setOnClickListener(v->requestMsCan());
     Button diagnostics = new Button(this);
     diagnostics.setText("Параметры и ошибки двигателя (только чтение)");
     root.addView(diagnostics);
@@ -455,7 +463,8 @@ public final class ObdConnectionActivity extends Activity {
               }
             }
             ui.post(() -> { if (!isFinishing() && !isDestroyed()) moduleReport.setText(ObdSession.moduleReport()); });
-            append("Пробный опрос завершён. Обнаружение не подтверждает возможность чтения As-Built.");
+            append("Пробный опрос HS-CAN завершён. Обнаружение не подтверждает возможность чтения As-Built.");
+            ui.post(() -> { if (!isFinishing() && !isDestroyed()) offerNextMsScan(); });
           } catch(Exception e) {
             append("Ошибка опроса: "+e.getMessage());
             if (!ObdSession.adapterReady()) {
@@ -475,6 +484,17 @@ public final class ObdConnectionActivity extends Activity {
           finally { busy=false;ui.post(()->{ adapterConfirmed=ObdSession.adapterReady(); vehicleConfirmed=ObdSession.vehicleReady(); refreshButtons(adapterConfirmed); }); }
         });
       }).show();
+  }
+
+  private void offerNextMsScan() {
+    if (!ObdSession.adapterReady() || cancelled) return;
+    if (msCanMode.getSelectedItemPosition() == 1) return;
+    new AlertDialog.Builder(this)
+        .setTitle("Продолжить проверку MS-CAN?")
+        .setMessage("HS-CAN проверена. Для дополнительных блоков Mazda 6 GH требуется MS-CAN. Перейти к настройке MS-CAN? После выбора приложение само запросит переключение адаптера.")
+        .setNegativeButton("Остаться на HS-CAN", null)
+        .setPositiveButton("Продолжить", (dialog, which) -> requestMsCan())
+        .show();
   }
 
   private void stopConnection() {

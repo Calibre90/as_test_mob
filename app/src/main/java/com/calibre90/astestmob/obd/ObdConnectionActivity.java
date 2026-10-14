@@ -130,6 +130,7 @@ public final class ObdConnectionActivity extends Activity {
     log.setTextIsSelectable(true);
     log.setText("Журнал связи (без записи в блоки)\n" + ObdSession.journal());
     log.setVisibility(View.GONE);
+    root.addView(log);
     Button journalButton = new Button(this);
     journalButton.setText("Показать журнал связи");
     root.addView(journalButton);
@@ -137,6 +138,7 @@ public final class ObdConnectionActivity extends Activity {
       boolean show = log.getVisibility() != View.VISIBLE;
       log.setVisibility(show ? View.VISIBLE : View.GONE);
       journalButton.setText(show ? "Скрыть журнал связи" : "Показать журнал связи");
+      if (show) log.setText("Журнал связи (без записи в блоки)\n" + ObdSession.journal());
     });
     moduleReport = new TextView(this);
     moduleReport.setText(ObdSession.moduleReport());

@@ -63,6 +63,16 @@ public final class ObdModuleProbe {
             if (positiveDid(serial, "F18C")) positiveDid = "F18C";
             negative |= negativeDid(serial);
           }
+          // Extra non-mutating identification reads only for the elusive IC.
+          // These are exploratory DIDs, not proof of the ECU's bus or address.
+          if ("IC".equals(ecu[0]) && positiveDid == null) {
+            for (String did : new String[]{"F180", "F181", "F188"}) {
+              String extra = link.command("22" + did);
+              raw += " | " + did + ": " + extra;
+              if (positiveDid(extra, did)) { positiveDid = did; break; }
+              negative |= negativeDid(extra);
+            }
+          }
           String status = positiveDid != null
               ? "Диагностический ответ подтверждён (DID " + positiveDid + ")"
               : negative ? "ECU ответил отказом на запрос идентификации"
@@ -117,6 +127,15 @@ public final class ObdModuleProbe {
             raw += " | F18C: " + f18c;
             if (positiveDid(f18c, "F18C")) matched = "F18C";
             rejected |= negativeDid(f18c);
+          }
+          // Same conservative IC-only fallback on the physically selected MS bus.
+          if (ecu[0].startsWith("IC ") && matched == null) {
+            for (String did : new String[]{"F180", "F181", "F188"}) {
+              String extra = link.command("22" + did);
+              raw += " | " + did + ": " + extra;
+              if (positiveDid(extra, did)) { matched = did; break; }
+              rejected |= negativeDid(extra);
+            }
           }
           String state = matched != null
               ? "Диагностический ответ подтверждён (DID " + matched + "; адрес-кандидат)"

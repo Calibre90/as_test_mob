@@ -349,6 +349,13 @@ public final class ObdConnectionActivity extends Activity {
             append("Начат пробный опрос HS-CAN; запись запрещена.");
             ObdSession.clearModuleResults();
             for (ObdModuleProbe.Result result: ObdModuleProbe.probeHsCan(ObdSession::command)) {
+              if ("PCM".equals(result.name)) {
+                String detectedVin = ObdModuleProbe.decodeVin(result.response);
+                if (detectedVin != null) {
+                  ObdSession.confirmVehicle(detectedVin);
+                  append("VIN автомобиля (PCM): " + detectedVin);
+                }
+              }
               ObdSession.saveModuleResult(result.name+" ["+result.requestId+"/"+result.responseId+"]", result.status);
               append(result.name+" ["+result.requestId+"/"+result.responseId+"]: "+result.status);
               if (result.response != null && !result.response.trim().isEmpty()) {

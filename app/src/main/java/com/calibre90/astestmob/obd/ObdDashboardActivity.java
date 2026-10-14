@@ -124,6 +124,9 @@ public final class ObdDashboardActivity extends Activity {
       if(tile.name.equals("As-Built Studio"))
         startActivity(new Intent(this,AsBuiltEcuActivity.class));
       else if(tile.name.equals("Адаптер"))openConnection();
+      else if(tile.name.equals("Ошибки DTC") || tile.name.equals("Параметры"))
+        startActivity(new Intent(this,ObdDiagnosticsActivity.class));
+      else if(tile.name.equals("Модули"))openConnection();
       else showPreview(tile.name,tile.detail);
     });
   }

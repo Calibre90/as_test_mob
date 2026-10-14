@@ -32,7 +32,7 @@ public final class ElmWifiClient implements Closeable {
       if (cm != null) {
         for (Network n : cm.getAllNetworks()) {
           NetworkCapabilities caps = cm.getNetworkCapabilities(n);
-          if (caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+          if (caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)\n              && !caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
             wifiNetwork = n;
             break;
           }

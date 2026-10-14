@@ -1193,7 +1193,7 @@ public class MainActivity extends Activity {
         // One shared bottom-bar FAQ button, next to the existing About button.
         card(c,277,782,54,57,12,true);
         centered(c,"FAQ",277,782,54,57,14,Color.BLACK);
-        card(c,336,782,54,57,12,true);txt(c,"♙",350,821,32,Color.BLACK,true);
+        card(c,336,782,54,57,12,true);centered(c,"ⓘ",336,782,54,57,29,Color.BLACK);
         actual.restore();return;
       }
       card(c,10,190,380,82,13,true);
@@ -1232,7 +1232,7 @@ public class MainActivity extends Activity {
       card(c,277,782,54,57,12,true);
       centered(c,"FAQ",277,782,54,57,14,Color.BLACK);
       card(c,336,782,54,57,12,true);
-      txt(c,"♙",350,821,32,Color.BLACK,true);
+      centered(c,"ⓘ",336,782,54,57,29,Color.BLACK);
       actual.restore();
     }
     float startY,startX,moduleTabOffset=0;
@@ -1615,15 +1615,17 @@ public class MainActivity extends Activity {
     View header=new View(this);header.setBackground(panel(Color.WHITE,Color.rgb(235,239,244),10,Color.rgb(215,222,230)));
     place(root,header,.025f,.025f,.95f,.16f,width,height);
     TextView title=caption(isAdmin?StudioSettings.appearance(this,"admin_text","Админка"):"О программе",20,Color.BLACK,true);
-    place(root,title,.16f,.045f,.60f,.11f,width,height);
+    place(root,title,isAdmin?.16f:.08f,.045f,isAdmin?.60f:.84f,.11f,width,height);
     if(isAdmin){
       TextView lock=caption("🔒",25,Color.rgb(190,15,22),true);
       place(root,lock,.065f,.045f,.11f,.11f,width,height);
     }
+    if(isAdmin){
     TextView close=caption("×",31,Color.BLACK,true);close.setGravity(Gravity.CENTER);close.setIncludeFontPadding(false);close.setPadding(0,0,0,0);
     close.setBackground(panel(Color.WHITE,Color.rgb(235,238,242),8,Color.rgb(200,205,212)));
     place(root,close,.82f,.045f,.125f,.105f,width,height);
     close.setOnClickListener(v->dialog.dismiss());
+    }
     if(isAdmin){
       TextView help=caption("Вход администратора",15,Color.DKGRAY,false);
       place(root,help,.085f,.22f,.80f,.07f,width,height);
@@ -1659,7 +1661,7 @@ public class MainActivity extends Activity {
       description.setMaxLines(Integer.MAX_VALUE);
       description.setPadding(0,dp(3),dp(5),dp(3));
       descriptionScroll.addView(description,new android.widget.ScrollView.LayoutParams(-1,-2));
-      place(root,descriptionScroll,.09f,.35f,.84f,.265f,width,height);
+      place(root,descriptionScroll,.09f,.35f,.84f,.355f,width,height);
       String[] creatorNames={
         StudioSettings.appearance(this,"creator1_name","Dim304"),
         StudioSettings.appearance(this,"creator2_name","Wolis11")
@@ -1687,7 +1689,7 @@ public class MainActivity extends Activity {
         styled.setSpan(new android.text.style.ForegroundColorSpan(Color.rgb(24,96,191)),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         styled.setSpan(new android.text.style.UnderlineSpan(),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         person.setText(styled);
-        place(root,person,.09f,i==0?.625f:.680f,.84f,.060f,width,height);
+        place(root,person,.09f,i==0?.720f:.770f,.84f,.048f,width,height);
         android.text.style.ClickableSpan onlyLink=new android.text.style.ClickableSpan(){
           @Override public void onClick(android.view.View widget){
             if(!url.isEmpty()&&(url.startsWith("https://")||url.startsWith("http://"))){
@@ -1709,11 +1711,11 @@ public class MainActivity extends Activity {
         appBuild=android.os.Build.VERSION.SDK_INT>=28?pkg.getLongVersionCode():pkg.versionCode;
       }catch(Exception ignored){}
       TextView versionInfo=caption("◉  Версия: "+appVersion,10,Color.rgb(98,106,116),false);
-      place(root,versionInfo,.095f,.777f,.78f,.030f,width,height);
+      place(root,versionInfo,.095f,.835f,.78f,.030f,width,height);
 
       TextView ok=caption("Закрыть",16,Color.WHITE,true);ok.setGravity(Gravity.CENTER);
       ok.setBackground(panel(Color.rgb(245,69,69),Color.rgb(170,0,10),9,Color.rgb(255,103,109)));
-      place(root,ok,.09f,.86f,.82f,.095f,width,height);ok.setOnClickListener(v->dialog.dismiss());
+      place(root,ok,.09f,.89f,.82f,.075f,width,height);ok.setOnClickListener(v->dialog.dismiss());
     }
     dialog.setContentView(root);dialog.show();
     Window window=dialog.getWindow();if(window!=null){

@@ -38,7 +38,9 @@ public final class ObdConnectionActivity extends Activity {
     getWindow().getDecorView().setSystemUiVisibility(0);
     LinearLayout root = new LinearLayout(this);
     root.setOrientation(LinearLayout.VERTICAL);
-    root.setPadding(22,48,22,20);
+    // Respect Android edge-to-edge status/navigation insets on Android 15+.
+    root.setFitsSystemWindows(true);
+    root.setPadding(22,24,22,20);
     ScrollView scroll = new ScrollView(this);
     scroll.addView(root);
     setContentView(scroll);

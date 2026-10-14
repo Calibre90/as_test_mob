@@ -43,33 +43,30 @@ public final class ObdModuleProbe {
             results.add(new Result(ecu[0],req,resp,"Настройка адреса не поддерживается",""));
             continue;
           }
-          // UDS/ISO 14229 ReadDataByIdentifier F190 (VIN), read-only.
-          // Negative response 7F 22 is NOT proof that this ECU exists.
-          String raw=link.command("22F190");
-          // A negative response to VIN DID confirms ECU communication; NO DATA does not.
-          // Do not send potentially state-changing session/control commands.
-          String normalized=raw.toUpperCase(Locale.US).replaceAll("[^0-9A-F]","");
-          boolean positive=normalized.contains("62F190");
-          // A correctly addressed negative response (7F 22 xx) also proves
-          // that a diagnostic ECU answered, even when VIN DID is unsupported.
-          boolean negative=normalized.matches("(?s).*7F22(11|12|13|22|31|33|78).*");
-          // F187 = ECU spare-part number (read-only UDS DID). Try it only
-          // when VIN DID gave no diagnostic answer; keep both raw replies.
-          if (!positive && !negative) {
+          // Read-only identification DIDs; preserve each reply independently.
+          // 7F 22 31 is a real negative diagnostic response, not a timeout.
+          String vinReply = link.command("22F190");
+          String raw = "F190: " + vinReply;
+          String positiveDid = positiveDid(vinReply, "F190") ? "F190" : null;
+          boolean negative = negativeDid(vinReply);
+          // Additional read-only identification DIDs. They can be unsupported;
+          // that does not mean the ECU is absent.
+          if (positiveDid == null) {
             String spare = link.command("22F187");
-            String spareHex = spare == null ? "" : spare.toUpperCase(Locale.US).replaceAll("[^0-9A-F]", "");
-            if (spareHex.contains("62F187")) {
-              positive = true;
-              raw = "F190: " + raw + " | F187: " + spare;
-            } else if (spareHex.matches("(?s).*7F22(11|12|13|22|31|33|78).*")) {
-              negative = true;
-              raw = "F190: " + raw + " | F187: " + spare;
-            } else {
-              raw = "F190: " + raw + " | F187: " + spare;
-            }
+            raw += " | F187: " + spare;
+            if (positiveDid(spare, "F187")) positiveDid = "F187";
+            negative |= negativeDid(spare);
           }
-          String status=positive ? (normalized.contains("62F190") ? "Ответ подтверждён (VIN DID)" : "Ответ подтверждён (DID F187)") :
-              negative ? "Блок ответил: VIN DID не поддержан/отклонён" : "Не подтверждён";
+          if (positiveDid == null) {
+            String serial = link.command("22F18C");
+            raw += " | F18C: " + serial;
+            if (positiveDid(serial, "F18C")) positiveDid = "F18C";
+            negative |= negativeDid(serial);
+          }
+          String status = positiveDid != null
+              ? "Диагностический ответ подтверждён (DID " + positiveDid + ")"
+              : negative ? "ECU ответил отказом на запрос идентификации"
+              : "Не подтверждён (нет диагностического ответа)";
           results.add(new Result(ecu[0],req,resp,status,raw));
         } catch(IOException ex) {
           results.add(new Result(ecu[0],req,resp,"Нет ответа: "+ex.getMessage(),""));
@@ -150,6 +147,17 @@ public final class ObdModuleProbe {
       vin.append((char) Integer.parseInt(payload.substring(i, i + 2), 16));
     String result = vin.toString();
     return result.matches("[A-HJ-NPR-Z0-9]{17}") ? result : null;
+  }
+
+  private static boolean positiveDid(String response, String did) {
+    return response != null && response.toUpperCase(Locale.US)
+        .replaceAll("[^0-9A-F]", "").contains("62" + did);
+  }
+
+  private static boolean negativeDid(String response) {
+    return response != null && response.toUpperCase(Locale.US)
+        .replaceAll("[^0-9A-F]", "")
+        .matches("(?s).*7F22(10|11|12|13|21|22|24|31|33|35|36|37|78).*");
   }
 
   private static boolean isError(String response) {

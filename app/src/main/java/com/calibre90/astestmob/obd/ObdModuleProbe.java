@@ -100,13 +100,27 @@ public final class ObdModuleProbe {
             results.add(new Result(ecu[0], request, response, "ELM отклонил адрес/фильтр", header + " | " + filter));
             continue;
           }
-          String raw = link.command("22F190");
-          String normalized = raw == null ? "" : raw.toUpperCase(Locale.US).replaceAll("[^0-9A-F]", "");
-          boolean positive = normalized.contains("62F190");
-          boolean negative = normalized.matches("(?s).*7F22(11|12|13|22|31|33|78).*");
-          String state = positive ? "Получен положительный ответ (кандидат адреса)" :
-              negative ? "Получен отрицательный ответ ECU (кандидат адреса)" :
-              "Ответ не подтверждён (не означает отсутствие блока)";
+          String f190 = link.command("22F190");
+          String raw = "F190: " + f190;
+          String matched = positiveDid(f190, "F190") ? "F190" : null;
+          boolean rejected = negativeDid(f190);
+          // Read-only fallbacks mirror HS-CAN discovery; each DID is optional.
+          if (matched == null) {
+            String f187 = link.command("22F187");
+            raw += " | F187: " + f187;
+            if (positiveDid(f187, "F187")) matched = "F187";
+            rejected |= negativeDid(f187);
+          }
+          if (matched == null) {
+            String f18c = link.command("22F18C");
+            raw += " | F18C: " + f18c;
+            if (positiveDid(f18c, "F18C")) matched = "F18C";
+            rejected |= negativeDid(f18c);
+          }
+          String state = matched != null
+              ? "Диагностический ответ подтверждён (DID " + matched + "; адрес-кандидат)"
+              : rejected ? "Получен отрицательный ответ ECU (адрес-кандидат)"
+              : "Ответ не подтверждён (не означает отсутствие блока)";
           results.add(new Result(ecu[0], request, response, state, raw));
         } catch (IOException e) {
           results.add(new Result(ecu[0], request, response, "Ошибка связи: " + e.getMessage(), ""));

@@ -13,6 +13,30 @@ import java.io.*;
 
 public class MainActivity extends Activity {
   StudioView view;
+  private Uri pendingSplashUri;
+  private static final int SPLASH_PICK_REQUEST=9091;
+  private File splashFile(){return new File(getFilesDir(),"custom_launch_splash.png");}
+  private void saveChosenSplash(Uri uri) throws IOException {
+    BitmapFactory.Options opts=new BitmapFactory.Options();opts.inJustDecodeBounds=true;
+    try(InputStream input=getContentResolver().openInputStream(uri)){BitmapFactory.decodeStream(input,null,opts);}
+    if(opts.outWidth<1||opts.outHeight<1||opts.outWidth>12000||opts.outHeight>12000)throw new IOException("Неподдерживаемое изображение");
+    opts.inJustDecodeBounds=false;opts.inSampleSize=Math.max(1,Math.max(opts.outWidth/1600,opts.outHeight/2400));
+    Bitmap bitmap;
+    try(InputStream input=getContentResolver().openInputStream(uri)){bitmap=BitmapFactory.decodeStream(input,null,opts);}
+    if(bitmap==null)throw new IOException("Не удалось прочитать изображение");
+    File temporary=new File(getFilesDir(),"custom_launch_splash.tmp");
+    try(FileOutputStream output=new FileOutputStream(temporary)){if(!bitmap.compress(Bitmap.CompressFormat.PNG,95,output))throw new IOException("Ошибка сохранения PNG");}
+    bitmap.recycle();
+    if(splashFile().exists()&&!splashFile().delete())throw new IOException("Не удалось заменить заставку");
+    if(!temporary.renameTo(splashFile()))throw new IOException("Не удалось сохранить заставку");
+  }
+  private void showLaunchSplash(ImageView splash){
+    if(splashFile().isFile()){
+      Bitmap bitmap=BitmapFactory.decodeFile(splashFile().getAbsolutePath());
+      if(bitmap!=null){splash.setImageBitmap(bitmap);return;}
+    }
+    splash.setImageResource(R.drawable.splash_studio);
+  }
   String pendingAdminSnapshot;
   boolean adminSession=false;
   private static final String ADMIN_MAGIC="MAZDA6GH-ADMIN-V1";
@@ -474,18 +498,26 @@ public class MainActivity extends Activity {
     setTitle(StudioSettings.appearance(this,"title","M6GH AS-BUILT CONFIG"));
     view=new StudioView();
     view.moduleTabOffset=Math.max(0,active*90f-280f);
-    // Open editor without splash; preserve RSA license activation.
-    setContentView(view);
-    if(LicenseGate.isActivated(this)){
-      refreshPublishedCatalog();
-    }else{
-      LicenseGate.enforce(this,()->{
-        if(!isFinishing() && !isDestroyed()){
-          setContentView(view);
-          refreshPublishedCatalog();
-        }
-      });
-    }
+    // Display the default or admin-selected splash for 1.5 seconds.
+    ImageView splash=new ImageView(this);
+    splash.setBackgroundColor(Color.BLACK);
+    splash.setScaleType(ImageView.ScaleType.FIT_CENTER);
+    showLaunchSplash(splash);
+    setContentView(splash);
+    new Handler(Looper.getMainLooper()).postDelayed(()->{
+      if(isFinishing()||isDestroyed())return;
+      if(LicenseGate.isActivated(this)){
+        setContentView(view);
+        refreshPublishedCatalog();
+      }else{
+        LicenseGate.enforce(this,()->{
+          if(!isFinishing()&&!isDestroyed()){
+            setContentView(view);
+            refreshPublishedCatalog();
+          }
+        });
+      }
+    },1500);
   }
   /** Refresh only published feature definitions; never replace a locally edited draft. */
   private static final String FULL_CATALOG_URL = "https://raw.githubusercontent.com/Calibre90/as_test_mob/main/publication/studio-published-settings.json";
@@ -1050,6 +1082,7 @@ public class MainActivity extends Activity {
     try{return Math.max(1,Math.min(10,Integer.parseInt(StudioSettings.appearance(this,"feature_columns","3").trim())));}
     catch(Exception ignored){return 3;}
   }
+  float featureDimension(String key,int fallback,int min,int max){try{return Math.max(min,Math.min(max,Integer.parseInt(StudioSettings.appearance(this,key,""+fallback).trim())));}catch(Exception ignored){return fallback;}}
   int featureSlots(){return 10;} // Two columns, five rows per page
   float featureCellWidth(){return 119f;}
   float featureX(int index){return 23f+(index/3)*122f;}
@@ -1117,8 +1150,10 @@ public class MainActivity extends Activity {
       for(int i=0;i<slots&&page+i<items.size();i++){
         FeatureEngine.Feature feature=items.get(page+i);
         float x=18+(i%2)*187f,y=350+(i/2)*65f;
-        card(c,x,y,177,57,10,false);
-        float bx=x+12,by=y+17;
+        float fw=featureDimension("feature_card_width",177,100,180);
+        float fh=featureDimension("feature_card_height",57,32,63);
+        card(c,x,y,fw,fh,10,false);
+        float bx=x+12,by=y+(fh-23)/2;
         card(c,bx,by,23,23,4,false);
         boolean checked=enabled&&(active>=4?customChecked(feature):isChecked(feature));
         if(checked){
@@ -1127,7 +1162,7 @@ public class MainActivity extends Activity {
           Path mark=new Path();mark.moveTo(bx+5,by+12);mark.lineTo(bx+10,by+17);mark.lineTo(bx+19,by+6);
           c.drawPath(mark,p);p.setStyle(Paint.Style.FILL);
         }
-        txtFit(c,feature.label,bx+29,y+34,12,enabled?Color.BLACK:Color.GRAY,126);
+        txtFit(c,feature.label,bx+29,y+fh/2+5,12,enabled?Color.BLACK:Color.GRAY,Math.max(30,fw-51));
       }
       if(items.size()>slots)txt(c,"Следующие функции  ›",225,698,12,Color.rgb(150,0,0),true);
     }
@@ -1493,6 +1528,13 @@ public class MainActivity extends Activity {
     startActivityForResult(i,11);
   }
   @Override protected void onActivityResult(int req,int result,Intent data){super.onActivityResult(req,result,data);
+    if(req==SPLASH_PICK_REQUEST){
+      if(result==RESULT_OK&&data!=null&&data.getData()!=null){
+        pendingSplashUri=data.getData();
+        Toast.makeText(this,"Заставка выбрана. Нажмите «Сохранить оформление».",Toast.LENGTH_LONG).show();
+      }
+      return;
+    }
     if(req==9088){
       if(result==RESULT_OK && data!=null && data.getData()!=null){
         try{
@@ -2554,12 +2596,26 @@ public class MainActivity extends Activity {
         });
       }
       if(selected[0]==3){
-        final String[] keys={"title","background","panel","feature_columns","open_text","save_text","about_description","warning_title","warning_body","creator1_role","creator1_name","creator1_url","creator2_role","creator2_name","creator2_url"};
-        final String[] labels={"Название окна","Фон приложения","Фон HEX-блока","Колонки функций","Кнопка открытия","Кнопка сохранения","Описание программы","Заголовок предупреждения","Текст предупреждения","Автор 1 — подпись","Автор 1 — имя","Автор 1 — ссылка","Автор 2 — подпись","Автор 2 — имя","Автор 2 — ссылка"};
-        final String[] defaults={"M6GH AS-BUILT CONFIG","","","3","Открыть ABT","Сохранить ABT","Редактор As-Built для Mazda 6 GH","⚠️WARNING⚠️","НЕ ЗАБЫВАЙТЕ ДЕЛАТЬ КОПИЮ СКАЧЕННОГО ФАЙЛА НАСТРОЕК ИЗ FORSCAN.","Разработчик","Dim304","https://www.drive2.ru/users/dim304/","Помощник","Wolis11","https://www.drive2.ru/users/wolis11/"};
+        final String[] keys={"title","background","feature_card_width","feature_card_height","open_text","save_text","about_description","warning_title","warning_body","creator1_role","creator1_name","creator1_url","creator2_role","creator2_name","creator2_url"};
+        final String[] labels={"Название окна","Фон приложения","Ширина кнопок функций (100–180)","Высота кнопок функций (32–63)","Кнопка открытия","Кнопка сохранения","Описание программы","Заголовок предупреждения","Текст предупреждения","Автор 1 — подпись","Автор 1 — имя","Автор 1 — ссылка","Автор 2 — подпись","Автор 2 — имя","Автор 2 — ссылка"};
+        final String[] defaults={"M6GH AS-BUILT CONFIG","","177","57","Открыть ABT","Сохранить ABT","Редактор As-Built для Mazda 6 GH","⚠️WARNING⚠️","НЕ ЗАБЫВАЙТЕ ДЕЛАТЬ КОПИЮ СКАЧЕННОГО ФАЙЛА НАСТРОЕК ИЗ FORSCAN.","Разработчик","Dim304","https://www.drive2.ru/users/dim304/","Помощник","Wolis11","https://www.drive2.ru/users/wolis11/"};
         android.widget.ScrollView appearanceScroll=new android.widget.ScrollView(this);
         LinearLayout appearanceFields=new LinearLayout(this);appearanceFields.setOrientation(LinearLayout.VERTICAL);
         appearanceScroll.addView(appearanceFields);panel.addView(appearanceScroll,new LinearLayout.LayoutParams(-1,0,1));
+        TextView splashLabel=new TextView(this);
+        splashLabel.setText("Заставка при запуске (1,5 секунды)");
+        splashLabel.setTextColor(Color.WHITE);splashLabel.setTextSize(13);
+        appearanceFields.addView(splashLabel);
+        Button chooseSplash=new Button(this);
+        chooseSplash.setText("Выбрать изображение PNG/JPG");
+        chooseSplash.setAllCaps(false);
+        chooseSplash.setOnClickListener(v->{
+          Intent pick=new Intent(Intent.ACTION_OPEN_DOCUMENT);
+          pick.setType("image/*");
+          pick.addCategory(Intent.CATEGORY_OPENABLE);
+          startActivityForResult(pick,SPLASH_PICK_REQUEST);
+        });
+        appearanceFields.addView(chooseSplash);
         final EditText[] appearanceInputs=new EditText[keys.length];
         for(int k=0;k<keys.length;k++){
           TextView label=new TextView(this);label.setText(labels[k]);label.setTextColor(Color.WHITE);label.setTextSize(13);
@@ -2578,6 +2634,7 @@ public class MainActivity extends Activity {
           appearanceFields.addView(input,new LinearLayout.LayoutParams(-1,isDescription?dp(112):dp(42)));appearanceInputs[k]=input;
         }
         TextView note=new TextView(this);note.setText("Цвета: #RRGGBB, пустое поле — стандартный цвет. Количество колонок функций: 1–10. Название, кнопки и данные авторов применяются после сохранения.");
+        note.setText("Цвета: #RRGGBB; размеры кнопок по умолчанию 177 × 57. Две колонки сохраняются. Новая заставка применяется после подтверждения сохранения.");
         note.setTextColor(Color.LTGRAY);appearanceFields.addView(note);
         Button saveAppearance=new Button(this);saveAppearance.setText("Сохранить оформление");saveAppearance.setAllCaps(false);
         saveAppearance.setTextSize(12);saveAppearance.setMinWidth(0);saveAppearance.setPadding(dp(4),0,dp(4),0);
@@ -2586,8 +2643,10 @@ public class MainActivity extends Activity {
           try{
             java.util.HashMap<String,String> changes=new java.util.HashMap<>();
             for(int k=0;k<keys.length;k++)changes.put(keys[k],appearanceInputs[k].getText().toString());
-            int columns=Integer.parseInt(changes.get("feature_columns").trim());
-            if(columns<1||columns>10)throw new IllegalArgumentException("Колонки функций: от 1 до 10");
+            int cardWidth=Integer.parseInt(changes.get("feature_card_width").trim());
+            int cardHeight=Integer.parseInt(changes.get("feature_card_height").trim());
+            if(cardWidth<100||cardWidth>180)throw new IllegalArgumentException("Ширина: 100–180");
+            if(cardHeight<32||cardHeight>63)throw new IllegalArgumentException("Высота: 32–63");
             final java.util.HashMap<String,String> confirmedChanges=new java.util.HashMap<>(changes);
             final EditText pinInput=new EditText(this);
             pinInput.setSingleLine(true);
@@ -2612,6 +2671,10 @@ public class MainActivity extends Activity {
                   return;
                 }
                 try{
+                  if(pendingSplashUri!=null){
+                    saveChosenSplash(pendingSplashUri);
+                    pendingSplashUri=null;
+                  }
                   StudioSettings.saveAppearance(this,confirmedChanges);
                   setTitle(StudioSettings.appearance(this,"title","M6GH AS-BUILT CONFIG"));
                   view.invalidate();

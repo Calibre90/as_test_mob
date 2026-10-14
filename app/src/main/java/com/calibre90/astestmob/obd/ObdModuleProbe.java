@@ -62,6 +62,47 @@ public final class ObdModuleProbe {
     }
     return results;
   }
+  /**
+   * Experimental Mazda/Ford 11-bit MS-CAN address candidates, not a verified
+   * GH module map. Read-only DID F190 only; no broadcast writes or coding.
+   */
+  public static List<Result> probeMsCan(Commands link) throws IOException {
+    final String[][] candidates = {
+      {"BCM (кандидат)", "726", "72E"},
+      {"RKE (кандидат)", "731", "739"},
+      {"HVAC/EATC (кандидат)", "733", "73B"}
+    };
+    List<Result> results = new ArrayList<>();
+    try {
+      for (String[] ecu : candidates) {
+        String request = ecu[1], response = ecu[2];
+        try {
+          String header = link.command("ATSH" + request);
+          String filter = link.command("ATCRA" + response);
+          if (isError(header) || isError(filter)) {
+            results.add(new Result(ecu[0], request, response, "ELM отклонил адрес/фильтр", header + " | " + filter));
+            continue;
+          }
+          String raw = link.command("22F190");
+          String normalized = raw == null ? "" : raw.toUpperCase(Locale.US).replaceAll("[^0-9A-F]", "");
+          boolean positive = normalized.contains("62F190");
+          boolean negative = normalized.matches("(?s).*7F22(11|12|13|22|31|33|78).*");
+          String state = positive ? "Получен положительный ответ (кандидат адреса)" :
+              negative ? "Получен отрицательный ответ ECU (кандидат адреса)" :
+              "Ответ не подтверждён (не означает отсутствие блока)";
+          results.add(new Result(ecu[0], request, response, state, raw));
+        } catch (IOException e) {
+          results.add(new Result(ecu[0], request, response, "Ошибка связи: " + e.getMessage(), ""));
+          if (e.getMessage() != null && e.getMessage().contains("connection")) throw e;
+        }
+      }
+    } finally {
+      try { link.command("ATCRA"); } catch (Exception ignored) {}
+      try { link.command("ATSH7DF"); } catch (Exception ignored) {}
+    }
+    return results;
+  }
+
   /** Decode an ELM ISO-TP numbered reply containing positive DID F190. */
   public static String decodeVin(String raw) {
     if (raw == null) return null;

@@ -12,8 +12,21 @@ public final class ObdSession {
   private static String vin = "";
   private static final StringBuilder journal = new StringBuilder();
   private static final java.util.LinkedHashMap<String,String> moduleResults = new java.util.LinkedHashMap<>();
-  public static synchronized void clearModuleResults() { moduleResults.clear(); }
+  private static final java.util.LinkedHashMap<String,String> moduleRaw = new java.util.LinkedHashMap<>();
+  public static synchronized void clearModuleResults() { moduleResults.clear(); moduleRaw.clear(); }
   public static synchronized void saveModuleResult(String name, String result) { moduleResults.put(name, result); }
+  public static synchronized void saveModuleRaw(String name, String raw) { moduleRaw.put(name, raw == null ? "" : raw); }
+  public static synchronized String detailedModuleReport() {
+    if (moduleResults.isEmpty()) return "Модули ещё не опрошены";
+    StringBuilder b = new StringBuilder("Mazda 6 GH — результаты опроса\\n\\n".replace("\\n","\n"));
+    for (java.util.Map.Entry<String,String> e : moduleResults.entrySet()) {
+      b.append(e.getKey()).append("\n").append("Состояние: ").append(e.getValue()).append("\n");
+      String raw = moduleRaw.get(e.getKey());
+      if (raw != null && !raw.isEmpty()) b.append("Ответ: ").append(raw).append("\n");
+      b.append("\n");
+    }
+    return b.toString();
+  }
   public static synchronized String moduleReport() {
     if (moduleResults.isEmpty()) return "Модули ещё не опрошены";
     StringBuilder report = new StringBuilder("Результаты опроса:\n");
@@ -41,7 +54,7 @@ public final class ObdSession {
   public static synchronized void confirmVehicle(String detectedVin) {
     if (!adapterReady()) return;
     vehicleReady = true;
-    vin = detectedVin == null ? "" : detectedVin;
+    if (detectedVin != null && !detectedVin.isEmpty()) vin = detectedVin;
   }
   public static synchronized void disconnect() {
     Closeable old = transport;

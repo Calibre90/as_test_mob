@@ -367,6 +367,35 @@ public final class ObdConnectionActivity extends Activity {
         .setView(scroller).setPositiveButton("Закрыть", null).show();
   }
 
+  private void retryHsVehicleHandshake() {
+    if (busy || !ObdSession.adapterReady()) { append("Сначала подключите ELM327"); return; }
+    busy = true;
+    refreshButtons(true);
+    worker.execute(() -> {
+      try {
+        append("Повторная проверка HS-CAN: 11 бит / 500 кбит/с.");
+        ObdSession.command("ATSP6");
+        ObdSession.command("ATCRA");
+        ObdSession.command("ATSH7DF");
+        String pids = ObdSession.command("0100");
+        append("Повторный ответ 0100: " + pids.replaceAll("[\\r\\n]+", " | "));
+        if (hasSupportedPids(pids)) {
+          ObdSession.confirmVehicle(null);
+          publishConnection(true, true);
+          append("HS-CAN подтверждён. Теперь можно запустить опрос блоков.");
+          ui.post(() -> { if (!isFinishing() && !isDestroyed()) probeModules(); });
+        } else {
+          append("HS-CAN не ответил. Проверьте положение HS переключателя и зажигание ON.");
+        }
+      } catch (Exception e) {
+        append("Ошибка повторной проверки HS-CAN: " + e.getMessage());
+      } finally {
+        busy = false;
+        ui.post(() -> refreshButtons(ObdSession.adapterReady()));
+      }
+    });
+  }
+
   private void ensureHsCanThenProbe() {
     if (busy) { append("Дождитесь завершения текущего запроса"); return; }
     if (msCanMode.getSelectedItemPosition() == 2 && physicalMsSelected) {
@@ -379,6 +408,15 @@ public final class ObdConnectionActivity extends Activity {
             append("Пользователь подтвердил положение HS-CAN.");
             probeModules();
           }).show();
+      return;
+    }
+    if (!ObdSession.vehicleReady() && ObdSession.adapterReady()) {
+      new AlertDialog.Builder(this)
+          .setTitle("Проверить связь HS-CAN")
+          .setMessage("ELM327 подключён, но ECU не ответил на 0100. Проверьте зажигание ON и физический переключатель HS-CAN. Повторить проверку без отключения Wi-Fi?")
+          .setNegativeButton("Отмена", null)
+          .setPositiveButton("Проверить HS-CAN", (dialog, which) -> retryHsVehicleHandshake())
+          .show();
       return;
     }
     probeModules();

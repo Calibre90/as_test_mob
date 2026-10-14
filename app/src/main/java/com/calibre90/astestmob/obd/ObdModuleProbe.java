@@ -27,6 +27,47 @@ public final class ObdModuleProbe {
     {"RKE (HS кандидат)","731","739"},
     {"HVAC/EATC (HS кандидат)","733","73B"}
   };
+  // ISO 14229 identification range. Support is ECU-specific, not guaranteed.
+  private static final String[] EXTENDED_IDENTIFICATION_DIDS = new String[32];
+  static {
+    for (int i = 0; i < 32; i++)
+      EXTENDED_IDENTIFICATION_DIDS[i] = String.format(Locale.US, "F1%02X", 0x80 + i);
+  }
+
+  /** Bounded, read-only DID survey for IC address candidate on selected bus. */
+  public static Result probeIcExtended(Commands link, boolean msCan) throws IOException {
+    String name = msCan ? "IC (MS-CAN, расширенный DID)" : "IC (HS-CAN, расширенный DID)";
+    StringBuilder raw = new StringBuilder();
+    int positive = 0, negative = 0, noData = 0;
+    String first = null;
+    try {
+      String header = link.command("ATSH720");
+      String filter = link.command("ATCRA728");
+      if (isError(header) || isError(filter))
+        return new Result(name, "720", "728", "ELM отклонил адрес/фильтр", header + " | " + filter);
+      for (String did : EXTENDED_IDENTIFICATION_DIDS) {
+        if (Thread.currentThread().isInterrupted()) throw new IOException("Опрос прерван");
+        String reply = link.command("22" + did);
+        if (raw.length() > 0) raw.append(" | ");
+        raw.append(did).append(": ").append(reply.replaceAll("[\\r\\n]+", " ").trim());
+        if (positiveDid(reply, did)) {
+          positive++;
+          if (first == null) first = did;
+        } else if (negativeDid(reply)) {
+          negative++;
+        } else {
+          noData++;
+        }
+      }
+    } finally {
+      try { link.command("ATCRA"); } catch (Exception ignored) {}
+      try { link.command("ATSH7DF"); } catch (Exception ignored) {}
+    }
+    String status = "DID F180–F19F: положительных " + positive
+        + ", отказов " + negative + ", без подтверждения " + noData
+        + (first == null ? "; адрес IC не подтверждён" : "; первый ответ " + first);
+    return new Result(name, "720", "728", status, raw.toString());
+  }
   private ObdModuleProbe() {}
   public static List<Result> probeHsCan(Commands link) throws IOException {
     List<Result> results = new ArrayList<>();

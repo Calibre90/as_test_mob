@@ -493,8 +493,8 @@ public final class ObdConnectionActivity extends Activity {
                         .append(" → ").append(b == null ? "нет" : b.toString()).append("\\n");
                   }
                 }
-                String result = diff.toString().replace("\\n","\n");
-                if (differences == 0) result += "\nРазличий в захваченных вариантах данных нет. Это не доказывает отсутствие изменений на шине.";
+                if (differences == 0) diff.append("\\nРазличий в захваченных вариантах данных нет. Это не доказывает отсутствие изменений на шине.");
+                final String result = diff.toString().replace("\\n","\n");
                 append(result);
                 ObdSession.saveModuleResult("Сравнение CAN-ID MS-CAN", result);
                 ui.post(() -> { if (!isFinishing() && !isDestroyed())

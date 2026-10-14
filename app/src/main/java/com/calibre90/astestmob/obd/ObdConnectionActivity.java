@@ -372,6 +372,12 @@ public final class ObdConnectionActivity extends Activity {
     probeModules();
   }
 
+  private static boolean elmOk(String response) {
+    if (response == null) return false;
+    String value = response.toUpperCase(Locale.US);
+    return value.contains("OK") && !value.contains("?") && !value.contains("ERROR");
+  }
+
   private void requestMsCan() {
     if (busy) { append("Дождитесь завершения текущего запроса"); return; }
     if (!ObdSession.adapterReady()) { append("Сначала подключитесь к ELM327"); return; }
@@ -395,11 +401,26 @@ public final class ObdConnectionActivity extends Activity {
         .setNegativeButton("Отмена", null)
         .setPositiveButton("ОК, переключил", (dialog, which) -> {
           physicalMsSelected = true;
-          append("Пользователь подтвердил положение MS-CAN. Опрос блоков не запускался: протокол MS-CAN и адреса ECU пока не проверены.");
-          new AlertDialog.Builder(this)
-              .setTitle("MS-CAN: положение подтверждено")
-              .setMessage("Адаптер переведён вручную. Для возврата к HS-CAN нажмите «Пробный опрос HS-CAN» — приложение сначала попросит вернуть переключатель в HS.")
-              .setPositiveButton("Понятно", null).show();
+          append("Пользователь подтвердил положение MS-CAN. Настраиваем протокол 11-bit/125 кбит/с.");
+          busy = true;
+          refreshButtons(ObdSession.adapterReady());
+          worker.execute(() -> {
+            try {
+              // ELM327 user protocol B: 11-bit ISO-TP CAN, divisor 04 = 125 kbit/s.
+              String config = ObdSession.command("ATPB C1 04");
+              if (!elmOk(config)) throw new IOException("ATPB C1 04: " + config);
+              String selectedProtocol = ObdSession.command("ATSPB");
+              if (!elmOk(selectedProtocol)) throw new IOException("ATSPB: " + selectedProtocol);
+              append("MS-CAN: ELM принял настройки 125 кбит/с. Это НЕ подтверждает ответы блоков.");
+              append("BCM/RKE/EATC: диагностические адреса Mazda 6 GH ещё проверяются, запросы к ним не отправлялись.");
+            } catch (Exception e) {
+              append("MS-CAN: настройка не удалась: " + e.getMessage());
+              if (!ObdSession.adapterReady()) publishConnection(false, false);
+            } finally {
+              busy = false;
+              ui.post(() -> { if (!isFinishing() && !isDestroyed()) refreshButtons(ObdSession.adapterReady()); });
+            }
+          });
         }).show();
   }
 

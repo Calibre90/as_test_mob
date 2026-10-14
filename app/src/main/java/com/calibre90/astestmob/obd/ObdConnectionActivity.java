@@ -461,7 +461,17 @@ public final class ObdConnectionActivity extends Activity {
               if (!elmOk(config)) throw new IOException("ATPB C1 04: " + config);
               String selectedProtocol = ObdSession.command("ATSPB");
               if (!elmOk(selectedProtocol)) throw new IOException("ATSPB: " + selectedProtocol);
-              append("MS-CAN: ELM принял настройки 125 кбит/с. Это НЕ подтверждает ответы блоков.");
+              // ATDPN reports the currently selected ELM protocol; B is user protocol B.
+              String protocolNumber = ObdSession.command("ATDPN").trim();
+              String protocolName = ObdSession.command("ATDP").trim();
+              append("MS-CAN: контроль протокола ATDPN=" + protocolNumber
+                  + "; ATDP=" + protocolName + ".");
+              if (!protocolNumber.equalsIgnoreCase("B")) {
+                append("MS-CAN: ВНИМАНИЕ — ELM не подтвердил пользовательский протокол B. Опрос MS-CAN остановлен.");
+                return;
+              }
+              append("MS-CAN: ELM подтвердил выбор протокола B (настройка 125 кбит/с). Это НЕ подтверждает физическое переключение HS/MS или ответы блоков.");
+              append("MS-CAN: проверяем также IC [720/728] как адрес-кандидат на MS-CAN.");
               append("MS-CAN: выполняем экспериментальный опрос адресов-кандидатов (только чтение).");
               for (ObdModuleProbe.Result result : ObdModuleProbe.probeMsCan(ObdSession::command)) {
                 String key = "MS-CAN " + result.name + " [" + result.requestId + "/" + result.responseId + "]";

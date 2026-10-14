@@ -77,6 +77,17 @@ public final class ObdSession {
       throw ex;
     }
   }
+  public static synchronized String monitorMsCanPassive(int durationMs) throws IOException {
+    if (!adapterReady()) throw new IOException("ELM не подключён");
+    if (!(transport instanceof ElmWifiClient))
+      throw new IOException("Пассивный мониторинг пока доступен только для Wi-Fi ELM327");
+    try {
+      return ((ElmWifiClient) transport).monitorCanPassive(durationMs);
+    } catch (IOException ex) {
+      if (!((ElmWifiClient) transport).isConnected()) disconnect();
+      throw ex;
+    }
+  }
   public static synchronized String status() {
     if (!adapterReady()) return "Адаптер не подключён";
     if (!vehicleReady) return "ELM подключён; автомобиль не подтверждён";

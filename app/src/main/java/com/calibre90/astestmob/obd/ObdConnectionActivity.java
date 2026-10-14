@@ -28,6 +28,7 @@ public final class ObdConnectionActivity extends Activity {
   private TextView status, log, moduleReport;
   private Button connect, disconnect;
   private boolean physicalMsSelected;
+  private java.util.Map<String, String> previousCanSnapshot;
   private BluetoothDevice selected;
   private final ArrayList<BluetoothDevice> paired = new ArrayList<>();
 
@@ -129,6 +130,10 @@ public final class ObdConnectionActivity extends Activity {
     results.setText("Результаты обнаружения блоков");
     root.addView(results);
     results.setOnClickListener(v->showModuleResults());
+    Button canAnalysis = new Button(this);
+    canAnalysis.setText("Анализ CAN-ID MS-CAN (сравнить 2 замера)");
+    root.addView(canAnalysis);
+    canAnalysis.setOnClickListener(v -> startCanAnalysis());
     Button diagnostics = new Button(this);
     diagnostics.setText("Параметры и ошибки двигателя (только чтение)");
     root.addView(diagnostics);
@@ -435,6 +440,83 @@ public final class ObdConnectionActivity extends Activity {
     if (response == null) return false;
     String value = response.toUpperCase(Locale.US);
     return value.contains("OK") && !value.contains("?") && !value.contains("ERROR");
+  }
+
+
+  private void startCanAnalysis() {
+    if (busy) { append("Дождитесь завершения текущего опроса"); return; }
+    if (!ObdSession.adapterReady()) { append("Сначала подключитесь к Wi-Fi ELM327"); return; }
+    if (wifi == null) { append("Анализ CAN-ID пока поддерживается только через Wi-Fi ELM327"); return; }
+    if (msCanMode.getSelectedItemPosition() != 2) {
+      append("Для анализа MS-CAN выберите «Переключатель HS/MS»"); return;
+    }
+    new AlertDialog.Builder(this).setTitle("Анализ CAN-ID — MS-CAN")
+        .setMessage(previousCanSnapshot == null
+            ? "Переключите адаптер в MS-CAN. Первый замер: не включайте дополнительные потребители. Мониторинг 5 секунд, только приём."
+            : "Переключатель должен быть в MS-CAN. Второй замер: включите поворотник или дальний свет. Сравним изменения CAN-ID. Мониторинг 5 секунд, только приём.")
+        .setNegativeButton("Отмена", null)
+        .setPositiveButton("Начать замер", (d,w) -> {
+          busy = true;
+          refreshButtons(true);
+          worker.execute(() -> {
+            try {
+              String config = ObdSession.command("ATPB C1 04");
+              String protocol = ObdSession.command("ATSPB");
+              String number = ObdSession.command("ATDPN").trim();
+              if (!elmOk(config) || !elmOk(protocol) || !number.equalsIgnoreCase("B"))
+                throw new IOException("Протокол MS-CAN 125 кбит/с не подтверждён: " + number);
+              if (!elmOk(ObdSession.command("ATAR")) || !elmOk(ObdSession.command("ATH1")))
+                throw new IOException("ELM не принял настройку мониторинга");
+              String raw = ObdSession.monitorMsCanPassive(5000);
+              java.util.Map<String,String> snapshot = parseCanSnapshot(raw);
+              String summary = "MS-CAN: CAN-ID " + snapshot.size() + ", данные " + snapshot;
+              append(summary);
+              ObdSession.saveModuleResult("Анализ CAN-ID MS-CAN", summary);
+              if (previousCanSnapshot == null) {
+                previousCanSnapshot = snapshot;
+                append("Первый замер сохранён. Повторите анализ с включённым поворотником или дальним светом.");
+              } else {
+                java.util.Map<String,String> first = previousCanSnapshot;
+                previousCanSnapshot = null;
+                java.util.Set<String> ids = new java.util.TreeSet<>(first.keySet());
+                ids.addAll(snapshot.keySet());
+                StringBuilder diff = new StringBuilder("Сравнение CAN-ID (замер 1 → замер 2):\\n");
+                for (String id : ids) {
+                  String a = first.get(id), b = snapshot.get(id);
+                  if (!java.util.Objects.equals(a,b))
+                    diff.append(id).append(": ").append(a == null ? "нет" : a)
+                        .append(" → ").append(b == null ? "нет" : b).append("\\n");
+                }
+                String result = diff.toString().replace("\\n","\n");
+                append(result);
+                ObdSession.saveModuleResult("Сравнение CAN-ID MS-CAN", result);
+                ui.post(() -> { if (!isFinishing() && !isDestroyed())
+                  new AlertDialog.Builder(this).setTitle("Сравнение CAN-ID")
+                      .setMessage(result).setPositiveButton("Закрыть",null).show(); });
+              }
+            } catch (Exception ex) {
+              append("Анализ CAN-ID: " + ex.getMessage());
+            } finally {
+              if (ObdSession.adapterReady()) {
+                try { ObdSession.command("ATH0"); } catch (IOException ignored) {}
+              }
+              busy = false;
+              ui.post(() -> { if (!isFinishing() && !isDestroyed()) refreshButtons(ObdSession.adapterReady()); });
+            }
+          });
+        }).show();
+  }
+
+  private static java.util.Map<String,String> parseCanSnapshot(String raw) {
+    java.util.Map<String,String> ids = new java.util.TreeMap<>();
+    for (String line : raw.split("[\\r\\n]+")) {
+      String t = line.trim().toUpperCase(Locale.US);
+      if (t.contains("ERROR") || t.contains("BUFFER FULL") || t.contains("STOPPED")) continue;
+      String c = t.replaceAll("[ \\t:]", "");
+      if (c.matches("[0-7][0-9A-F]{2}(?:[0-9A-F]{2}){1,8}"))
+        ids.put(c.substring(0,3), c.substring(3));
+    }
+    return ids;
   }
 
   private void passiveCanCheck(String bus) {

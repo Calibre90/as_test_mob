@@ -479,6 +479,13 @@ public final class ObdConnectionActivity extends Activity {
                 if (result.response != null && !result.response.trim().isEmpty())
                   append("Сырой ответ " + key + ": " + result.response.replaceAll("[\\r\\n]+", " | "));
               }
+              append("MS-CAN: проверка IC без фильтра ответа ATCRA728; CAN-заголовки включены.");
+              ObdModuleProbe.Result unfiltered = ObdModuleProbe.probeIcUnfilteredMs(ObdSession::command);
+              String unfilteredKey = "MS-CAN " + unfiltered.name + " [720/*]";
+              ObdSession.saveModuleResult(unfilteredKey, unfiltered.status);
+              ObdSession.saveModuleRaw(unfilteredKey, unfiltered.response);
+              append(unfilteredKey + ": " + unfiltered.status);
+              append("Сырой ответ IC без фильтра: " + unfiltered.response);
               append("Расширенная проверка IC на MS-CAN: 32 DID F180–F19F (только чтение).");
               ObdModuleProbe.Result extendedIc = ObdModuleProbe.probeIcExtended(ObdSession::command, true);
               String icKey = "MS-CAN " + extendedIc.name + " [" + extendedIc.requestId + "/" + extendedIc.responseId + "]";

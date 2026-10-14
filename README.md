@@ -1,2 +1,2 @@
-# 6GH AS-BUILT CONFIG — UI test
+# M6GH AS-BUILT CONFIG — UI test
 First Android shell for the asset-driven UI. Interactive: four tabs, checkboxes, admin dialog, about dialog, bottom action buttons. Text/data logic intentionally deferred.

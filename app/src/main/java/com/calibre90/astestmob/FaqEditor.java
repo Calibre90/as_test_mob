@@ -61,6 +61,10 @@ public final class FaqEditor {
     EditText description=new EditText(a);description.setSingleLine(false);description.setMinLines(6);
     description.setGravity(android.view.Gravity.TOP);description.setHint("Подробное описание");
     description.setText(existing==null?"":existing.optString("description"));fields.addView(description);
+    EditText extra=new EditText(a);extra.setSingleLine(false);extra.setMinLines(2);
+    extra.setHint("Дополнительный текст между красными линиями");
+    extra.setText(existing==null?"":existing.optString("extra_text",""));
+    fields.addView(extra);
     ScrollView scroll=new ScrollView(a);scroll.addView(fields);
     AlertDialog.Builder builder=new AlertDialog.Builder(a).setTitle(index<0?"Добавить FAQ":"Редактировать FAQ")
       .setView(scroll).setNegativeButton("Отмена",null);
@@ -84,7 +88,7 @@ public final class FaqEditor {
         }
       }
       try{
-        JSONObject row=new JSONObject();row.put("name",title);row.put("description",description.getText().toString());
+        JSONObject row=new JSONObject();row.put("name",title);row.put("description",description.getText().toString());row.put("extra_text",extra.getText().toString());
         JSONArray next=new JSONArray();
         for(int i=0;i<entries.length();i++)next.put(i==index?row:entries.getJSONObject(i));
         if(index<0)next.put(row);

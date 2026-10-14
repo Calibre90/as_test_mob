@@ -142,6 +142,10 @@ public final class ObdConnectionActivity extends Activity {
     icOnly.setText("Проверить IC отдельно (MS-CAN, только чтение)");
     root.addView(icOnly);
     icOnly.setOnClickListener(v -> startIcOnlyMsProbe());
+    Button icCheck = new Button(this);
+    icCheck.setText("Проверка IC по MS-CAN (только чтение)");
+    root.addView(icCheck);
+    icCheck.setOnClickListener(v -> startIcMsDiagnostic());
     Button diagnostics = new Button(this);
     diagnostics.setText("Параметры и ошибки двигателя (только чтение)");
     root.addView(diagnostics);
@@ -573,6 +577,57 @@ public final class ObdConnectionActivity extends Activity {
               }
               busy = false;
               ui.post(() -> { if (!isFinishing() && !isDestroyed()) refreshButtons(ObdSession.adapterReady()); });
+            }
+          });
+        }).show();
+  }
+
+
+  private void startIcMsDiagnostic() {
+    if (busy || !ObdSession.adapterReady()) {
+      append("IC MS-CAN: подключите ELM327 и дождитесь окончания текущего запроса"); return;
+    }
+    if (msCanMode.getSelectedItemPosition() != 2) {
+      append("IC MS-CAN: выберите «Переключатель HS/MS»"); return;
+    }
+    new AlertDialog.Builder(this).setTitle("IC — MS-CAN, только чтение")
+        .setMessage("Автомобиль на стоянке, зажигание ON. Переключите ELM327 в MS-CAN. Проверим неподтверждённый адрес 720 с автоматическим приёмом ответов: 22F190, 22F187, 22F18C. Никакой записи в блоки.")
+        .setNegativeButton("Отмена", null)
+        .setPositiveButton("Переключил на MS", (dialog, which) -> {
+          physicalMsSelected = true;
+          busy = true;
+          refreshButtons(true);
+          worker.execute(() -> {
+            try {
+              String cfg = ObdSession.command("ATPB C1 04");
+              String proto = ObdSession.command("ATSPB");
+              String number = ObdSession.command("ATDPN").trim();
+              append("IC MS: ATPB=" + cfg.trim() + "; ATSPB=" + proto.trim()
+                  + "; ATDPN=" + number);
+              if (!elmOk(cfg) || !elmOk(proto) || !number.equalsIgnoreCase("B"))
+                throw new IOException("Протокол MS-CAN не подтверждён: " + number);
+              ObdModuleProbe.Result result =
+                  ObdModuleProbe.probeIcUnfilteredMs(ObdSession::command);
+              String report = result.status + "\\n" + result.response;
+              ObdSession.saveModuleResult("IC MS-CAN отдельный тест", report);
+              ObdSession.saveModuleRaw("IC MS-CAN отдельный тест", result.response);
+              append(report.replace("\\n", "\n"));
+              ui.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                TextView details = new TextView(this);
+                details.setTextIsSelectable(true);
+                details.setPadding(32, 20, 32, 20);
+                details.setText(report.replace("\\n", "\n"));
+                ScrollView scroller = new ScrollView(this);
+                scroller.addView(details);
+                new AlertDialog.Builder(this).setTitle("IC MS-CAN — ответы адаптера")
+                    .setView(scroller).setPositiveButton("Закрыть", null).show();
+              });
+            } catch (Exception e) { append("IC MS-CAN: " + e.getMessage()); }
+            finally {
+              busy = false;
+              ui.post(() -> { if (!isFinishing() && !isDestroyed())
+                refreshButtons(ObdSession.adapterReady()); });
             }
           });
         }).show();

@@ -490,7 +490,34 @@ public final class ObdConnectionActivity extends Activity {
                 if (result.response != null && !result.response.trim().isEmpty())
                   append("Сырой ответ " + key + ": " + result.response.replaceAll("[\\r\\n]+", " | "));
               }
-              append("MS-CAN: ATDP подтверждает только настройку скорости, не наличие CAN-трафика. Пассивное ATMA пока отключено: текущий ELM-транспорт ожидает символ '>' и не умеет безопасно останавливать непрерывный мониторинг.");
+              append("MS-CAN: проверяем реальную активность шины пассивным ATMA (2 секунды, Wi-Fi ELM).");
+              if (wifi != null && ObdSession.adapterReady()) {
+                try {
+                  String traffic = ObdSession.monitorMsCanPassive(2000);
+                  StringBuilder sample = new StringBuilder();
+                  java.util.LinkedHashSet<String> ids = new java.util.LinkedHashSet<>();
+                  int frames = 0;
+                  for (String line : traffic.split("[\\r\\n]+")) {
+                    String trimmed = line.trim().toUpperCase(Locale.US);
+                    if (trimmed.matches("^[0-9A-F]{3}([ \\t]+[0-9A-F]{2})+.*")) {
+                      frames++;
+                      ids.add(trimmed.substring(0, 3));
+                      if (sample.length() < 600) sample.append(trimmed).append(" | ");
+                    }
+                  }
+                  String report = "ATMA: кадров " + frames + ", CAN-ID " + ids
+                      + (frames == 0 ? "; активность MS-CAN не подтверждена" : "; активность CAN подтверждена, принадлежность шины зависит от переключателя");
+                  ObdSession.saveModuleResult("MS-CAN пассивный монитор", report);
+                  ObdSession.saveModuleRaw("MS-CAN пассивный монитор", sample.toString());
+                  append("MS-CAN: " + report);
+                  append("MS-CAN ATMA образец: " + (sample.length() == 0 ? traffic.replaceAll("[\\r\\n]+", " | ") : sample.toString()));
+                } catch (IOException monitorError) {
+                  append("MS-CAN ATMA: " + monitorError.getMessage());
+                  if (!ObdSession.adapterReady()) throw monitorError;
+                }
+              } else {
+                append("MS-CAN ATMA: пропущено — нужен подключённый Wi-Fi ELM327.");
+              }
               append("MS-CAN: проверка IC без фильтра ответа ATCRA728; CAN-заголовки включены.");
               ObdModuleProbe.Result unfiltered = ObdModuleProbe.probeIcUnfilteredMs(ObdSession::command);
               String unfilteredKey = "MS-CAN " + unfiltered.name + " [720/*]";

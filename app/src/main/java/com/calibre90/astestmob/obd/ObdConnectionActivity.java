@@ -27,6 +27,7 @@ public final class ObdConnectionActivity extends Activity {
   private EditText host, port;
   private TextView status, log, moduleReport;
   private Button connect, disconnect;
+  private boolean physicalMsSelected;
   private BluetoothDevice selected;
   private final ArrayList<BluetoothDevice> paired = new ArrayList<>();
 
@@ -49,7 +50,7 @@ public final class ObdConnectionActivity extends Activity {
     title.setTextSize(22);
     root.addView(title);
     TextView hint = new TextView(this);
-    hint.setText("Только чтение. Для MS-CAN переключайте HS/MS на адаптере вручную.");
+    hint.setText("Только чтение. Для адаптера с переключателем приложение запросит смену HS/MS перед опросом.");
     root.addView(hint);
     mode = new Spinner(this);
     ArrayAdapter<String> types = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item,
@@ -108,7 +109,11 @@ public final class ObdConnectionActivity extends Activity {
     Button scan = new Button(this);
     scan.setText("Пробный опрос HS-CAN (только чтение)");
     root.addView(scan);
-    scan.setOnClickListener(v->probeModules());
+    scan.setOnClickListener(v->ensureHsCanThenProbe());
+    Button msScan = new Button(this);
+    msScan.setText("MS-CAN: переключение и проверка готовности");
+    root.addView(msScan);
+    msScan.setOnClickListener(v->requestMsCan());
     Button diagnostics = new Button(this);
     diagnostics.setText("Параметры и ошибки двигателя (только чтение)");
     root.addView(diagnostics);
@@ -212,9 +217,10 @@ public final class ObdConnectionActivity extends Activity {
       if(!bluetoothPermission())return;
       if(selected==null){append("Сначала выберите Bluetooth адаптер");return;}
     }
+    physicalMsSelected = false;
     final int msSelection = msCanMode.getSelectedItemPosition();
     if(msSelection == 0) {
-      append("MS-CAN: Авто — аппаратное автопереключение пока не реализовано.");
+      append("MS-CAN: Авто — возможность программного переключения адаптера не подтверждена; переключение не выполняется.");
     } else if(msSelection == 1) {
       append("MS-CAN отключена в настройках.");
     } else {
@@ -332,6 +338,54 @@ public final class ObdConnectionActivity extends Activity {
     }
     String vin = ascii.toString().trim();
     return vin.matches("[A-HJ-NPR-Z0-9]{17}") ? vin : null;
+  }
+
+  private void ensureHsCanThenProbe() {
+    if (busy) { append("Дождитесь завершения текущего запроса"); return; }
+    if (msCanMode.getSelectedItemPosition() == 2 && physicalMsSelected) {
+      new AlertDialog.Builder(this)
+          .setTitle("Переключите адаптер на HS-CAN")
+          .setMessage("Переведите физический переключатель ELM327 в положение HS-CAN. После переключения нажмите «ОК». Опрос начнётся только после подтверждения.")
+          .setNegativeButton("Отмена", null)
+          .setPositiveButton("ОК, переключил", (dialog, which) -> {
+            physicalMsSelected = false;
+            append("Пользователь подтвердил положение HS-CAN.");
+            probeModules();
+          }).show();
+      return;
+    }
+    probeModules();
+  }
+
+  private void requestMsCan() {
+    if (busy) { append("Дождитесь завершения текущего запроса"); return; }
+    if (!ObdSession.adapterReady()) { append("Сначала подключитесь к ELM327"); return; }
+    int setting = msCanMode.getSelectedItemPosition();
+    if (setting == 1) {
+      new AlertDialog.Builder(this).setTitle("MS-CAN отключена")
+          .setMessage("В настройках выбрано «Нет». Выберите тип адаптера с поддержкой MS-CAN.")
+          .setPositiveButton("Понятно", null).show();
+      return;
+    }
+    if (setting == 0) {
+      new AlertDialog.Builder(this).setTitle("Автоматическое переключение MS-CAN")
+          .setMessage("Режим «Авто» выбран, но поддержка команд автоматического переключения именно этим адаптером пока не определена. Программа не будет отправлять неподтверждённые команды и выдавать переключение за успешное.")
+          .setPositiveButton("Понятно", null).show();
+      append("MS-CAN: автоматическое переключение не подтверждено.");
+      return;
+    }
+    new AlertDialog.Builder(this)
+        .setTitle("Переключите адаптер на MS-CAN")
+        .setMessage("Переведите переключатель HS/MS на адаптере в положение MS-CAN и нажмите «ОК». Пока доступна проверка готовности: полноценный опрос BCM, RKE и HVAC будет добавлен после проверки протокола и адресов Mazda 6 GH.")
+        .setNegativeButton("Отмена", null)
+        .setPositiveButton("ОК, переключил", (dialog, which) -> {
+          physicalMsSelected = true;
+          append("Пользователь подтвердил положение MS-CAN. Опрос блоков не запускался: протокол MS-CAN и адреса ECU пока не проверены.");
+          new AlertDialog.Builder(this)
+              .setTitle("MS-CAN: положение подтверждено")
+              .setMessage("Адаптер переведён вручную. Для возврата к HS-CAN нажмите «Пробный опрос HS-CAN» — приложение сначала попросит вернуть переключатель в HS.")
+              .setPositiveButton("Понятно", null).show();
+        }).show();
   }
 
   private void probeModules() {

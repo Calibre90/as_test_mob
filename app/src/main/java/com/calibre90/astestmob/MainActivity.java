@@ -1661,7 +1661,14 @@ public class MainActivity extends Activity {
       description.setMaxLines(Integer.MAX_VALUE);
       description.setPadding(0,dp(3),dp(5),dp(3));
       descriptionScroll.addView(description,new android.widget.ScrollView.LayoutParams(-1,-2));
-      place(root,descriptionScroll,.09f,.255f,.84f,.445f,width,height);
+      place(root,descriptionScroll,.09f,.255f,.84f,.355f,width,height);
+      TextView warningTitle=caption("⚠️WARNING⚠️",16,Color.rgb(204,24,38),true);
+      warningTitle.setGravity(Gravity.CENTER);
+      place(root,warningTitle,.09f,.625f,.82f,.030f,width,height);
+      TextView warningBody=caption("НЕ ЗАБЫВАЙТЕ ДЕЛАТЬ КОПИЮ СКАЧЕНОГО ФАЙЛА НАСТРОЕК.",12,Color.rgb(204,24,38),true);
+      warningBody.setGravity(Gravity.CENTER);
+      warningBody.setSingleLine(false);
+      place(root,warningBody,.09f,.658f,.82f,.052f,width,height);
       String[] creatorNames={
         StudioSettings.appearance(this,"creator1_name","Dim304"),
         StudioSettings.appearance(this,"creator2_name","Wolis11")

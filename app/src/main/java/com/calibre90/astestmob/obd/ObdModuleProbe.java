@@ -45,9 +45,14 @@ public final class ObdModuleProbe {
       String filter = link.command("ATCRA728");
       if (isError(header) || isError(filter))
         return new Result(name, "720", "728", "ELM отклонил адрес/фильтр", header + " | " + filter);
+      // Show CAN response headers to distinguish a real ECU reply from ELM NO DATA.
+      String headers = link.command("ATH1");
+      if (isError(headers)) throw new IOException("ELM не поддерживает ATH1: " + headers);
+      int tested = 0;
       for (String did : EXTENDED_IDENTIFICATION_DIDS) {
         if (Thread.currentThread().isInterrupted()) throw new IOException("Опрос прерван");
         String reply = link.command("22" + did);
+        tested++;
         if (raw.length() > 0) raw.append(" | ");
         raw.append(did).append(": ").append(reply.replaceAll("[\\r\\n]+", " ").trim());
         if (positiveDid(reply, did)) {
@@ -58,6 +63,12 @@ public final class ObdModuleProbe {
         } else {
           noData++;
         }
+        // After eight unanswered reads there is no evidence of an ECU at
+        // this candidate address. Do not flood the same address with 24 more DIDs.
+        if (tested == 8 && positive == 0 && negative == 0) {
+          raw.append(" | ОСТАНОВЛЕНО: 8 DID без ответа; проверьте CAN-адрес и шину");
+          break;
+        }
       }
     } finally {
       try { link.command("ATCRA"); } catch (Exception ignored) {}
@@ -65,7 +76,7 @@ public final class ObdModuleProbe {
     }
     String status = "DID F180–F19F: положительных " + positive
         + ", отказов " + negative + ", без подтверждения " + noData
-        + (first == null ? "; адрес IC не подтверждён" : "; первый ответ " + first);
+        + (first == null ? "; адрес IC не подтверждён, дальнейший опрос требует проверки адреса/шины" : "; первый ответ " + first);
     return new Result(name, "720", "728", status, raw.toString());
   }
   private ObdModuleProbe() {}

@@ -110,6 +110,10 @@ public final class ObdConnectionActivity extends Activity {
     scan.setText("Пробный опрос HS-CAN (только чтение)");
     root.addView(scan);
     scan.setOnClickListener(v->ensureHsCanThenProbe());
+    Button results = new Button(this);
+    results.setText("Результаты обнаружения блоков");
+    root.addView(results);
+    results.setOnClickListener(v->showModuleResults());
     Button msScan = new Button(this);
     msScan.setText("MS-CAN: переключение и проверка готовности");
     root.addView(msScan);
@@ -340,6 +344,17 @@ public final class ObdConnectionActivity extends Activity {
     return vin.matches("[A-HJ-NPR-Z0-9]{17}") ? vin : null;
   }
 
+  private void showModuleResults() {
+    TextView details = new TextView(this);
+    details.setPadding(32, 20, 32, 20);
+    details.setTextIsSelectable(true);
+    details.setText(ObdSession.detailedModuleReport());
+    ScrollView scroller = new ScrollView(this);
+    scroller.addView(details);
+    new AlertDialog.Builder(this).setTitle("Обнаруженные блоки Mazda 6 GH")
+        .setView(scroller).setPositiveButton("Закрыть", null).show();
+  }
+
   private void ensureHsCanThenProbe() {
     if (busy) { append("Дождитесь завершения текущего запроса"); return; }
     if (msCanMode.getSelectedItemPosition() == 2 && physicalMsSelected) {
@@ -410,7 +425,9 @@ public final class ObdConnectionActivity extends Activity {
                   append("VIN автомобиля (PCM): " + detectedVin);
                 }
               }
-              ObdSession.saveModuleResult(result.name+" ["+result.requestId+"/"+result.responseId+"]", result.status);
+              String key = result.name+" ["+result.requestId+"/"+result.responseId+"]";
+              ObdSession.saveModuleResult(key, result.status);
+              ObdSession.saveModuleRaw(key, result.response);
               append(result.name+" ["+result.requestId+"/"+result.responseId+"]: "+result.status);
               if (result.response != null && !result.response.trim().isEmpty()) {
                 append("Сырой ответ "+result.name+": "+result.response.replaceAll("[\\r\\n]+"," | ").trim());

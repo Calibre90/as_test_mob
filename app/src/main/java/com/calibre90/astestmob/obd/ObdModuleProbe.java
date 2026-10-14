@@ -62,6 +62,35 @@ public final class ObdModuleProbe {
     }
     return results;
   }
+  /** Decode an ELM ISO-TP numbered reply containing positive DID F190. */
+  public static String decodeVin(String raw) {
+    if (raw == null) return null;
+    StringBuilder payload = new StringBuilder();
+    boolean found = false;
+    for (String segment : raw.toUpperCase(Locale.US).split("[\\r\\n|]+")) {
+      String line = segment.trim();
+      int colon = line.indexOf(':');
+      if (colon >= 0 && line.substring(0, colon).trim().matches("[0-9A-F]+"))
+        line = line.substring(colon + 1);
+      String hex = line.replaceAll("[^0-9A-F]", "");
+      int marker = hex.indexOf("62F190");
+      if (marker >= 0) {
+        payload.setLength(0);
+        payload.append(hex.substring(marker + 6));
+        found = true;
+      } else if (found && colon >= 0) {
+        payload.append(hex);
+      }
+      if (payload.length() >= 34) break;
+    }
+    if (!found || payload.length() < 34) return null;
+    StringBuilder vin = new StringBuilder(17);
+    for (int i = 0; i < 34; i += 2)
+      vin.append((char) Integer.parseInt(payload.substring(i, i + 2), 16));
+    String result = vin.toString();
+    return result.matches("[A-HJ-NPR-Z0-9]{17}") ? result : null;
+  }
+
   private static boolean isError(String response) {
     if(response==null)return true;
     String s=response.toUpperCase(Locale.US);

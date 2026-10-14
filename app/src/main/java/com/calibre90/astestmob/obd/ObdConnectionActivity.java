@@ -28,7 +28,7 @@ public final class ObdConnectionActivity extends Activity {
   private TextView status, log, moduleReport;
   private Button connect, disconnect;
   private boolean physicalMsSelected;
-  private java.util.Map<String, String> previousCanSnapshot;
+  private java.util.Map<String, java.util.Set<String>> previousCanSnapshot;
   private BluetoothDevice selected;
   private final ArrayList<BluetoothDevice> paired = new ArrayList<>();
 
@@ -233,6 +233,7 @@ public final class ObdConnectionActivity extends Activity {
   }
 
   private void startConnect() {
+    previousCanSnapshot = null;
     if(busy || ObdSession.adapterReady())return;
     final boolean useWifi=mode.getSelectedItemPosition()==0;
     final String ip=host.getText().toString().trim();
@@ -468,7 +469,7 @@ public final class ObdConnectionActivity extends Activity {
               if (!elmOk(ObdSession.command("ATAR")) || !elmOk(ObdSession.command("ATH1")))
                 throw new IOException("ELM не принял настройку мониторинга");
               String raw = ObdSession.monitorMsCanPassive(5000);
-              java.util.Map<String,String> snapshot = parseCanSnapshot(raw);
+              java.util.Map<String,java.util.Set<String>> snapshot = parseCanSnapshot(raw);
               String summary = "MS-CAN: CAN-ID " + snapshot.size() + ", данные " + snapshot;
               append(summary);
               ObdSession.saveModuleResult("Анализ CAN-ID MS-CAN", summary);
@@ -476,18 +477,19 @@ public final class ObdConnectionActivity extends Activity {
                 previousCanSnapshot = snapshot;
                 append("Первый замер сохранён. Повторите анализ с включённым поворотником или дальним светом.");
               } else {
-                java.util.Map<String,String> first = previousCanSnapshot;
+                java.util.Map<String,java.util.Set<String>> first = previousCanSnapshot;
                 previousCanSnapshot = null;
                 java.util.Set<String> ids = new java.util.TreeSet<>(first.keySet());
                 ids.addAll(snapshot.keySet());
                 StringBuilder diff = new StringBuilder("Сравнение CAN-ID (замер 1 → замер 2):\\n");
                 for (String id : ids) {
-                  String a = first.get(id), b = snapshot.get(id);
+                  java.util.Set<String> a = first.get(id), b = snapshot.get(id);
                   if (!java.util.Objects.equals(a,b))
-                    diff.append(id).append(": ").append(a == null ? "нет" : a)
-                        .append(" → ").append(b == null ? "нет" : b).append("\\n");
+                    diff.append(id).append(": ").append(a == null ? "нет" : a.toString())
+                        .append(" → ").append(b == null ? "нет" : b.toString()).append("\\n");
                 }
                 String result = diff.toString().replace("\\n","\n");
+                if (result.trim().equals("Сравнение CAN-ID (замер 1 → замер 2):")) result += "Различий в захваченных вариантах данных нет. Это не доказывает отсутствие изменений на шине.";
                 append(result);
                 ObdSession.saveModuleResult("Сравнение CAN-ID MS-CAN", result);
                 ui.post(() -> { if (!isFinishing() && !isDestroyed())
@@ -507,14 +509,18 @@ public final class ObdConnectionActivity extends Activity {
         }).show();
   }
 
-  private static java.util.Map<String,String> parseCanSnapshot(String raw) {
-    java.util.Map<String,String> ids = new java.util.TreeMap<>();
+  private static java.util.Map<String,java.util.Set<String>> parseCanSnapshot(String raw) {
+    java.util.Map<String,java.util.Set<String>> ids = new java.util.TreeMap<>();
     for (String line : raw.split("[\\r\\n]+")) {
       String t = line.trim().toUpperCase(Locale.US);
       if (t.contains("ERROR") || t.contains("BUFFER FULL") || t.contains("STOPPED")) continue;
       String c = t.replaceAll("[ \\t:]", "");
-      if (c.matches("[0-7][0-9A-F]{2}(?:[0-9A-F]{2}){1,8}"))
-        ids.put(c.substring(0,3), c.substring(3));
+      if (c.matches("[0-7][0-9A-F]{2}(?:[0-9A-F]{2}){1,8}")) {
+        String id = c.substring(0,3);
+        java.util.Set<String> values = ids.get(id);
+        if (values == null) { values = new java.util.TreeSet<>(); ids.put(id, values); }
+        if (values.size() < 64) values.add(c.substring(3));
+      }
     }
     return ids;
   }

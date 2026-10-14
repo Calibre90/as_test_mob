@@ -46,10 +46,7 @@ public final class StudioFaq {
     header.setBackground(bg(a,Color.WHITE,Color.rgb(235,239,244),Color.rgb(215,222,230),9));
     TextView heading=text(a,"FAQ",20,Color.BLACK,true);heading.setGravity(Gravity.CENTER);
     header.addView(heading,new LinearLayout.LayoutParams(0,dp(a,52),1));
-    TextView x=text(a,"×",30,Color.BLACK,true);x.setGravity(Gravity.CENTER);
-    x.setBackground(bg(a,Color.WHITE,Color.rgb(235,238,242),Color.rgb(200,205,212),8));
-    header.addView(x,new LinearLayout.LayoutParams(dp(a,48),dp(a,46)));
-    x.setOnClickListener(v->dialog.dismiss());
+    // Same full-width, centered header as the About dialog; close via bottom button.
     root.addView(header,new LinearLayout.LayoutParams(-1,dp(a,56)));
     LinearLayout columns=new LinearLayout(a);columns.setOrientation(LinearLayout.HORIZONTAL);
     LinearLayout left=new LinearLayout(a);left.setOrientation(LinearLayout.VERTICAL);
@@ -64,6 +61,11 @@ public final class StudioFaq {
     LinearLayout right=new LinearLayout(a);right.setOrientation(LinearLayout.VERTICAL);right.setPadding(dp(a,10),0,dp(a,2),0);
     TextView name=text(a,"FAQ",18,Color.BLACK,true);right.addView(name,new LinearLayout.LayoutParams(-1,dp(a,44)));
     View red=new View(a);red.setBackgroundColor(Color.rgb(220,50,55));right.addView(red,new LinearLayout.LayoutParams(-1,dp(a,2)));
+    TextView extra=text(a,"",14,Color.rgb(55,58,64),false);
+    extra.setPadding(0,dp(a,10),0,dp(a,10));
+    right.addView(extra,new LinearLayout.LayoutParams(-1,-2));
+    View extraDivider=new View(a);extraDivider.setBackgroundColor(Color.rgb(220,50,55));
+    right.addView(extraDivider,new LinearLayout.LayoutParams(-1,dp(a,2)));
     ScrollView descriptionScroll=new ScrollView(a);
     TextView description=text(a,"",14,Color.BLACK,false);description.setPadding(0,dp(a,12),dp(a,4),dp(a,8));
     descriptionScroll.addView(description);right.addView(descriptionScroll,new LinearLayout.LayoutParams(-1,0,1));
@@ -83,7 +85,12 @@ public final class StudioFaq {
           active?Color.rgb(116,118,122):Color.rgb(177,184,192),6));
       }
       JSONObject row=entries.optJSONObject(selected[0]);
-      if(row!=null){name.setText(row.optString("name","FAQ"));description.setText(row.optString("description",""));descriptionScroll.scrollTo(0,0);}
+      if(row!=null){name.setText(row.optString("name","FAQ"));
+        String note=row.optString("extra_text","");
+        if(note.isEmpty()&&row.optString("name","").toUpperCase(java.util.Locale.ROOT).contains("RVM"))note="Doors Rest";
+        extra.setText(note);extra.setVisibility(note.isEmpty()?View.GONE:View.VISIBLE);
+        extraDivider.setVisibility(note.isEmpty()?View.GONE:View.VISIBLE);
+        description.setText(row.optString("description",""));descriptionScroll.scrollTo(0,0);}
     };
     for(int i=0;i<entries.length();i++){
       JSONObject row=entries.optJSONObject(i);if(row==null)continue;

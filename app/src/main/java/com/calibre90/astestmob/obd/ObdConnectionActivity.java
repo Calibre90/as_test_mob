@@ -39,27 +39,15 @@ public final class ObdConnectionActivity extends Activity {
     getWindow().getDecorView().setSystemUiVisibility(0);
     LinearLayout root = new LinearLayout(this);
     root.setOrientation(LinearLayout.VERTICAL);
-    // Respect Android edge-to-edge status/navigation insets on Android 15+.
-    root.setFitsSystemWindows(false);
-    root.setPadding(22,24,22,20);
+    // Let Android place content below the system bars on every supported API.
+    // The previous edge-to-edge listener applied insets to the inner root and
+    // still allowed the scroll viewport to overlap the status bar.
+    root.setPadding(22, 24, 22, 20);
     ScrollView scroll = new ScrollView(this);
     scroll.addView(root);
-    scroll.setFitsSystemWindows(false);
     setContentView(scroll);
     if (Build.VERSION.SDK_INT >= 30) {
-      // Explicitly keep the scrolling content below Android system bars.
-      getWindow().setDecorFitsSystemWindows(false);
-    }
-    if (Build.VERSION.SDK_INT >= 30) {
-      scroll.setClipToPadding(true);
-      scroll.setOnApplyWindowInsetsListener((view, insets) -> {
-        android.graphics.Insets bars = insets.getInsets(
-            android.view.WindowInsets.Type.statusBars() | android.view.WindowInsets.Type.navigationBars());
-        // Insets are applied to the content once, avoiding status-bar overlap.
-        root.setPadding(22, 24 + bars.top, 22, 20 + bars.bottom);
-        return insets;
-      });
-      scroll.requestApplyInsets();
+      getWindow().setDecorFitsSystemWindows(true);
     }
     TextView title = new TextView(this);
     title.setText("Mazda 6 GH — OBD подключение");
@@ -141,10 +129,18 @@ public final class ObdConnectionActivity extends Activity {
     log.setText("Журнал связи (без записи в блоки)\n");
     log.setTextIsSelectable(true);
     log.setText("Журнал связи (без записи в блоки)\n" + ObdSession.journal());
-    root.addView(log);
+    log.setVisibility(View.GONE);
+    Button journalButton = new Button(this);
+    journalButton.setText("Показать журнал связи");
+    root.addView(journalButton);
+    journalButton.setOnClickListener(v -> {
+      boolean show = log.getVisibility() != View.VISIBLE;
+      log.setVisibility(show ? View.VISIBLE : View.GONE);
+      journalButton.setText(show ? "Скрыть журнал связи" : "Показать журнал связи");
+    });
     moduleReport = new TextView(this);
     moduleReport.setText(ObdSession.moduleReport());
-    root.addView(moduleReport);
+    moduleReport.setVisibility(View.GONE);
     adapterConfirmed = ObdSession.adapterReady();
     vehicleConfirmed = ObdSession.vehicleReady();
     status.setText(ObdSession.status());

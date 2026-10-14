@@ -1193,7 +1193,7 @@ public class MainActivity extends Activity {
         // One shared bottom-bar FAQ button, next to the existing About button.
         card(c,277,782,54,57,12,true);
         centered(c,"FAQ",277,782,54,57,14,Color.BLACK);
-        card(c,336,782,54,57,12,true);centered(c,"ⓘ",336,782,54,57,29,Color.BLACK);
+        card(c,336,782,54,57,12,true);centered(c,"ⓘ",336,782,54,57,23,Color.rgb(70,75,82));
         actual.restore();return;
       }
       card(c,10,190,380,82,13,true);
@@ -1232,7 +1232,7 @@ public class MainActivity extends Activity {
       card(c,277,782,54,57,12,true);
       centered(c,"FAQ",277,782,54,57,14,Color.BLACK);
       card(c,336,782,54,57,12,true);
-      centered(c,"ⓘ",336,782,54,57,29,Color.BLACK);
+      centered(c,"ⓘ",336,782,54,57,23,Color.rgb(70,75,82));
       actual.restore();
     }
     float startY,startX,moduleTabOffset=0;
@@ -1613,9 +1613,9 @@ public class MainActivity extends Activity {
     root.setBackground(panel(Color.rgb(252,253,254),Color.rgb(234,239,244),14,Color.rgb(225,50,51)));
     root.setClipToOutline(true);
     View header=new View(this);header.setBackground(panel(Color.WHITE,Color.rgb(235,239,244),10,Color.rgb(215,222,230)));
-    place(root,header,.025f,.025f,.95f,.16f,width,height);
+    place(root,header,.025f,.025f,.95f,isAdmin?.16f:(float)dp(56)/height,width,height);
     TextView title=caption(isAdmin?StudioSettings.appearance(this,"admin_text","Админка"):"О программе",20,Color.BLACK,true);
-    place(root,title,isAdmin?.16f:.08f,.045f,isAdmin?.60f:.84f,.11f,width,height);
+    place(root,title,isAdmin?.16f:.08f,isAdmin?.045f:.025f,isAdmin?.60f:.84f,isAdmin?.11f:(float)dp(56)/height,width,height);
     if(isAdmin){
       TextView lock=caption("🔒",25,Color.rgb(190,15,22),true);
       place(root,lock,.065f,.045f,.11f,.11f,width,height);
@@ -1648,9 +1648,9 @@ public class MainActivity extends Activity {
       // Information-only layout without duplicated Mazda logo/banner.
       TextView version=caption("Mazda 6 GH AS-Built",22,Color.BLACK,true);
       version.setGravity(Gravity.CENTER);
-      place(root,version,.09f,.205f,.82f,.10f,width,height);
+      place(root,version,.09f,.135f,.82f,.075f,width,height);
       View divider=new View(this);divider.setBackgroundColor(Color.rgb(220,50,55));
-      place(root,divider,.09f,.32f,.82f,.004f,width,height);
+      place(root,divider,.09f,.235f,.82f,.004f,width,height);
       // Give the complete description a substantially taller region; scroll only for unusually long text.
       android.widget.ScrollView descriptionScroll=new android.widget.ScrollView(this);
       descriptionScroll.setFillViewport(false);
@@ -1661,7 +1661,7 @@ public class MainActivity extends Activity {
       description.setMaxLines(Integer.MAX_VALUE);
       description.setPadding(0,dp(3),dp(5),dp(3));
       descriptionScroll.addView(description,new android.widget.ScrollView.LayoutParams(-1,-2));
-      place(root,descriptionScroll,.09f,.35f,.84f,.355f,width,height);
+      place(root,descriptionScroll,.09f,.255f,.84f,.445f,width,height);
       String[] creatorNames={
         StudioSettings.appearance(this,"creator1_name","Dim304"),
         StudioSettings.appearance(this,"creator2_name","Wolis11")

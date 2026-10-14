@@ -22,7 +22,10 @@ public final class ObdModuleProbe {
     {"PCM","7E0","7E8"},
     {"TCM","7E1","7E9"},
     {"ABS","760","768"},
-    {"IC","720","728"}
+    {"IC","720","728"},
+    {"BCM (HS кандидат)","726","72E"},
+    {"RKE (HS кандидат)","731","739"},
+    {"HVAC/EATC (HS кандидат)","733","73B"}
   };
   private ObdModuleProbe() {}
   public static List<Result> probeHsCan(Commands link) throws IOException {
@@ -43,6 +46,8 @@ public final class ObdModuleProbe {
           // UDS/ISO 14229 ReadDataByIdentifier F190 (VIN), read-only.
           // Negative response 7F 22 is NOT proof that this ECU exists.
           String raw=link.command("22F190");
+          // A negative response to VIN DID confirms ECU communication; NO DATA does not.
+          // Do not send potentially state-changing session/control commands.
           String normalized=raw.toUpperCase(Locale.US).replaceAll("[^0-9A-F]","");
           boolean positive=normalized.contains("62F190");
           // A correctly addressed negative response (7F 22 xx) also proves

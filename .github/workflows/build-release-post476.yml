@@ -159,11 +159,11 @@ jobs:
         if: always()
         with:
           if-no-files-found: warn
-          name: Mazda6GH-Studio-Release-APK
+          name: 6GH-AS-BUILT-CONFIG-Release-APK
           path: app/build/outputs/apk/release/app-release.apk
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           if-no-files-found: warn
-          name: Mazda6GH-Admin-Release-APK
+          name: 6GH-CONFIG-ADMIN-Release-APK
           path: catalog-admin/build/outputs/apk/release/catalog-admin-release.apk

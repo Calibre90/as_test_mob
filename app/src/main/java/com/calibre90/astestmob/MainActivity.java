@@ -471,28 +471,21 @@ public class MainActivity extends Activity {
       });
       return;
     }
-    setTitle(StudioSettings.appearance(this,"title","M6GH AS-BUILT CONFIG"));view=new StudioView();view.moduleTabOffset=Math.max(0,active*90f-280f);// Studio splash is shown before the editor and the existing RSA license gate.
-    // No ABT, feature, or license verification logic is changed here.
-    ImageView splash=new ImageView(this);
-    splash.setBackgroundColor(Color.BLACK);
-    splash.setImageResource(R.drawable.splash_studio);
-    splash.setScaleType(ImageView.ScaleType.CENTER_CROP);
-    setContentView(splash);
-    new Handler(Looper.getMainLooper()).postDelayed(()->{
-      if(isFinishing() || isDestroyed())return;
-      if(LicenseGate.isActivated(this)){
-        setContentView(view);
-        refreshPublishedCatalog();
-      }else{
-        // Keep the splash behind the activation dialog until a valid license is entered.
-        LicenseGate.enforce(this,()->{
-          if(!isFinishing() && !isDestroyed()){
-            setContentView(view);
-            refreshPublishedCatalog();
-          }
-        });
-      }
-    },1500);
+    setTitle(StudioSettings.appearance(this,"title","M6GH AS-BUILT CONFIG"));
+    view=new StudioView();
+    view.moduleTabOffset=Math.max(0,active*90f-280f);
+    // Open editor without splash; preserve RSA license activation.
+    setContentView(view);
+    if(LicenseGate.isActivated(this)){
+      refreshPublishedCatalog();
+    }else{
+      LicenseGate.enforce(this,()->{
+        if(!isFinishing() && !isDestroyed()){
+          setContentView(view);
+          refreshPublishedCatalog();
+        }
+      });
+    }
   }
   /** Refresh only published feature definitions; never replace a locally edited draft. */
   private static final String FULL_CATALOG_URL = "https://raw.githubusercontent.com/Calibre90/as_test_mob/main/publication/studio-published-settings.json";

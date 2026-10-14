@@ -44,11 +44,22 @@ public final class ObdConnectionActivity extends Activity {
     // still allowed the scroll viewport to overlap the status bar.
     root.setPadding(22, 24, 22, 20);
     ScrollView scroll = new ScrollView(this);
+    scroll.setClipToPadding(false);
     scroll.addView(root);
-    setContentView(scroll);
+    // Android 15/16 may enforce edge-to-edge even when decor fitting is
+    // requested. Apply real system-bar insets to the scroll viewport itself.
     if (Build.VERSION.SDK_INT >= 30) {
-      getWindow().setDecorFitsSystemWindows(true);
+      getWindow().setDecorFitsSystemWindows(false);
+      scroll.setOnApplyWindowInsetsListener((view, insets) -> {
+        android.graphics.Insets bars = insets.getInsets(
+            WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+        view.setPadding(0, bars.top, 0, bars.bottom);
+        return insets;
+      });
+    } else {
+      scroll.setFitsSystemWindows(true);
     }
+    setContentView(scroll);
     TextView title = new TextView(this);
     title.setText("Mazda 6 GH — OBD подключение");
     title.setTextSize(22);
@@ -479,6 +490,7 @@ public final class ObdConnectionActivity extends Activity {
                 if (result.response != null && !result.response.trim().isEmpty())
                   append("Сырой ответ " + key + ": " + result.response.replaceAll("[\\r\\n]+", " | "));
               }
+              append("MS-CAN: ATDP подтверждает только настройку скорости, не наличие CAN-трафика. Пассивное ATMA пока отключено: текущий ELM-транспорт ожидает символ '>' и не умеет безопасно останавливать непрерывный мониторинг.");
               append("MS-CAN: проверка IC без фильтра ответа ATCRA728; CAN-заголовки включены.");
               ObdModuleProbe.Result unfiltered = ObdModuleProbe.probeIcUnfilteredMs(ObdSession::command);
               String unfilteredKey = "MS-CAN " + unfiltered.name + " [720/*]";

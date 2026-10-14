@@ -55,7 +55,8 @@ public final class ObdConnectionActivity extends Activity {
       scroll.setOnApplyWindowInsetsListener((view, insets) -> {
         android.graphics.Insets bars = insets.getInsets(
             android.view.WindowInsets.Type.statusBars() | android.view.WindowInsets.Type.navigationBars());
-        scroll.setPadding(0, bars.top, 0, bars.bottom);
+        // Insets are applied to the content once, avoiding status-bar overlap.
+        root.setPadding(22, 24 + bars.top, 22, 20 + bars.bottom);
         return insets;
       });
       scroll.requestApplyInsets();

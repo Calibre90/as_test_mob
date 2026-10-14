@@ -69,7 +69,7 @@ public final class ObdConnectionActivity extends Activity {
     root.addView(hint);
     mode = new Spinner(this);
     ArrayAdapter<String> types = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item,
-        new String[]{"Wi-Fi (автопоиск)", "Bluetooth"});
+        new String[]{"Wi-Fi", "Bluetooth"});
     mode.setAdapter(types);
     root.addView(mode);
     TextView msLabel = new TextView(this);
@@ -96,14 +96,12 @@ public final class ObdConnectionActivity extends Activity {
     host.setHint("IP адаптера");
     host.setText(getPreferences(0).getString("obd_host","192.168.0.10"));
     root.addView(host);
-    host.setVisibility(View.GONE);
     port = new EditText(this);
     port.setSingleLine(true);
     port.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
     port.setHint("TCP порт");
     port.setText(getPreferences(0).getString("obd_port","35000"));
     root.addView(port);
-    port.setVisibility(View.GONE);
     Button choose = new Button(this);
     choose.setText("Выбрать сопряжённый Bluetooth адаптер");
     root.addView(choose);
@@ -112,8 +110,8 @@ public final class ObdConnectionActivity extends Activity {
       public void onNothingSelected(android.widget.AdapterView<?> parent) {}
       public void onItemSelected(android.widget.AdapterView<?> parent,View view,int position,long id) {
         boolean isWifi = position == 0;
-        host.setVisibility(View.GONE);
-        port.setVisibility(View.GONE);
+        host.setVisibility(isWifi ? View.VISIBLE : View.GONE);
+        port.setVisibility(isWifi ? View.VISIBLE : View.GONE);
         choose.setVisibility(isWifi ? View.GONE : View.VISIBLE);
       }
     });
@@ -219,31 +217,6 @@ public final class ObdConnectionActivity extends Activity {
     ui.post(() -> { if (!isFinishing() && !isDestroyed()) refreshButtons(adapterReady); });
   }
 
-  private void showVcxNotice() {
-    new AlertDialog.Builder(this).setTitle("VXDiag VCX Nano — For IDS")
-        .setMessage("Для VXDiag пока реализована только проверка TCP-доступности. Устройство не является ELM327: диагностические команды AT и опрос ECU не отправляются до подтверждения протокола VXDiag/J2534. Сохранённое подключение ELM327 остаётся отдельным.")
-        .setPositiveButton("Понятно", null).show();
-  }
-
-  private void testVcxTcp(String ip, int tcpPort) {
-    if (busy) return;
-    busy = true;
-    refreshButtons(false);
-    append("VXDiag: проверяем TCP " + ip + ":" + tcpPort + " (без диагностических команд).");
-    worker.execute(() -> {
-      try (java.net.Socket socket = new java.net.Socket()) {
-        socket.connect(new java.net.InetSocketAddress(ip, tcpPort), 4000);
-        append("VXDiag: TCP-порт доступен. Протокол управления и J2534 ещё НЕ подтверждены.");
-        ui.post(() -> { if (!isFinishing() && !isDestroyed()) showVcxNotice(); });
-      } catch (Exception e) {
-        append("VXDiag: TCP-соединение не установлено: " + e.getMessage() + ". Проверьте IP и порт устройства.");
-      } finally {
-        busy = false;
-        ui.post(() -> { if (!isFinishing() && !isDestroyed()) refreshButtons(ObdSession.adapterReady()); });
-      }
-    });
-  }
-
   private void startConnect() {
     if(busy || ObdSession.adapterReady())return;
     final boolean useWifi=mode.getSelectedItemPosition()==0;
@@ -276,30 +249,10 @@ public final class ObdConnectionActivity extends Activity {
       try {
         String id;
         if(useWifi) {
-          append("Wi-Fi: автоматически определяем шлюз и доступные диагностические TCP-порты…");
-          ObdWifiDiscovery.Result discovery = ObdWifiDiscovery.scan(getApplicationContext());
-          append("Wi-Fi: шлюз " + (discovery.gateway==null ? "не определён" : discovery.gateway));
-          if(discovery.open.isEmpty()) throw new IOException("На проверенных адресах и портах TCP-сервис не найден. Протокол VXDiag может требовать специальный драйвер.");
-          IOException last = null;
-          String detected = null;
-          for(ObdWifiDiscovery.Endpoint endpoint:discovery.open) {
-            if(cancelled)return;
-            append("Wi-Fi: найден TCP " + endpoint + "; проверяем совместимость с ELM327.");
-            ElmWifiClient candidate = new ElmWifiClient();
-            try {
-              candidate.connect(getApplicationContext(),endpoint.host,endpoint.port,1500);
-              detected = candidate.initializeReadOnly();
-              wifi=candidate;
-              append("Wi-Fi: подтверждён ELM327 " + endpoint + ".");
-              break;
-            } catch(IOException ex) {
-              last=ex;
-              try { candidate.close(); } catch(IOException ignored) {}
-              append("Wi-Fi: " + endpoint + " не подтвердил ELM327.");
-            }
-          }
-          if(detected==null) throw new IOException("TCP-сервис найден, но протокол ELM327 не подтверждён. VXDiag требует отдельного протокола управления."+(last==null?"":" Последняя ошибка: "+last.getMessage()));
-          id=detected;
+          wifi=new ElmWifiClient();
+          wifi.connect(getApplicationContext(),ip,tcpPort,5000);
+          if(cancelled)return;
+          id=wifi.initializeReadOnly();
         } else {
           bluetooth=new ElmBluetoothClient();
           bluetooth.connect(this,selected);

@@ -349,6 +349,9 @@ public final class ObdConnectionActivity extends Activity {
             for (ObdModuleProbe.Result result: ObdModuleProbe.probeHsCan(ObdSession::command)) {
               ObdSession.saveModuleResult(result.name+" ["+result.requestId+"/"+result.responseId+"]", result.status);
               append(result.name+" ["+result.requestId+"/"+result.responseId+"]: "+result.status);
+              if (result.response != null && !result.response.trim().isEmpty()) {
+                append("Сырой ответ "+result.name+": "+result.response.replaceAll("[\\r\\n]+"," | ").trim());
+              }
             }
             ui.post(() -> { if (!isFinishing() && !isDestroyed()) moduleReport.setText(ObdSession.moduleReport()); });
             append("Пробный опрос завершён. Обнаружение не подтверждает возможность чтения As-Built.");

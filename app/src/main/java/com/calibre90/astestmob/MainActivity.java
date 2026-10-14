@@ -1615,6 +1615,7 @@ public class MainActivity extends Activity {
     View header=new View(this);header.setBackground(panel(Color.WHITE,Color.rgb(235,239,244),10,Color.rgb(215,222,230)));
     place(root,header,.025f,.025f,.95f,isAdmin?.16f:(float)dp(56)/height,width,height);
     TextView title=caption(isAdmin?StudioSettings.appearance(this,"admin_text","Админка"):"О программе",20,Color.BLACK,true);
+    if(!isAdmin)title.setGravity(Gravity.CENTER);
     place(root,title,isAdmin?.16f:.08f,isAdmin?.045f:.025f,isAdmin?.60f:.84f,isAdmin?.11f:(float)dp(56)/height,width,height);
     if(isAdmin){
       TextView lock=caption("🔒",25,Color.rgb(190,15,22),true);
@@ -1648,24 +1649,25 @@ public class MainActivity extends Activity {
       // Information-only layout without duplicated Mazda logo/banner.
       TextView version=caption("Mazda 6 GH AS-Built",22,Color.BLACK,true);
       version.setGravity(Gravity.CENTER);
-      place(root,version,.09f,.135f,.82f,.075f,width,height);
+      place(root,version,.09f,.112f,.82f,.070f,width,height);
       View divider=new View(this);divider.setBackgroundColor(Color.rgb(220,50,55));
-      place(root,divider,.09f,.235f,.82f,.004f,width,height);
+      place(root,divider,.09f,.195f,.82f,.004f,width,height);
       // Give the complete description a substantially taller region; scroll only for unusually long text.
       android.widget.ScrollView descriptionScroll=new android.widget.ScrollView(this);
       descriptionScroll.setFillViewport(false);
       descriptionScroll.setVerticalScrollBarEnabled(true);
       TextView description=caption(aboutText,15,Color.BLACK,false);
+      description.setText(android.text.Html.fromHtml(aboutText,android.text.Html.FROM_HTML_MODE_LEGACY));
       description.setGravity(Gravity.TOP|Gravity.START);
       description.setSingleLine(false);
       description.setMaxLines(Integer.MAX_VALUE);
       description.setPadding(0,dp(3),dp(5),dp(3));
       descriptionScroll.addView(description,new android.widget.ScrollView.LayoutParams(-1,-2));
-      place(root,descriptionScroll,.09f,.255f,.84f,.390f,width,height);
-      TextView warningTitle=caption("⚠️WARNING⚠️",16,Color.rgb(204,24,38),true);
+      place(root,descriptionScroll,.09f,.212f,.84f,.433f,width,height);
+      TextView warningTitle=caption(StudioSettings.appearance(this,"warning_title","⚠️WARNING⚠️"),16,Color.rgb(204,24,38),true);
       warningTitle.setGravity(Gravity.CENTER);
       place(root,warningTitle,.09f,.653f,.82f,.030f,width,height);
-      TextView warningBody=caption("НЕ ЗАБЫВАЙТЕ ДЕЛАТЬ КОПИЮ СКАЧЕННОГО ФАЙЛА НАСТРОЕК ИЗ FORSCAN.",12,Color.rgb(204,24,38),true);
+      TextView warningBody=caption(StudioSettings.appearance(this,"warning_body","НЕ ЗАБЫВАЙТЕ ДЕЛАТЬ КОПИЮ СКАЧЕННОГО ФАЙЛА НАСТРОЕК ИЗ FORSCAN."),12,Color.rgb(204,24,38),true);
       warningBody.setGravity(Gravity.CENTER);
       warningBody.setSingleLine(false);
       place(root,warningBody,.09f,.687f,.82f,.052f,width,height);
@@ -1696,7 +1698,7 @@ public class MainActivity extends Activity {
         styled.setSpan(new android.text.style.ForegroundColorSpan(Color.rgb(24,96,191)),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         styled.setSpan(new android.text.style.UnderlineSpan(),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         person.setText(styled);
-        place(root,person,.09f,i==0?.755f:.795f,.84f,.038f,width,height);
+        place(root,person,.09f,i==0?.773f:.795f,.84f,.038f,width,height);
         android.text.style.ClickableSpan onlyLink=new android.text.style.ClickableSpan(){
           @Override public void onClick(android.view.View widget){
             if(!url.isEmpty()&&(url.startsWith("https://")||url.startsWith("http://"))){
@@ -2559,9 +2561,9 @@ public class MainActivity extends Activity {
         });
       }
       if(selected[0]==3){
-        final String[] keys={"title","background","panel","feature_columns","open_text","save_text","about_description","creator1_role","creator1_name","creator1_url","creator2_role","creator2_name","creator2_url"};
-        final String[] labels={"Название окна","Фон приложения","Фон HEX-блока","Колонки функций","Кнопка открытия","Кнопка сохранения","Описание программы","Автор 1 — подпись","Автор 1 — имя","Автор 1 — ссылка","Автор 2 — подпись","Автор 2 — имя","Автор 2 — ссылка"};
-        final String[] defaults={"Mazda 6 GH As-Built Studio","","","3","Открыть ABT","Сохранить ABT","Редактор As-Built для Mazda 6 GH","Разработчик","Dim304","https://www.drive2.ru/users/dim304/","Помощник","Wolis11","https://www.drive2.ru/users/wolis11/"};
+        final String[] keys={"title","background","panel","feature_columns","open_text","save_text","about_description","warning_title","warning_body","creator1_role","creator1_name","creator1_url","creator2_role","creator2_name","creator2_url"};
+        final String[] labels={"Название окна","Фон приложения","Фон HEX-блока","Колонки функций","Кнопка открытия","Кнопка сохранения","Описание программы","Заголовок предупреждения","Текст предупреждения","Автор 1 — подпись","Автор 1 — имя","Автор 1 — ссылка","Автор 2 — подпись","Автор 2 — имя","Автор 2 — ссылка"};
+        final String[] defaults={"Mazda 6 GH As-Built Studio","","","3","Открыть ABT","Сохранить ABT","Редактор As-Built для Mazda 6 GH","⚠️WARNING⚠️","НЕ ЗАБЫВАЙТЕ ДЕЛАТЬ КОПИЮ СКАЧЕННОГО ФАЙЛА НАСТРОЕК ИЗ FORSCAN.","Разработчик","Dim304","https://www.drive2.ru/users/dim304/","Помощник","Wolis11","https://www.drive2.ru/users/wolis11/"};
         android.widget.ScrollView appearanceScroll=new android.widget.ScrollView(this);
         LinearLayout appearanceFields=new LinearLayout(this);appearanceFields.setOrientation(LinearLayout.VERTICAL);
         appearanceScroll.addView(appearanceFields);panel.addView(appearanceScroll,new LinearLayout.LayoutParams(-1,0,1));
@@ -2570,7 +2572,7 @@ public class MainActivity extends Activity {
           TextView label=new TextView(this);label.setText(labels[k]);label.setTextColor(Color.WHITE);label.setTextSize(13);
           label.setPadding(dp(5),dp(7),dp(5),dp(3));appearanceFields.addView(label);
           EditText input=new EditText(this);
-          boolean isDescription="about_description".equals(keys[k]);
+          boolean isDescription="about_description".equals(keys[k]) || "warning_body".equals(keys[k]);
           input.setSingleLine(!isDescription);
           if(isDescription){
             input.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE|android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);

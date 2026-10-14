@@ -79,6 +79,40 @@ public final class ObdModuleProbe {
         + (first == null ? "; адрес IC не подтверждён, дальнейший опрос требует проверки адреса/шины" : "; первый ответ " + first);
     return new Result(name, "720", "728", status, raw.toString());
   }
+  /**
+   * MS-CAN address discovery diagnostic: send only to existing IC candidate
+   * 720, but do not constrain the response to 728. A response from another
+   * address can then be recorded with ATH1; this is NOT a bus-wide scan.
+   */
+  public static Result probeIcUnfilteredMs(Commands link) throws IOException {
+    StringBuilder raw = new StringBuilder();
+    int positives = 0, negatives = 0;
+    try {
+      String headers = link.command("ATH1");
+      String clear = link.command("ATCRA");
+      String request = link.command("ATSH720");
+      if (isError(headers) || isError(clear) || isError(request))
+        return new Result("IC MS-CAN (без фильтра ответа)", "720", "любой",
+            "ELM не принял настройку", headers + " | " + clear + " | " + request);
+      for (String did : new String[]{"F190", "F187", "F18C"}) {
+        if (Thread.currentThread().isInterrupted()) throw new IOException("Опрос прерван");
+        String response = link.command("22" + did);
+        if (raw.length() > 0) raw.append(" | ");
+        raw.append(did).append(": ").append(response.replaceAll("[\\r\\n]+", " ").trim());
+        if (positiveDid(response, did)) positives++;
+        else if (negativeDid(response)) negatives++;
+      }
+    } finally {
+      try { link.command("ATH0"); } catch (Exception ignored) {}
+      try { link.command("ATCRA"); } catch (Exception ignored) {}
+      try { link.command("ATSH7DF"); } catch (Exception ignored) {}
+    }
+    String status = "Без фильтра ATCRA: положительных " + positives
+        + ", отказов " + negatives
+        + "; адрес ответа нужно проверить по сырым CAN-заголовкам";
+    return new Result("IC MS-CAN (без фильтра ответа)", "720", "любой", status, raw.toString());
+  }
+
   private ObdModuleProbe() {}
   public static List<Result> probeHsCan(Commands link) throws IOException {
     List<Result> results = new ArrayList<>();

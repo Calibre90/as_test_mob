@@ -81,10 +81,11 @@ public final class ObdModuleProbe {
   }
   /**
    * Experimental Mazda/Ford 11-bit MS-CAN address candidates, not a verified
-   * GH module map. Read-only DID F190 only; no broadcast writes or coding.
+   * GH module map. Read-only identification DIDs F190/F187/F18C; no broadcast writes or coding.
    */
   public static List<Result> probeMsCan(Commands link) throws IOException {
     final String[][] candidates = {
+      {"IC (кандидат MS-CAN)", "720", "728"},
       {"BCM (кандидат)", "726", "72E"},
       {"RKE (кандидат)", "731", "739"},
       {"HVAC/EATC (кандидат)", "733", "73B"}

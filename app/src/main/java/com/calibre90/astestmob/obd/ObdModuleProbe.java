@@ -87,30 +87,36 @@ public final class ObdModuleProbe {
   public static Result probeIcUnfilteredMs(Commands link) throws IOException {
     StringBuilder raw = new StringBuilder();
     int positives = 0, negatives = 0;
+    String resetMode = "";
     try {
+      // ATCRA without an address returns '?' on some ELM327 clones.
+      // ATAR asks ELM to restore automatic receive addressing.
       String headers = link.command("ATH1");
-      String clear = link.command("ATCRA");
+      resetMode = link.command("ATAR");
       String request = link.command("ATSH720");
-      if (isError(headers) || isError(clear) || isError(request))
-        return new Result("IC MS-CAN (без фильтра ответа)", "720", "любой",
-            "ELM не принял настройку", headers + " | " + clear + " | " + request);
+      raw.append("SETUP ATH1=").append(headers.replaceAll("[\\r\\n]+", " ").trim())
+          .append("; ATAR=").append(resetMode.replaceAll("[\\r\\n]+", " ").trim())
+          .append("; ATSH720=").append(request.replaceAll("[\\r\\n]+", " ").trim());
+      if (isError(headers) || isError(resetMode) || isError(request))
+        return new Result("IC MS-CAN (автоматический приём)", "720", "авто",
+            "ELM не принял настройку; проверка DID не выполнена", raw.toString());
       for (String did : new String[]{"F190", "F187", "F18C"}) {
         if (Thread.currentThread().isInterrupted()) throw new IOException("Опрос прерван");
         String response = link.command("22" + did);
-        if (raw.length() > 0) raw.append(" | ");
-        raw.append(did).append(": ").append(response.replaceAll("[\\r\\n]+", " ").trim());
+        raw.append(" | ").append(did).append(": ")
+            .append(response.replaceAll("[\\r\\n]+", " ").trim());
         if (positiveDid(response, did)) positives++;
         else if (negativeDid(response)) negatives++;
       }
     } finally {
       try { link.command("ATH0"); } catch (Exception ignored) {}
-      try { link.command("ATCRA"); } catch (Exception ignored) {}
+      try { link.command("ATAR"); } catch (Exception ignored) {}
       try { link.command("ATSH7DF"); } catch (Exception ignored) {}
     }
-    String status = "Без фильтра ATCRA: положительных " + positives
+    String status = "Автоматический приём ATAR: положительных " + positives
         + ", отказов " + negatives
-        + "; адрес ответа нужно проверить по сырым CAN-заголовкам";
-    return new Result("IC MS-CAN (без фильтра ответа)", "720", "любой", status, raw.toString());
+        + "; при NO DATA адрес IC всё ещё не подтверждён";
+    return new Result("IC MS-CAN (автоматический приём)", "720", "авто", status, raw.toString());
   }
 
   private ObdModuleProbe() {}

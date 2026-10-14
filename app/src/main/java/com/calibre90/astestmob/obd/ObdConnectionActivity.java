@@ -69,7 +69,7 @@ public final class ObdConnectionActivity extends Activity {
     root.addView(hint);
     mode = new Spinner(this);
     ArrayAdapter<String> types = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item,
-        new String[]{"ELM327 Wi-Fi", "ELM327 Bluetooth", "VXDiag VCX Nano Wi-Fi (тест)"});
+        new String[]{"Wi-Fi (автопоиск)", "Bluetooth"});
     mode.setAdapter(types);
     root.addView(mode);
     TextView msLabel = new TextView(this);
@@ -96,12 +96,14 @@ public final class ObdConnectionActivity extends Activity {
     host.setHint("IP адаптера");
     host.setText(getPreferences(0).getString("obd_host","192.168.0.10"));
     root.addView(host);
+    host.setVisibility(View.GONE);
     port = new EditText(this);
     port.setSingleLine(true);
     port.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
     port.setHint("TCP порт");
     port.setText(getPreferences(0).getString("obd_port","35000"));
     root.addView(port);
+    port.setVisibility(View.GONE);
     Button choose = new Button(this);
     choose.setText("Выбрать сопряжённый Bluetooth адаптер");
     root.addView(choose);
@@ -109,9 +111,9 @@ public final class ObdConnectionActivity extends Activity {
     mode.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
       public void onNothingSelected(android.widget.AdapterView<?> parent) {}
       public void onItemSelected(android.widget.AdapterView<?> parent,View view,int position,long id) {
-        boolean isWifi = position != 1;
-        host.setVisibility(isWifi ? View.VISIBLE : View.GONE);
-        port.setVisibility(isWifi ? View.VISIBLE : View.GONE);
+        boolean isWifi = position == 0;
+        host.setVisibility(View.GONE);
+        port.setVisibility(View.GONE);
         choose.setVisibility(isWifi ? View.GONE : View.VISIBLE);
       }
     });
@@ -124,7 +126,7 @@ public final class ObdConnectionActivity extends Activity {
     Button scan = new Button(this);
     scan.setText("Опрос блоков автомобиля (только чтение)");
     root.addView(scan);
-    scan.setOnClickListener(v->{ if (mode.getSelectedItemPosition()==2) { showVcxNotice(); return; } ensureHsCanThenProbe(); });
+    scan.setOnClickListener(v->ensureHsCanThenProbe());
     Button results = new Button(this);
     results.setText("Результаты обнаружения блоков");
     root.addView(results);
@@ -132,7 +134,7 @@ public final class ObdConnectionActivity extends Activity {
     Button diagnostics = new Button(this);
     diagnostics.setText("Параметры и ошибки двигателя (только чтение)");
     root.addView(diagnostics);
-    diagnostics.setOnClickListener(v->{ if(mode.getSelectedItemPosition()==2) { showVcxNotice(); return; } startActivity(new Intent(this,ObdDiagnosticsActivity.class)); });
+    diagnostics.setOnClickListener(v->startActivity(new Intent(this,ObdDiagnosticsActivity.class)));
     status = new TextView(this);
     status.setText("Не подключено");
     root.addView(status);
@@ -244,8 +246,7 @@ public final class ObdConnectionActivity extends Activity {
 
   private void startConnect() {
     if(busy || ObdSession.adapterReady())return;
-    final boolean vcx = mode.getSelectedItemPosition()==2;
-    final boolean useWifi=mode.getSelectedItemPosition()!=1;
+    final boolean useWifi=mode.getSelectedItemPosition()==0;
     final String ip=host.getText().toString().trim();
     final int tcpPort;
     if(useWifi) {
@@ -258,7 +259,6 @@ public final class ObdConnectionActivity extends Activity {
       if(!bluetoothPermission())return;
       if(selected==null){append("Сначала выберите Bluetooth адаптер");return;}
     }
-    if (vcx) { testVcxTcp(ip, tcpPort); return; }
     physicalMsSelected = false;
     final int msSelection = msCanMode.getSelectedItemPosition();
     if(msSelection == 0) {
@@ -276,10 +276,30 @@ public final class ObdConnectionActivity extends Activity {
       try {
         String id;
         if(useWifi) {
-          wifi=new ElmWifiClient();
-          wifi.connect(getApplicationContext(),ip,tcpPort,5000);
-          if(cancelled)return;
-          id=wifi.initializeReadOnly();
+          append("Wi-Fi: автоматически определяем шлюз и доступные диагностические TCP-порты…");
+          ObdWifiDiscovery.Result discovery = ObdWifiDiscovery.scan(getApplicationContext());
+          append("Wi-Fi: шлюз " + (discovery.gateway==null ? "не определён" : discovery.gateway));
+          if(discovery.open.isEmpty()) throw new IOException("На проверенных адресах и портах TCP-сервис не найден. Протокол VXDiag может требовать специальный драйвер.");
+          IOException last = null;
+          String detected = null;
+          for(ObdWifiDiscovery.Endpoint endpoint:discovery.open) {
+            if(cancelled)return;
+            append("Wi-Fi: найден TCP " + endpoint + "; проверяем совместимость с ELM327.");
+            ElmWifiClient candidate = new ElmWifiClient();
+            try {
+              candidate.connect(getApplicationContext(),endpoint.host,endpoint.port,1500);
+              detected = candidate.initializeReadOnly();
+              wifi=candidate;
+              append("Wi-Fi: подтверждён ELM327 " + endpoint + ".");
+              break;
+            } catch(IOException ex) {
+              last=ex;
+              try { candidate.close(); } catch(IOException ignored) {}
+              append("Wi-Fi: " + endpoint + " не подтвердил ELM327.");
+            }
+          }
+          if(detected==null) throw new IOException("TCP-сервис найден, но протокол ELM327 не подтверждён. VXDiag требует отдельного протокола управления."+(last==null?"":" Последняя ошибка: "+last.getMessage()));
+          id=detected;
         } else {
           bluetooth=new ElmBluetoothClient();
           bluetooth.connect(this,selected);

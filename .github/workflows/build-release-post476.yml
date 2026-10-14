@@ -42,6 +42,34 @@ jobs:
                   raise SystemExit(f"Image too small: {path}: {width}x{height}")
               print(f"Validated {path}: {width}x{height}")
           PY
+      - name: Install M6GH AS-BUILT CONFIG banner and launcher icon
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Upload m6gh_header.png and m6gh_icon.png to the main branch before running.
+          for asset in m6gh_header m6gh_icon; do
+            curl --fail --location --retry 3 \
+              "https://raw.githubusercontent.com/Calibre90/as_test_mob/main/${asset}.png" \
+              -o "$RUNNER_TEMP/${asset}.png"
+          done
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct, os, shutil
+          src=Path(os.environ['RUNNER_TEMP'])
+          dest=Path('app/src/main/res/drawable-nodpi')
+          for filename,target,minw,minh in (
+              ('m6gh_header.png','header_mazda_no_lock.png',1000,250),
+              ('m6gh_icon.png','icon_studio.png',512,512)):
+              path=src/filename
+              data=path.read_bytes()
+              if data[:8]!=b'\\x89PNG\\r\\n\\x1a\\n' or data[12:16]!=b'IHDR':
+                  raise SystemExit(f'Invalid PNG: {filename}')
+              w,h=struct.unpack('>II',data[16:24])
+              if w<minw or h<minh:
+                  raise SystemExit(f'Invalid dimensions for {filename}: {w}x{h}')
+              shutil.copyfile(path,dest/target)
+              print(f'Installed {filename} as {target}: {w}x{h}')
+          PY
       - name: Install corrected Admin launcher icon
         shell: bash
         run: |
@@ -159,11 +187,11 @@ jobs:
         if: always()
         with:
           if-no-files-found: warn
-          name: 6GH-AS-BUILT-CONFIG-Release-APK
+          name: M6GH-AS-BUILT-CONFIG-Release-APK
           path: app/build/outputs/apk/release/app-release.apk
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           if-no-files-found: warn
-          name: 6GH-CONFIG-ADMIN-Release-APK
+          name: M6GH-AS-BUILT-CONFIG-ADMIN-Release-APK
           path: catalog-admin/build/outputs/apk/release/catalog-admin-release.apk

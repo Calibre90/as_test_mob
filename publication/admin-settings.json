@@ -18,7 +18,9 @@
       "appearance_save_text": "Сохранить ABT",
       "appearance_background": "",
       "appearance_warning_body": "НЕ ЗАБЫВАЙТЕ ДЕЛАТЬ КОПИЮ СКАЧЕННОГО ФАЙЛА НАСТРОЕК ИЗ FORSCAN.",
-      "appearance_warning_title": "⚠️WARNING⚠️"
+      "appearance_warning_title": "⚠️WARNING⚠️",
+      "appearance_feature_card_height": "55",
+      "appearance_feature_card_width": "177"
     },
     "studio_admin_rows": {
       "BCM": "[{\"address\":\"726-01-01\",\"value\":\"9999 5555 3333 1182\"},{\"address\":\"726-02-01\",\"value\":\"9999 5555 3333 1183\"}]",

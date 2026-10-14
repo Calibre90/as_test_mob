@@ -69,7 +69,7 @@ public final class ObdConnectionActivity extends Activity {
     root.addView(hint);
     mode = new Spinner(this);
     ArrayAdapter<String> types = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item,
-        new String[]{"Wi-Fi", "Bluetooth"});
+        new String[]{"ELM327 Wi-Fi", "ELM327 Bluetooth", "VXDiag VCX Nano Wi-Fi (тест)"});
     mode.setAdapter(types);
     root.addView(mode);
     TextView msLabel = new TextView(this);
@@ -109,7 +109,7 @@ public final class ObdConnectionActivity extends Activity {
     mode.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
       public void onNothingSelected(android.widget.AdapterView<?> parent) {}
       public void onItemSelected(android.widget.AdapterView<?> parent,View view,int position,long id) {
-        boolean isWifi = position == 0;
+        boolean isWifi = position != 1;
         host.setVisibility(isWifi ? View.VISIBLE : View.GONE);
         port.setVisibility(isWifi ? View.VISIBLE : View.GONE);
         choose.setVisibility(isWifi ? View.GONE : View.VISIBLE);
@@ -124,7 +124,7 @@ public final class ObdConnectionActivity extends Activity {
     Button scan = new Button(this);
     scan.setText("Опрос блоков автомобиля (только чтение)");
     root.addView(scan);
-    scan.setOnClickListener(v->ensureHsCanThenProbe());
+    scan.setOnClickListener(v->{ if (mode.getSelectedItemPosition()==2) { showVcxNotice(); return; } ensureHsCanThenProbe(); });
     Button results = new Button(this);
     results.setText("Результаты обнаружения блоков");
     root.addView(results);
@@ -132,7 +132,7 @@ public final class ObdConnectionActivity extends Activity {
     Button diagnostics = new Button(this);
     diagnostics.setText("Параметры и ошибки двигателя (только чтение)");
     root.addView(diagnostics);
-    diagnostics.setOnClickListener(v->startActivity(new Intent(this,ObdDiagnosticsActivity.class)));
+    diagnostics.setOnClickListener(v->{ if(mode.getSelectedItemPosition()==2) { showVcxNotice(); return; } startActivity(new Intent(this,ObdDiagnosticsActivity.class)); });
     status = new TextView(this);
     status.setText("Не подключено");
     root.addView(status);
@@ -217,9 +217,35 @@ public final class ObdConnectionActivity extends Activity {
     ui.post(() -> { if (!isFinishing() && !isDestroyed()) refreshButtons(adapterReady); });
   }
 
+  private void showVcxNotice() {
+    new AlertDialog.Builder(this).setTitle("VXDiag VCX Nano — For IDS")
+        .setMessage("Для VXDiag пока реализована только проверка TCP-доступности. Устройство не является ELM327: диагностические команды AT и опрос ECU не отправляются до подтверждения протокола VXDiag/J2534. Сохранённое подключение ELM327 остаётся отдельным.")
+        .setPositiveButton("Понятно", null).show();
+  }
+
+  private void testVcxTcp(String ip, int tcpPort) {
+    if (busy) return;
+    busy = true;
+    refreshButtons(false);
+    append("VXDiag: проверяем TCP " + ip + ":" + tcpPort + " (без диагностических команд).");
+    worker.execute(() -> {
+      try (java.net.Socket socket = new java.net.Socket()) {
+        socket.connect(new java.net.InetSocketAddress(ip, tcpPort), 4000);
+        append("VXDiag: TCP-порт доступен. Протокол управления и J2534 ещё НЕ подтверждены.");
+        ui.post(() -> { if (!isFinishing() && !isDestroyed()) showVcxNotice(); });
+      } catch (Exception e) {
+        append("VXDiag: TCP-соединение не установлено: " + e.getMessage() + ". Проверьте IP и порт устройства.");
+      } finally {
+        busy = false;
+        ui.post(() -> { if (!isFinishing() && !isDestroyed()) refreshButtons(ObdSession.adapterReady()); });
+      }
+    });
+  }
+
   private void startConnect() {
     if(busy || ObdSession.adapterReady())return;
-    final boolean useWifi=mode.getSelectedItemPosition()==0;
+    final boolean vcx = mode.getSelectedItemPosition()==2;
+    final boolean useWifi=mode.getSelectedItemPosition()!=1;
     final String ip=host.getText().toString().trim();
     final int tcpPort;
     if(useWifi) {
@@ -232,6 +258,7 @@ public final class ObdConnectionActivity extends Activity {
       if(!bluetoothPermission())return;
       if(selected==null){append("Сначала выберите Bluetooth адаптер");return;}
     }
+    if (vcx) { testVcxTcp(ip, tcpPort); return; }
     physicalMsSelected = false;
     final int msSelection = msCanMode.getSelectedItemPosition();
     if(msSelection == 0) {

@@ -479,6 +479,13 @@ public final class ObdConnectionActivity extends Activity {
                 if (result.response != null && !result.response.trim().isEmpty())
                   append("Сырой ответ " + key + ": " + result.response.replaceAll("[\\r\\n]+", " | "));
               }
+              append("Расширенная проверка IC на MS-CAN: 32 DID F180–F19F (только чтение).");
+              ObdModuleProbe.Result extendedIc = ObdModuleProbe.probeIcExtended(ObdSession::command, true);
+              String icKey = "MS-CAN " + extendedIc.name + " [" + extendedIc.requestId + "/" + extendedIc.responseId + "]";
+              ObdSession.saveModuleResult(icKey, extendedIc.status);
+              ObdSession.saveModuleRaw(icKey, extendedIc.response);
+              append(icKey + ": " + extendedIc.status);
+              append("Сырой расширенный ответ IC MS-CAN: " + extendedIc.response);
               ui.post(() -> {
                 if (!isFinishing() && !isDestroyed()) moduleReport.setText(ObdSession.moduleReport());
               });
@@ -524,6 +531,13 @@ public final class ObdConnectionActivity extends Activity {
                 append("Сырой ответ "+result.name+": "+result.response.replaceAll("[\\r\\n]+"," | ").trim());
               }
             }
+            append("Расширенная проверка IC на HS-CAN: 32 DID F180–F19F (только чтение).");
+            ObdModuleProbe.Result extendedIc = ObdModuleProbe.probeIcExtended(ObdSession::command, false);
+            String icKey = extendedIc.name + " [" + extendedIc.requestId + "/" + extendedIc.responseId + "]";
+            ObdSession.saveModuleResult(icKey, extendedIc.status);
+            ObdSession.saveModuleRaw(icKey, extendedIc.response);
+            append(icKey + ": " + extendedIc.status);
+            append("Сырой расширенный ответ IC HS-CAN: " + extendedIc.response);
             ui.post(() -> { if (!isFinishing() && !isDestroyed()) moduleReport.setText(ObdSession.moduleReport()); });
             append("Пробный опрос HS-CAN завершён. Обнаружение не подтверждает возможность чтения As-Built.");
             ui.post(() -> { if (!isFinishing() && !isDestroyed()) offerNextMsScan(); });

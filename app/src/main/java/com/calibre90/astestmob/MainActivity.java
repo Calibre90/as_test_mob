@@ -117,7 +117,7 @@ public class MainActivity extends Activity {
       styleAdminHomeButton(reopen, "⚙");
       adminHome.addView(reopen);
       Button exportSnapshot=new Button(this);
-      exportSnapshot.setText("Экспорт настроек Studio");
+      exportSnapshot.setText("Экспорт настроек 6GH CONFIG");
       exportSnapshot.setOnClickListener(v->{
         try{
           org.json.JSONObject snapshot=AdminSnapshot.exportLocal(this);
@@ -150,7 +150,7 @@ public class MainActivity extends Activity {
       styleAdminHomeButton(exportSnapshot, "↓");
       adminHome.addView(exportSnapshot);
       Button importSnapshot=new Button(this);
-      importSnapshot.setText("Импорт настроек Studio");
+      importSnapshot.setText("Импорт настроек 6GH CONFIG");
       importSnapshot.setOnClickListener(v->{
         Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -409,7 +409,7 @@ public class MainActivity extends Activity {
                   runOnUiThread(()->new AlertDialog.Builder(this)
                     .setTitle("Настройки отправлены")
                     .setMessage("Изменения загружены на сервер, выпуск подписанной конфигурации запрошен автоматически. "+
-                      "Studio получит их после успешного завершения публикации.")
+                      "6GH AS-BUILT CONFIG получит их после успешного завершения публикации.")
                     .setPositiveButton("Закрыть",null).show());
                 }catch(Exception ex){
                   runOnUiThread(()->Toast.makeText(this,"Сервер: "+ex.getMessage(),Toast.LENGTH_LONG).show());
@@ -471,7 +471,7 @@ public class MainActivity extends Activity {
       });
       return;
     }
-    setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));view=new StudioView();view.moduleTabOffset=Math.max(0,active*90f-280f);// Studio splash is shown before the editor and the existing RSA license gate.
+    setTitle(StudioSettings.appearance(this,"title","6GH AS-BUILT CONFIG"));view=new StudioView();view.moduleTabOffset=Math.max(0,active*90f-280f);// Studio splash is shown before the editor and the existing RSA license gate.
     // No ABT, feature, or license verification logic is changed here.
     ImageView splash=new ImageView(this);
     splash.setBackgroundColor(Color.BLACK);
@@ -1517,7 +1517,7 @@ public class MainActivity extends Activity {
           AdminSnapshot.validate(snapshot);
           org.json.JSONObject stores=snapshot.getJSONObject("stores");
           int functions=new org.json.JSONArray(stores.getJSONObject("run35_settings").optString("features","[]")).length();
-          new AlertDialog.Builder(this).setTitle("Импорт настроек Studio")
+          new AlertDialog.Builder(this).setTitle("Импорт настроек 6GH CONFIG")
             .setMessage("Функций в файле: "+functions+
               "\nБудут заменены сохранённые настройки блоков, строк, функций и оформления. "+
               "Сначала сохраните резервную копию текущих настроек. Продолжить?")
@@ -1647,7 +1647,7 @@ public class MainActivity extends Activity {
       enter.setOnClickListener(v->{if(login.getText().toString().equals("admin")&&verifyStudioAdminPassword(password.getText().toString())){dialog.dismiss();adminSession=true;view.invalidate();showAdminTabs();}else Toast.makeText(this,"Неверный логин или пароль",Toast.LENGTH_SHORT).show();});
     }else{
       // Information-only layout without duplicated Mazda logo/banner.
-      TextView version=caption("Mazda 6 GH AS-Built",22,Color.BLACK,true);
+      TextView version=caption("6GH AS-BUILT CONFIG",22,Color.BLACK,true);
       version.setGravity(Gravity.CENTER);
       place(root,version,.09f,.112f,.82f,.070f,width,height);
       View divider=new View(this);divider.setBackgroundColor(Color.rgb(220,50,55));
@@ -1712,7 +1712,7 @@ public class MainActivity extends Activity {
         person.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
         person.setHighlightColor(Color.TRANSPARENT);
       }
-      String appVersion="1.0.0 (STUDIO)";
+      String appVersion="1.0.0 (CONFIG)";
       long appBuild=1;
       try{
         android.content.pm.PackageInfo pkg=getPackageManager().getPackageInfo(getPackageName(),0);
@@ -2563,7 +2563,7 @@ public class MainActivity extends Activity {
       if(selected[0]==3){
         final String[] keys={"title","background","panel","feature_columns","open_text","save_text","about_description","warning_title","warning_body","creator1_role","creator1_name","creator1_url","creator2_role","creator2_name","creator2_url"};
         final String[] labels={"Название окна","Фон приложения","Фон HEX-блока","Колонки функций","Кнопка открытия","Кнопка сохранения","Описание программы","Заголовок предупреждения","Текст предупреждения","Автор 1 — подпись","Автор 1 — имя","Автор 1 — ссылка","Автор 2 — подпись","Автор 2 — имя","Автор 2 — ссылка"};
-        final String[] defaults={"Mazda 6 GH As-Built Studio","","","3","Открыть ABT","Сохранить ABT","Редактор As-Built для Mazda 6 GH","⚠️WARNING⚠️","НЕ ЗАБЫВАЙТЕ ДЕЛАТЬ КОПИЮ СКАЧЕННОГО ФАЙЛА НАСТРОЕК ИЗ FORSCAN.","Разработчик","Dim304","https://www.drive2.ru/users/dim304/","Помощник","Wolis11","https://www.drive2.ru/users/wolis11/"};
+        final String[] defaults={"6GH AS-BUILT CONFIG","","","3","Открыть ABT","Сохранить ABT","Редактор As-Built для Mazda 6 GH","⚠️WARNING⚠️","НЕ ЗАБЫВАЙТЕ ДЕЛАТЬ КОПИЮ СКАЧЕННОГО ФАЙЛА НАСТРОЕК ИЗ FORSCAN.","Разработчик","Dim304","https://www.drive2.ru/users/dim304/","Помощник","Wolis11","https://www.drive2.ru/users/wolis11/"};
         android.widget.ScrollView appearanceScroll=new android.widget.ScrollView(this);
         LinearLayout appearanceFields=new LinearLayout(this);appearanceFields.setOrientation(LinearLayout.VERTICAL);
         appearanceScroll.addView(appearanceFields);panel.addView(appearanceScroll,new LinearLayout.LayoutParams(-1,0,1));
@@ -2620,7 +2620,7 @@ public class MainActivity extends Activity {
                 }
                 try{
                   StudioSettings.saveAppearance(this,confirmedChanges);
-                  setTitle(StudioSettings.appearance(this,"title","Mazda 6 GH As-Built Studio"));
+                  setTitle(StudioSettings.appearance(this,"title","6GH AS-BUILT CONFIG"));
                   view.invalidate();
                   Toast.makeText(this,"Оформление сохранено",Toast.LENGTH_SHORT).show();
                   confirmDialog.dismiss();

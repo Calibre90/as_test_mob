@@ -57,6 +57,9 @@ public final class AdminFaq {
     title.setText(old==null?"":old.optString("name"));fields.addView(title);
     EditText desc=new EditText(a);desc.setSingleLine(false);desc.setMinLines(6);desc.setGravity(Gravity.TOP);
     desc.setHint("Описание");desc.setText(old==null?"":old.optString("description"));fields.addView(desc);
+    EditText extra=new EditText(a);extra.setSingleLine(false);extra.setMinLines(2);
+    extra.setHint("Дополнительный текст между красными линиями");
+    extra.setText(old==null?"":old.optString("extra_text",""));fields.addView(extra);
     ScrollView scroll=new ScrollView(a);scroll.addView(fields);
     AlertDialog.Builder builder=new AlertDialog.Builder(a).setTitle(index<0?"Новая запись FAQ":"Изменить FAQ")
       .setView(scroll).setNegativeButton("Отмена",null);
@@ -66,7 +69,7 @@ public final class AdminFaq {
     AlertDialog dialog=builder.setPositiveButton("Сохранить",null).create();
     dialog.setOnShowListener(v->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(b->{
       String name=title.getText().toString().trim();if(name.isEmpty()){title.setError("Введите название");return;}
-      try{JSONObject item=new JSONObject();item.put("name",name);item.put("description",desc.getText().toString());
+      try{JSONObject item=new JSONObject();item.put("name",name);item.put("description",desc.getText().toString());item.put("extra_text",extra.getText().toString());
         if(index<0)rows.put(item);else rows.put(index,item);
         save(a,rows);refresh.run();dialog.dismiss();
       }catch(Exception e){Toast.makeText(a,"Ошибка FAQ: "+e.getMessage(),Toast.LENGTH_LONG).show();}

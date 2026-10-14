@@ -439,7 +439,16 @@ public final class ObdConnectionActivity extends Activity {
             append("Ошибка опроса: "+e.getMessage());
             if (!ObdSession.adapterReady()) {
               publishConnection(false, false);
-              append("Соединение с ELM потеряно. Нажмите «Подключить» для нового TCP-соединения перед повторным опросом.");
+              append("Соединение с ELM потеряно. Для повторного опроса необходимо переподключиться.");
+              ui.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                new AlertDialog.Builder(this)
+                    .setTitle("Потеряна связь с ELM327")
+                    .setMessage("TCP/Bluetooth-соединение прервано. Проверьте Wi-Fi адаптера и зажигание. Подключиться заново?")
+                    .setNegativeButton("Позже", null)
+                    .setPositiveButton("Переподключить", (dialog, which) -> startConnect())
+                    .show();
+              });
             }
           }
           finally { busy=false;ui.post(()->{ adapterConfirmed=ObdSession.adapterReady(); vehicleConfirmed=ObdSession.vehicleReady(); refreshButtons(adapterConfirmed); }); }

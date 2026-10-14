@@ -25,7 +25,7 @@ public final class CatalogAdminActivity extends Activity {
     root.setOrientation(LinearLayout.VERTICAL);
     root.setPadding(24,24,24,24);
     TextView heading=new TextView(this);
-    heading.setText("Mazda 6 GH Studio Admin — черновик каталога");
+    heading.setText("6GH CONFIG ADMIN — черновик каталога");
     heading.setTextSize(20);
     root.addView(heading);
     status=new TextView(this);

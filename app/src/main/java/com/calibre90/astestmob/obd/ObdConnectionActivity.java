@@ -541,7 +541,7 @@ public final class ObdConnectionActivity extends Activity {
                 throw new IOException("ELM отклонил настройку мониторинга");
               String[] phases = {"База", "Поворотник", "Поворотник + открытая дверь/KLS", "Дверь закрыта, поворотник выключен"};
               java.util.List<java.util.Map<String,java.util.Set<String>>> snapshots = new java.util.ArrayList<>();
-              StringBuilder report = new StringBuilder("MS-CAN: непрерывная серия из 8 окон по 5 секунд. Время ориентировочное, ELM не передаёт временные метки кадров.\\n");
+              StringBuilder report = new StringBuilder("MS-CAN: 8 окон по 5 секунд. Время ориентировочное, ELM не передаёт временные метки кадров.\\n");
               for (int i=0; i<8; i++) {
                 if (cancelled || Thread.currentThread().isInterrupted()) break;
                 final int n=i;
@@ -550,24 +550,48 @@ public final class ObdConnectionActivity extends Activity {
                 java.util.Map<String,java.util.Set<String>> sample = parseCanSnapshot(raw);
                 snapshots.add(sample);
                 report.append("Окно ").append(i+1).append(" (").append(phases[i/2]).append("): ")
-                    .append(countCanFrames(raw)).append("; данные ").append(sample).append("\\n");
+                    .append(countCanFrames(raw)).append("; уникальных CAN-ID ").append(sample.size()).append("\\n");
               }
-              java.util.Set<String> ids = new java.util.TreeSet<>();
-              for (java.util.Map<String,java.util.Set<String>> sample : snapshots) ids.addAll(sample.keySet());
-              report.append("\\nИзменения между последовательными окнами:\\n");
-              int changes=0;
-              for (int i=1; i<snapshots.size(); i++) {
-                for (String id: ids) {
-                  java.util.Set<String> a=snapshots.get(i-1).get(id), b=snapshots.get(i).get(id);
-                  if (!java.util.Objects.equals(a,b)) {
-                    changes++;
-                    report.append("Окна ").append(i).append("→").append(i+1).append(" ID ").append(id)
-                        .append(": ").append(a).append(" → ").append(b).append("\\n");
+              report.append("\\nСРАВНЕНИЕ СОСТОЯНИЙ (изменения байтов и битов):\\n");
+              // Compare stable payloads within each 10-second state, not neighbouring windows.
+              int[][] pairs = {{0,2},{2,4},{4,6},{0,6}};
+              String[] labels = {"Поворотник: выкл → вкл", "Дверь/KLS: закрыта → открыта (поворотник включён)",
+                  "Возврат: дверь закрыта и поворотник выключен", "База → конечное состояние"};
+              int differences = 0;
+              for (int p=0; p<pairs.length; p++) {
+                int left=pairs[p][0], right=pairs[p][1];
+                if (snapshots.size() <= right+1) break;
+                report.append("\\n").append(labels[p]).append(":\\n");
+                java.util.Map<String,String> stableA=stablePayloads(snapshots.get(left),snapshots.get(left+1));
+                java.util.Map<String,String> stableB=stablePayloads(snapshots.get(right),snapshots.get(right+1));
+                java.util.Set<String> ids=new java.util.TreeSet<>(stableA.keySet());
+                ids.retainAll(stableB.keySet());
+                int phaseChanges=0;
+                for (String id:ids) {
+                  String x=stableA.get(id),y=stableB.get(id);
+                  if (x.equals(y)) continue;
+                  phaseChanges++; differences++;
+                  report.append("CAN-ID ").append(id).append(": ").append(x).append(" → ").append(y);
+                  if (x.length()==y.length() && x.length()%2==0) {
+                    for (int k=0;k<x.length();k+=2) {
+                      try {
+                        int oldByte=Integer.parseInt(x.substring(k,k+2),16);
+                        int newByte=Integer.parseInt(y.substring(k,k+2),16);
+                        int xor=oldByte^newByte;
+                        if (xor!=0) report.append("; байт ").append(k/2)
+                            .append(" XOR=0x").append(String.format(Locale.US,"%02X",xor))
+                            .append(" (биты ").append(Integer.toBinaryString(xor)).append(")");
+                      } catch(NumberFormatException ignored) {}
+                    }
                   }
+                  report.append("\\n");
                 }
+                if (phaseChanges==0) report.append("Устойчивых изменений не обнаружено.\\n");
               }
-              if (changes==0) report.append("Изменений в захваченных данных нет; это не исключает изменений на шине.\\n");
-              report.append("Изменения могут быть вызваны и другими событиями; назначение CAN-ID требует повторной проверки.");
+              if (differences==0) report.append("\\nНи одного устойчиво изменившегося байта в принятых кадрах.\\n");
+              report.append("\\nАнализ использует только сообщения, одинаковые в двух окнах каждого состояния. ")
+                  .append("Мигающие, циклические или потерянные кадры могут не попасть в отчёт. ")
+                  .append("Индикаторы KLS и двери включаются одновременно, поэтому их нельзя однозначно разделить этим тестом.");
               final String result=report.toString().replace("\\n","\n");
               ObdSession.saveModuleResult("Непрерывный монитор MS-CAN",result);
               append(result);
@@ -582,6 +606,18 @@ public final class ObdConnectionActivity extends Activity {
             }
           });
         }).show();
+  }
+
+  private static java.util.Map<String,String> stablePayloads(
+      java.util.Map<String,java.util.Set<String>> first,
+      java.util.Map<String,java.util.Set<String>> second) {
+    java.util.Map<String,String> stable = new java.util.TreeMap<>();
+    for (String id:first.keySet()) {
+      java.util.Set<String> a=first.get(id), b=second.get(id);
+      if (a!=null && b!=null && a.size()==1 && b.size()==1 && a.equals(b))
+        stable.put(id,a.iterator().next());
+    }
+    return stable;
   }
 
   private static java.util.Map<String,java.util.Set<String>> parseCanSnapshot(String raw) {

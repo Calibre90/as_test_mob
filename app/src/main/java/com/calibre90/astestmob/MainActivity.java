@@ -1661,14 +1661,14 @@ public class MainActivity extends Activity {
       description.setMaxLines(Integer.MAX_VALUE);
       description.setPadding(0,dp(3),dp(5),dp(3));
       descriptionScroll.addView(description,new android.widget.ScrollView.LayoutParams(-1,-2));
-      place(root,descriptionScroll,.09f,.255f,.84f,.355f,width,height);
+      place(root,descriptionScroll,.09f,.255f,.84f,.390f,width,height);
       TextView warningTitle=caption("⚠️WARNING⚠️",16,Color.rgb(204,24,38),true);
       warningTitle.setGravity(Gravity.CENTER);
-      place(root,warningTitle,.09f,.625f,.82f,.030f,width,height);
-      TextView warningBody=caption("НЕ ЗАБЫВАЙТЕ ДЕЛАТЬ КОПИЮ СКАЧЕНОГО ФАЙЛА НАСТРОЕК.",12,Color.rgb(204,24,38),true);
+      place(root,warningTitle,.09f,.653f,.82f,.030f,width,height);
+      TextView warningBody=caption("НЕ ЗАБЫВАЙТЕ ДЕЛАТЬ КОПИЮ СКАЧЕННОГО ФАЙЛА НАСТРОЕК ИЗ FORSCAN.",12,Color.rgb(204,24,38),true);
       warningBody.setGravity(Gravity.CENTER);
       warningBody.setSingleLine(false);
-      place(root,warningBody,.09f,.658f,.82f,.052f,width,height);
+      place(root,warningBody,.09f,.687f,.82f,.052f,width,height);
       String[] creatorNames={
         StudioSettings.appearance(this,"creator1_name","Dim304"),
         StudioSettings.appearance(this,"creator2_name","Wolis11")
@@ -1696,7 +1696,7 @@ public class MainActivity extends Activity {
         styled.setSpan(new android.text.style.ForegroundColorSpan(Color.rgb(24,96,191)),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         styled.setSpan(new android.text.style.UnderlineSpan(),linkStart,styled.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         person.setText(styled);
-        place(root,person,.09f,i==0?.720f:.770f,.84f,.048f,width,height);
+        place(root,person,.09f,i==0?.755f:.795f,.84f,.038f,width,height);
         android.text.style.ClickableSpan onlyLink=new android.text.style.ClickableSpan(){
           @Override public void onClick(android.view.View widget){
             if(!url.isEmpty()&&(url.startsWith("https://")||url.startsWith("http://"))){

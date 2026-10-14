@@ -36,7 +36,7 @@ public final class ObdWifiDiscovery {
     LinkProperties props=null;
     for(Network n:cm.getAllNetworks()) {
       NetworkCapabilities caps=cm.getNetworkCapabilities(n);
-      if(caps!=null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+      if(caps!=null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)\n          && !caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
         wifi=n;props=cm.getLinkProperties(n);break;
       }
     }
@@ -44,21 +44,21 @@ public final class ObdWifiDiscovery {
     LinkedHashSet<String> hosts=new LinkedHashSet<>();
     String gateway=null;
     for(android.net.RouteInfo route:props.getRoutes()) {
-      if(route.isDefaultRoute() && route.getGateway() instanceof Inet4Address) {
+      if(route.isDefaultRoute() && route.getGateway() instanceof Inet4Address\n          && !route.getGateway().isAnyLocalAddress()) {
         gateway=route.getGateway().getHostAddress();
         hosts.add(gateway);
       }
     }
     // Common direct-connection ELM Wi-Fi address; only attempt if on the same /24.
     for(LinkAddress addr:props.getLinkAddresses()) {
-      if(addr.getAddress() instanceof Inet4Address) {
+      if(addr.getAddress() instanceof Inet4Address\n          && !addr.getAddress().isAnyLocalAddress()\n          && !addr.getAddress().isLoopbackAddress()) {
         byte[] b=addr.getAddress().getAddress();
         String subnet=(b[0]&255)+"."+(b[1]&255)+"."+(b[2]&255)+".";
         hosts.add(subnet+"1");
         hosts.add(subnet+"10");
       }
     }
-    int[] ports={35000, 23, 2000, 2001};
+    if(hosts.isEmpty()) throw new IOException("У Wi-Fi нет подходящего IPv4-адреса или шлюза");\n    int[] ports={35000, 23, 2000, 2001};
     List<Endpoint> open=new ArrayList<>();
     for(String host:hosts) {
       for(int port:ports) {

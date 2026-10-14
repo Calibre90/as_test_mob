@@ -45,7 +45,7 @@ public final class ObdConnectionActivity extends Activity {
     // still allowed the scroll viewport to overlap the status bar.
     root.setPadding(22, 24, 22, 20);
     ScrollView scroll = new ScrollView(this);
-    scroll.setClipToPadding(false);
+    scroll.setClipToPadding(true);
     scroll.addView(root);
     // Android 15/16 may enforce edge-to-edge even when decor fitting is
     // requested. Apply real system-bar insets to the scroll viewport itself.
@@ -134,6 +134,10 @@ public final class ObdConnectionActivity extends Activity {
     canAnalysis.setText("Анализ CAN-ID MS-CAN (сравнить 2 замера)");
     root.addView(canAnalysis);
     canAnalysis.setOnClickListener(v -> startCanAnalysis());
+    Button continuous = new Button(this);
+    continuous.setText("Непрерывный монитор MS-CAN (40 секунд)");
+    root.addView(continuous);
+    continuous.setOnClickListener(v -> startContinuousCanMonitor());
     Button diagnostics = new Button(this);
     diagnostics.setText("Параметры и ошибки двигателя (только чтение)");
     root.addView(diagnostics);
@@ -508,6 +512,72 @@ public final class ObdConnectionActivity extends Activity {
                 try { ObdSession.command("ATH0"); } catch (IOException ignored) {}
               }
               busy = false;
+              ui.post(() -> { if (!isFinishing() && !isDestroyed()) refreshButtons(ObdSession.adapterReady()); });
+            }
+          });
+        }).show();
+  }
+
+  private void startContinuousCanMonitor() {
+    if (busy || !ObdSession.adapterReady() || wifi == null) {
+      append("Для непрерывного мониторинга требуется свободное подключение Wi-Fi ELM327"); return;
+    }
+    if (msCanMode.getSelectedItemPosition() != 2) {
+      append("Выберите режим «Переключатель HS/MS»"); return;
+    }
+    new AlertDialog.Builder(this).setTitle("MS-CAN: 40 секунд, только приём")
+        .setMessage("Переведите адаптер в MS. 0–10 с: дверь закрыта, поворотник выключен. 10–20 с: включите поворотник. 20–30 с: откройте дверь (поворотник работает). 30–40 с: закройте дверь и выключите поворотник. Не выполняйте действия, отвлекающие от управления автомобилем; тест только на стоянке.")
+        .setNegativeButton("Отмена",null)
+        .setPositiveButton("Начать", (d,w) -> {
+          busy = true; refreshButtons(true);
+          worker.execute(() -> {
+            try {
+              String config = ObdSession.command("ATPB C1 04");
+              String protocol = ObdSession.command("ATSPB");
+              String number = ObdSession.command("ATDPN").trim();
+              if (!elmOk(config) || !elmOk(protocol) || !number.equalsIgnoreCase("B"))
+                throw new IOException("MS-CAN 125 кбит/с не подтверждён: " + number);
+              if (!elmOk(ObdSession.command("ATAR")) || !elmOk(ObdSession.command("ATH1")))
+                throw new IOException("ELM отклонил настройку мониторинга");
+              String[] phases = {"База", "Поворотник", "Поворотник + открытая дверь/KLS", "Дверь закрыта, поворотник выключен"};
+              java.util.List<java.util.Map<String,java.util.Set<String>>> snapshots = new java.util.ArrayList<>();
+              StringBuilder report = new StringBuilder("MS-CAN: непрерывная серия из 8 окон по 5 секунд. Время ориентировочное, ELM не передаёт временные метки кадров.\\n");
+              for (int i=0; i<8; i++) {
+                if (cancelled || Thread.currentThread().isInterrupted()) break;
+                final int n=i;
+                append("Монитор MS-CAN: " + phases[i/2] + ", окно " + (i+1) + "/8");
+                String raw = ObdSession.monitorMsCanPassive(5000);
+                java.util.Map<String,java.util.Set<String>> sample = parseCanSnapshot(raw);
+                snapshots.add(sample);
+                report.append("Окно ").append(i+1).append(" (").append(phases[i/2]).append("): ")
+                    .append(countCanFrames(raw)).append("; данные ").append(sample).append("\\n");
+              }
+              java.util.Set<String> ids = new java.util.TreeSet<>();
+              for (java.util.Map<String,java.util.Set<String>> sample : snapshots) ids.addAll(sample.keySet());
+              report.append("\\nИзменения между последовательными окнами:\\n");
+              int changes=0;
+              for (int i=1; i<snapshots.size(); i++) {
+                for (String id: ids) {
+                  java.util.Set<String> a=snapshots.get(i-1).get(id), b=snapshots.get(i).get(id);
+                  if (!java.util.Objects.equals(a,b)) {
+                    changes++;
+                    report.append("Окна ").append(i).append("→").append(i+1).append(" ID ").append(id)
+                        .append(": ").append(a).append(" → ").append(b).append("\\n");
+                  }
+                }
+              }
+              if (changes==0) report.append("Изменений в захваченных данных нет; это не исключает изменений на шине.\\n");
+              report.append("Изменения могут быть вызваны и другими событиями; назначение CAN-ID требует повторной проверки.");
+              final String result=report.toString().replace("\\n","\n");
+              ObdSession.saveModuleResult("Непрерывный монитор MS-CAN",result);
+              append(result);
+              ui.post(() -> { if (!isFinishing() && !isDestroyed())
+                new AlertDialog.Builder(this).setTitle("Непрерывный монитор MS-CAN")
+                    .setMessage(result).setPositiveButton("Закрыть",null).show(); });
+            } catch(Exception ex) { append("Непрерывный монитор MS-CAN: " + ex.getMessage()); }
+            finally {
+              if (ObdSession.adapterReady()) try { ObdSession.command("ATH0"); } catch(IOException ignored) {}
+              busy=false;
               ui.post(() -> { if (!isFinishing() && !isDestroyed()) refreshButtons(ObdSession.adapterReady()); });
             }
           });

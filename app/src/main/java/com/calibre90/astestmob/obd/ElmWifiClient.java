@@ -87,6 +87,55 @@ public final class ElmWifiClient implements Closeable {
     }
   }
 
+  /**
+   * Passive CAN observation for a bounded window. ATMA transmits no CAN frames.
+   * Stop the stream with CR and consume the ELM prompt before other commands.
+   */
+  public String monitorCanPassive(int durationMs) throws IOException {
+    if (durationMs < 500 || durationMs > 5000) throw new IllegalArgumentException("Monitor duration");
+    synchronized (lock) {
+      if (!isConnected()) throw new IOException("ELM adapter not connected");
+      int previousTimeout = socket.getSoTimeout();
+      ByteArrayOutputStream captured = new ByteArrayOutputStream();
+      boolean stopped = false;
+      try {
+        socket.setSoTimeout(200);
+        output.write("ATMA\\r".replace("\\r", "\r").getBytes(StandardCharsets.US_ASCII));
+        output.flush();
+        long end = System.nanoTime() + durationMs * 1_000_000L;
+        while (System.nanoTime() < end && captured.size() < 12000) {
+          try {
+            int b = input.read();
+            if (b < 0) throw new EOFException("ELM disconnected during CAN monitor");
+            if (b == '>') { stopped = true; break; }
+            captured.write(b);
+          } catch (SocketTimeoutException ignored) { /* time bound */ }
+        }
+      } finally {
+        try {
+          // ELM monitor is stopped by any character; CR is not a CAN request.
+          output.write('\r');
+          output.flush();
+          long stopDeadline = System.nanoTime() + 2_000_000_000L;
+          while (!stopped && System.nanoTime() < stopDeadline) {
+            try {
+              int b = input.read();
+              if (b < 0) throw new EOFException("ELM disconnected while stopping monitor");
+              if (b == '>') stopped = true;
+            } catch (SocketTimeoutException ignored) {}
+          }
+        } finally {
+          socket.setSoTimeout(previousTimeout);
+          if (!stopped) {
+            close();
+            throw new IOException("ATMA: не получен символ завершения >; соединение закрыто для безопасности");
+          }
+        }
+      }
+      return new String(captured.toByteArray(), StandardCharsets.US_ASCII);
+    }
+  }
+
   /** Adapter handshake; no vehicle configuration is changed. */
   public String initializeReadOnly() throws IOException {
     // Some inexpensive Wi-Fi bridges need a short startup pause after TCP opens.

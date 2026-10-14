@@ -761,7 +761,7 @@ public class MainActivity extends Activity {
         }
         // Keep the most recent toggle event visible even after the final checkbox is cleared.
         // The IC/BCM/RKE/ABS status line likewise reports the reverse HEX transition.
-        customFeatureStatuses.put(id,feature.label+": "+(changes.length()>0?"Изменено "+changes:"Без изменений"));
+        customFeatureStatuses.put(id,feature.label+": "+(next?"активирована":"деактивирована"));
         rememberCustomBaseline(id,feature.address,before);
         customChecks.put(featureKey(feature),next);
         if(!next)clearInactiveCustomBaseline(id,feature.address);
@@ -1391,7 +1391,7 @@ public class MainActivity extends Activity {
           changes.append(oldChar).append(" на ").append(newChar);
         }
       }
-      lastFeatureStatus=f.label+": "+(changes.length()>0?"Изменено "+changes:"Без изменений");
+      lastFeatureStatus=f.label+": "+(next?"активирована":"деактивирована");
       refreshRows(active);view.invalidate();
     }
     catch(Exception ex){Toast.makeText(this,"Ошибка функции: "+ex.getMessage(),Toast.LENGTH_LONG).show();}

@@ -405,7 +405,7 @@ public final class ObdConnectionActivity extends Activity {
     }
     new AlertDialog.Builder(this)
         .setTitle("Переключите адаптер на MS-CAN")
-        .setMessage("Переведите переключатель HS/MS на адаптере в положение MS-CAN и нажмите «ОК». Пока доступна проверка готовности: полноценный опрос BCM, RKE и HVAC будет добавлен после проверки протокола и адресов Mazda 6 GH.")
+        .setMessage("Переведите переключатель HS/MS на адаптере в положение MS-CAN и нажмите «ОК». После подтверждения начнётся экспериментальный опрос MS-CAN по предварительным адресам BCM/RKE/HVAC (только чтение). Отсутствие ответа не означает отсутствие блока.")
         .setNegativeButton("Отмена", null)
         .setPositiveButton("ОК, переключил", (dialog, which) -> {
           physicalMsSelected = true;
@@ -420,7 +420,19 @@ public final class ObdConnectionActivity extends Activity {
               String selectedProtocol = ObdSession.command("ATSPB");
               if (!elmOk(selectedProtocol)) throw new IOException("ATSPB: " + selectedProtocol);
               append("MS-CAN: ELM принял настройки 125 кбит/с. Это НЕ подтверждает ответы блоков.");
-              append("BCM/RKE/EATC: диагностические адреса Mazda 6 GH ещё проверяются, запросы к ним не отправлялись.");
+              append("MS-CAN: выполняем экспериментальный опрос адресов-кандидатов (только чтение).");
+              for (ObdModuleProbe.Result result : ObdModuleProbe.probeMsCan(ObdSession::command)) {
+                String key = "MS-CAN " + result.name + " [" + result.requestId + "/" + result.responseId + "]";
+                ObdSession.saveModuleResult(key, result.status);
+                ObdSession.saveModuleRaw(key, result.response);
+                append(key + ": " + result.status);
+                if (result.response != null && !result.response.trim().isEmpty())
+                  append("Сырой ответ " + key + ": " + result.response.replaceAll("[\\r\\n]+", " | "));
+              }
+              ui.post(() -> {
+                if (!isFinishing() && !isDestroyed()) moduleReport.setText(ObdSession.moduleReport());
+              });
+              append("MS-CAN: опрос адресов-кандидатов завершён. Названия блоков требуют подтверждения.");
             } catch (Exception e) {
               append("MS-CAN: настройка не удалась: " + e.getMessage());
               if (!ObdSession.adapterReady()) publishConnection(false, false);

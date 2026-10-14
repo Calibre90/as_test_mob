@@ -40,8 +40,9 @@ public final class ElmWifiClient implements Closeable {
         }
       }
       if (wifiNetwork == null) throw new IOException("Wi-Fi сеть ELM недоступна Android. Подключитесь к Wi-Fi адаптера и подтвердите использование сети без интернета.");
-      // Explicit socket factory prevents Android/VPN/mobile-data routing of ELM TCP traffic.
-      Socket s = wifiNetwork.getSocketFactory().createSocket();
+      // Use a normal socket first: Android can reject binding to a Wi-Fi network
+      // with EPERM when a VPN is active. The original ELM transport used TCP.
+      Socket s = new Socket();
       try {
         s.connect(new InetSocketAddress(host.trim(), port), timeoutMs);
         s.setSoTimeout(3000);

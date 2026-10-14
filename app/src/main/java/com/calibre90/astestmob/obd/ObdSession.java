@@ -67,7 +67,9 @@ public final class ObdSession {
   public static synchronized String status() {
     if (!adapterReady()) return "Адаптер не подключён";
     if (!vehicleReady) return "ELM подключён; автомобиль не подтверждён";
-    return vin.isEmpty() ? "Автомобиль ответил; модули не опрошены" :
-        "Автомобиль ответил; VIN: " + vin + "; модули не опрошены";
+    String modules = moduleResults.isEmpty() ? "модули не опрошены" :
+        "проверено блоков: " + moduleResults.size();
+    return vin.isEmpty() ? "Автомобиль ответил; " + modules :
+        "VIN: " + vin + "; " + modules;
   }
 }

@@ -138,6 +138,10 @@ public final class ObdConnectionActivity extends Activity {
     continuous.setText("Непрерывный монитор MS-CAN (40 секунд)");
     root.addView(continuous);
     continuous.setOnClickListener(v -> startContinuousCanMonitor());
+    Button icOnly = new Button(this);
+    icOnly.setText("Проверить IC отдельно (MS-CAN, только чтение)");
+    root.addView(icOnly);
+    icOnly.setOnClickListener(v -> startIcOnlyMsProbe());
     Button diagnostics = new Button(this);
     diagnostics.setText("Параметры и ошибки двигателя (только чтение)");
     root.addView(diagnostics);
@@ -447,6 +451,62 @@ public final class ObdConnectionActivity extends Activity {
     return value.contains("OK") && !value.contains("?") && !value.contains("ERROR");
   }
 
+
+  /** Targeted, non-mutating IC address candidate test, without full module scan. */
+  private void startIcOnlyMsProbe() {
+    if (busy) { append("Дождитесь завершения текущего опроса"); return; }
+    if (!ObdSession.adapterReady()) { append("Сначала подключите Wi-Fi ELM327"); return; }
+    if (msCanMode.getSelectedItemPosition() != 2) {
+      append("Для теста IC выберите «Переключатель HS/MS»"); return;
+    }
+    new AlertDialog.Builder(this)
+        .setTitle("Проверка IC — MS-CAN")
+        .setMessage("Автомобиль на стоянке, зажигание ON. Переведите переключатель адаптера в MS-CAN. Проверим только адрес-кандидат IC 720 и ответы с видимыми CAN-заголовками. Записи в блоки не будет. FORScan должен быть отключён от адаптера.")
+        .setNegativeButton("Отмена", null)
+        .setPositiveButton("MS переключён — проверить", (dialog, which) -> {
+          physicalMsSelected = true;
+          busy = true;
+          refreshButtons(true);
+          worker.execute(() -> {
+            try {
+              append("IC MS-CAN: начало адресной диагностики, только чтение.");
+              String config = ObdSession.command("ATPB C1 04");
+              String protocol = ObdSession.command("ATSPB");
+              String number = ObdSession.command("ATDPN").trim();
+              String description = ObdSession.command("ATDP").trim();
+              append("IC MS-CAN: ATPB=" + config.trim() + "; ATSPB=" + protocol.trim()
+                  + "; ATDPN=" + number + "; ATDP=" + description);
+              if (!elmOk(config) || !elmOk(protocol) || !number.equalsIgnoreCase("B"))
+                throw new IOException("ELM не подтвердил протокол MS-CAN B (125 кбит/с)");
+              ObdModuleProbe.Result result = ObdModuleProbe.probeIcUnfilteredMs(ObdSession::command);
+              String key = "IC MS-CAN — отдельная проверка 720 (без фильтра)";
+              ObdSession.saveModuleResult(key, result.status);
+              ObdSession.saveModuleRaw(key, result.response);
+              append(key + ": " + result.status);
+              append("IC MS-CAN сырой обмен: " + result.response);
+              append("Проверка IC завершена. Отсутствие ответа на 720 не означает отсутствие приборной панели.");
+              ui.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                TextView details = new TextView(this);
+                details.setTextIsSelectable(true);
+                details.setPadding(32, 24, 32, 24);
+                details.setText(result.status + "\\n\\n" + result.response);
+                ScrollView scroller = new ScrollView(this);
+                scroller.addView(details);
+                new AlertDialog.Builder(this).setTitle("IC MS-CAN — результат")
+                    .setView(scroller).setPositiveButton("Закрыть", null).show();
+              });
+            } catch (Exception e) {
+              append("IC MS-CAN: ошибка проверки — " + e.getMessage());
+            } finally {
+              busy = false;
+              ui.post(() -> {
+                if (!isFinishing() && !isDestroyed()) refreshButtons(ObdSession.adapterReady());
+              });
+            }
+          });
+        }).show();
+  }
 
   private void startCanAnalysis() {
     if (busy) { append("Дождитесь завершения текущего опроса"); return; }

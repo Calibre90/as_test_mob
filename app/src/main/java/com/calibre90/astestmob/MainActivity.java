@@ -13,10 +13,8 @@ import java.io.*;
 
 public class MainActivity extends Activity {
   StudioView view;
-  private boolean pendingSplashSelection=false;
   private static final int SPLASH_PICK_REQUEST=9091;
   private File splashFile(){return new File(getFilesDir(),"custom_launch_splash.png");}
-  private File stagedSplashFile(){return new File(getFilesDir(),"custom_launch_splash.staged.png");}
   private void saveChosenSplash(Uri uri) throws IOException {
     BitmapFactory.Options opts=new BitmapFactory.Options();opts.inJustDecodeBounds=true;
     try(InputStream input=getContentResolver().openInputStream(uri)){BitmapFactory.decodeStream(input,null,opts);}
@@ -28,8 +26,8 @@ public class MainActivity extends Activity {
     File temporary=new File(getFilesDir(),"custom_launch_splash.tmp");
     try(FileOutputStream output=new FileOutputStream(temporary)){if(!bitmap.compress(Bitmap.CompressFormat.PNG,95,output))throw new IOException("Ошибка сохранения PNG");}
     bitmap.recycle();
-    if(stagedSplashFile().exists()&&!stagedSplashFile().delete())throw new IOException("Не удалось заменить выбранное изображение");
-    if(!temporary.renameTo(stagedSplashFile()))throw new IOException("Не удалось сохранить выбранное изображение");
+    if(splashFile().exists()&&!splashFile().delete())throw new IOException("Не удалось заменить заставку");
+    if(!temporary.renameTo(splashFile()))throw new IOException("Не удалось сохранить заставку");
   }
   private void showLaunchSplash(ImageView splash){
     if(splashFile().isFile()){
@@ -1533,8 +1531,8 @@ public class MainActivity extends Activity {
       if(result==RESULT_OK&&data!=null&&data.getData()!=null){
         try{
           saveChosenSplash(data.getData());
-          pendingSplashSelection=true;
-          Toast.makeText(this,"Изображение подготовлено. Нажмите «Сохранить оформление» и подтвердите PIN.",Toast.LENGTH_LONG).show();
+          if(!splashFile().isFile()||splashFile().length()==0)throw new IOException("Файл не записался");
+          Toast.makeText(this,"Новая заставка установлена! Полностью закройте и откройте приложение.",Toast.LENGTH_LONG).show();
         }catch(Exception ex){Toast.makeText(this,"Ошибка изображения: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
       }
       return;
@@ -1698,8 +1696,21 @@ public class MainActivity extends Activity {
       TextView description=caption(aboutText,15,Color.BLACK,false);
       // Plain-text description keeps line breaks and paragraph indentation exactly as entered.
       // Existing rich-text descriptions retain their HTML formatting.
-      if(aboutText.matches("(?s).*<[/a-zA-Z][^>]*>.*"))description.setText(android.text.Html.fromHtml(aboutText,android.text.Html.FROM_HTML_MODE_LEGACY));
-      else description.setText(aboutText);
+      CharSequence parsed=aboutText.matches("(?s).*<[/a-zA-Z][^>]*>.*")
+          ?android.text.Html.fromHtml(aboutText,android.text.Html.FROM_HTML_MODE_LEGACY):aboutText;
+      android.text.SpannableStringBuilder indented=new android.text.SpannableStringBuilder(parsed);
+      int paragraphStart=0;
+      while(paragraphStart<indented.length()){
+        int paragraphEnd=android.text.TextUtils.indexOf(indented,'\n',paragraphStart);
+        if(paragraphEnd<0)paragraphEnd=indented.length();
+        else paragraphEnd++;
+        if(paragraphEnd>paragraphStart&&indented.subSequence(paragraphStart,paragraphEnd).toString().trim().length()>0){
+          indented.setSpan(new android.text.style.LeadingMarginSpan.Standard(dp(18),0),
+              paragraphStart,paragraphEnd,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        paragraphStart=paragraphEnd;
+      }
+      description.setText(indented);
       description.setGravity(Gravity.TOP|Gravity.START);
       description.setSingleLine(false);
       description.setMaxLines(Integer.MAX_VALUE);
@@ -2623,6 +2634,10 @@ public class MainActivity extends Activity {
           startActivityForResult(pick,SPLASH_PICK_REQUEST);
         });
         appearanceFields.addView(chooseSplash);
+        TextView splashStatus=new TextView(this);
+        splashStatus.setText(splashFile().isFile()?"Пользовательская заставка установлена ("+(splashFile().length()/1024)+" КБ)":"Используется стандартная заставка");
+        splashStatus.setTextColor(Color.LTGRAY);
+        appearanceFields.addView(splashStatus);
         final EditText[] appearanceInputs=new EditText[keys.length];
         for(int k=0;k<keys.length;k++){
           TextView label=new TextView(this);label.setText(labels[k]);label.setTextColor(Color.WHITE);label.setTextSize(13);
@@ -2641,7 +2656,7 @@ public class MainActivity extends Activity {
           appearanceFields.addView(input,new LinearLayout.LayoutParams(-1,isDescription?dp(112):dp(42)));appearanceInputs[k]=input;
         }
         TextView note=new TextView(this);note.setText("Цвета: #RRGGBB, пустое поле — стандартный цвет. Количество колонок функций: 1–10. Название, кнопки и данные авторов применяются после сохранения.");
-        note.setText("Цвета: #RRGGBB; размеры кнопок по умолчанию 177 × 57. Две колонки сохраняются. Новая заставка применяется после подтверждения сохранения.");
+        note.setText("Цвета: #RRGGBB; размеры кнопок по умолчанию 177 × 57. Две колонки сохраняются. Заставка сохраняется сразу после выбора файла.");
         note.setTextColor(Color.LTGRAY);appearanceFields.addView(note);
         Button saveAppearance=new Button(this);saveAppearance.setText("Сохранить оформление");saveAppearance.setAllCaps(false);
         saveAppearance.setTextSize(12);saveAppearance.setMinWidth(0);saveAppearance.setPadding(dp(4),0,dp(4),0);
@@ -2678,12 +2693,6 @@ public class MainActivity extends Activity {
                   return;
                 }
                 try{
-                  if(pendingSplashSelection||stagedSplashFile().isFile()){
-                    if(!stagedSplashFile().isFile())throw new IOException("Выбранная заставка не найдена");
-                    if(splashFile().exists()&&!splashFile().delete())throw new IOException("Не удалось заменить заставку");
-                    if(!stagedSplashFile().renameTo(splashFile()))throw new IOException("Не удалось применить заставку");
-                    pendingSplashSelection=false;
-                  }
                   StudioSettings.saveAppearance(this,confirmedChanges);
                   setTitle(StudioSettings.appearance(this,"title","M6GH AS-BUILT CONFIG"));
                   view.invalidate();

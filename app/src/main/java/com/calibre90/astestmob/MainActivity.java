@@ -13,9 +13,10 @@ import java.io.*;
 
 public class MainActivity extends Activity {
   StudioView view;
-  private Uri pendingSplashUri;
+  private boolean pendingSplashSelection=false;
   private static final int SPLASH_PICK_REQUEST=9091;
   private File splashFile(){return new File(getFilesDir(),"custom_launch_splash.png");}
+  private File stagedSplashFile(){return new File(getFilesDir(),"custom_launch_splash.staged.png");}
   private void saveChosenSplash(Uri uri) throws IOException {
     BitmapFactory.Options opts=new BitmapFactory.Options();opts.inJustDecodeBounds=true;
     try(InputStream input=getContentResolver().openInputStream(uri)){BitmapFactory.decodeStream(input,null,opts);}
@@ -27,8 +28,8 @@ public class MainActivity extends Activity {
     File temporary=new File(getFilesDir(),"custom_launch_splash.tmp");
     try(FileOutputStream output=new FileOutputStream(temporary)){if(!bitmap.compress(Bitmap.CompressFormat.PNG,95,output))throw new IOException("Ошибка сохранения PNG");}
     bitmap.recycle();
-    if(splashFile().exists()&&!splashFile().delete())throw new IOException("Не удалось заменить заставку");
-    if(!temporary.renameTo(splashFile()))throw new IOException("Не удалось сохранить заставку");
+    if(stagedSplashFile().exists()&&!stagedSplashFile().delete())throw new IOException("Не удалось заменить выбранное изображение");
+    if(!temporary.renameTo(stagedSplashFile()))throw new IOException("Не удалось сохранить выбранное изображение");
   }
   private void showLaunchSplash(ImageView splash){
     if(splashFile().isFile()){
@@ -1530,8 +1531,11 @@ public class MainActivity extends Activity {
   @Override protected void onActivityResult(int req,int result,Intent data){super.onActivityResult(req,result,data);
     if(req==SPLASH_PICK_REQUEST){
       if(result==RESULT_OK&&data!=null&&data.getData()!=null){
-        pendingSplashUri=data.getData();
-        Toast.makeText(this,"Заставка выбрана. Нажмите «Сохранить оформление».",Toast.LENGTH_LONG).show();
+        try{
+          saveChosenSplash(data.getData());
+          pendingSplashSelection=true;
+          Toast.makeText(this,"Изображение подготовлено. Нажмите «Сохранить оформление» и подтвердите PIN.",Toast.LENGTH_LONG).show();
+        }catch(Exception ex){Toast.makeText(this,"Ошибка изображения: "+ex.getMessage(),Toast.LENGTH_LONG).show();}
       }
       return;
     }
@@ -1692,7 +1696,10 @@ public class MainActivity extends Activity {
       descriptionScroll.setFillViewport(false);
       descriptionScroll.setVerticalScrollBarEnabled(true);
       TextView description=caption(aboutText,15,Color.BLACK,false);
-      description.setText(android.text.Html.fromHtml(aboutText,android.text.Html.FROM_HTML_MODE_LEGACY));
+      // Plain-text description keeps line breaks and paragraph indentation exactly as entered.
+      // Existing rich-text descriptions retain their HTML formatting.
+      if(aboutText.matches("(?s).*<[/a-zA-Z][^>]*>.*"))description.setText(android.text.Html.fromHtml(aboutText,android.text.Html.FROM_HTML_MODE_LEGACY));
+      else description.setText(aboutText);
       description.setGravity(Gravity.TOP|Gravity.START);
       description.setSingleLine(false);
       description.setMaxLines(Integer.MAX_VALUE);
@@ -2596,9 +2603,9 @@ public class MainActivity extends Activity {
         });
       }
       if(selected[0]==3){
-        final String[] keys={"title","background","feature_card_width","feature_card_height","open_text","save_text","about_description","warning_title","warning_body","creator1_role","creator1_name","creator1_url","creator2_role","creator2_name","creator2_url"};
-        final String[] labels={"Название окна","Фон приложения","Ширина кнопок функций (100–180)","Высота кнопок функций (32–63)","Кнопка открытия","Кнопка сохранения","Описание программы","Заголовок предупреждения","Текст предупреждения","Автор 1 — подпись","Автор 1 — имя","Автор 1 — ссылка","Автор 2 — подпись","Автор 2 — имя","Автор 2 — ссылка"};
-        final String[] defaults={"M6GH AS-BUILT CONFIG","","177","57","Открыть ABT","Сохранить ABT","Редактор As-Built для Mazda 6 GH","⚠️WARNING⚠️","НЕ ЗАБЫВАЙТЕ ДЕЛАТЬ КОПИЮ СКАЧЕННОГО ФАЙЛА НАСТРОЕК ИЗ FORSCAN.","Разработчик","Dim304","https://www.drive2.ru/users/dim304/","Помощник","Wolis11","https://www.drive2.ru/users/wolis11/"};
+        final String[] keys={"title","feature_card_width","feature_card_height","open_text","save_text","about_description","warning_title","warning_body","creator1_role","creator1_name","creator1_url","creator2_role","creator2_name","creator2_url"};
+        final String[] labels={"Название окна","Ширина кнопок функций (100–180)","Высота кнопок функций (32–63)","Кнопка открытия","Кнопка сохранения","Описание программы","Заголовок предупреждения","Текст предупреждения","Автор 1 — подпись","Автор 1 — имя","Автор 1 — ссылка","Автор 2 — подпись","Автор 2 — имя","Автор 2 — ссылка"};
+        final String[] defaults={"M6GH AS-BUILT CONFIG","177","57","Открыть ABT","Сохранить ABT","Редактор As-Built для Mazda 6 GH","⚠️WARNING⚠️","НЕ ЗАБЫВАЙТЕ ДЕЛАТЬ КОПИЮ СКАЧЕННОГО ФАЙЛА НАСТРОЕК ИЗ FORSCAN.","Разработчик","Dim304","https://www.drive2.ru/users/dim304/","Помощник","Wolis11","https://www.drive2.ru/users/wolis11/"};
         android.widget.ScrollView appearanceScroll=new android.widget.ScrollView(this);
         LinearLayout appearanceFields=new LinearLayout(this);appearanceFields.setOrientation(LinearLayout.VERTICAL);
         appearanceScroll.addView(appearanceFields);panel.addView(appearanceScroll,new LinearLayout.LayoutParams(-1,0,1));
@@ -2671,9 +2678,11 @@ public class MainActivity extends Activity {
                   return;
                 }
                 try{
-                  if(pendingSplashUri!=null){
-                    saveChosenSplash(pendingSplashUri);
-                    pendingSplashUri=null;
+                  if(pendingSplashSelection||stagedSplashFile().isFile()){
+                    if(!stagedSplashFile().isFile())throw new IOException("Выбранная заставка не найдена");
+                    if(splashFile().exists()&&!splashFile().delete())throw new IOException("Не удалось заменить заставку");
+                    if(!stagedSplashFile().renameTo(splashFile()))throw new IOException("Не удалось применить заставку");
+                    pendingSplashSelection=false;
                   }
                   StudioSettings.saveAppearance(this,confirmedChanges);
                   setTitle(StudioSettings.appearance(this,"title","M6GH AS-BUILT CONFIG"));

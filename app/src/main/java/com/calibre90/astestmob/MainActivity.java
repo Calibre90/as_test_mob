@@ -567,6 +567,8 @@ public class MainActivity extends Activity {
           if(isFinishing()||isDestroyed())return;
           // A signed server publication must refresh Studio feature definitions even
           // when an older build left a local feature draft behind.
+          // Apply the newly verified online splash immediately; it will also survive offline launches.
+          refreshPublishedSplash();
           features.clear();
           features.addAll(StudioSettings.load(this));
           if(view!=null)view.invalidate();

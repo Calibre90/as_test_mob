@@ -15,6 +15,30 @@ public class MainActivity extends Activity {
   StudioView view;
   private static final int SPLASH_PICK_REQUEST=9091;
   private File splashFile(){return new File(getFilesDir(),"custom_launch_splash.png");}
+  private static final String SPLASH_KEY="splash_image_b64";
+  private String publishedSplash(){
+    return PublishedFullSettings.moduleSetting(this,"appearance_"+SPLASH_KEY);
+  }
+  private void refreshPublishedSplash(){
+    if("com.calibre90.catalogadmin".equals(getPackageName()))return;
+    String encoded=publishedSplash();
+    if(encoded==null||encoded.isEmpty())return;
+    android.content.SharedPreferences prefs=getSharedPreferences("studio_splash_sync",MODE_PRIVATE);
+    String hash=String.valueOf(encoded.hashCode());
+    if(hash.equals(prefs.getString("hash",""))&&splashFile().isFile())return;
+    try{
+      byte[] bytes=android.util.Base64.decode(encoded,android.util.Base64.DEFAULT);
+      if(bytes.length>240000)throw new IOException("Изображение слишком большое");
+      Bitmap bmp=BitmapFactory.decodeByteArray(bytes,0,bytes.length);
+      if(bmp==null)throw new IOException("Некорректная заставка");
+      bmp.recycle();
+      File temp=new File(getFilesDir(),"published_splash.tmp");
+      try(FileOutputStream out=new FileOutputStream(temp)){out.write(bytes);}
+      if(splashFile().exists()&&!splashFile().delete())throw new IOException("Не удалось заменить заставку");
+      if(!temp.renameTo(splashFile()))throw new IOException("Не удалось сохранить заставку");
+      prefs.edit().putString("hash",hash).apply();
+    }catch(Exception e){android.util.Log.e("SplashSync","Failed to apply published splash",e);}
+  }
   private void saveChosenSplash(Uri uri) throws IOException {
     BitmapFactory.Options opts=new BitmapFactory.Options();opts.inJustDecodeBounds=true;
     try(InputStream input=getContentResolver().openInputStream(uri)){BitmapFactory.decodeStream(input,null,opts);}
@@ -24,12 +48,26 @@ public class MainActivity extends Activity {
     try(InputStream input=getContentResolver().openInputStream(uri)){bitmap=BitmapFactory.decodeStream(input,null,opts);}
     if(bitmap==null)throw new IOException("Не удалось прочитать изображение");
     File temporary=new File(getFilesDir(),"custom_launch_splash.tmp");
-    try(FileOutputStream output=new FileOutputStream(temporary)){if(!bitmap.compress(Bitmap.CompressFormat.PNG,95,output))throw new IOException("Ошибка сохранения PNG");}
+    byte[] compressed=null;
+    for(int quality:new int[]{82,65,48,32}){
+      ByteArrayOutputStream stream=new ByteArrayOutputStream();
+      if(!bitmap.compress(Bitmap.CompressFormat.JPEG,quality,stream))throw new IOException("Ошибка кодирования JPG");
+      if(stream.size()<=170000){compressed=stream.toByteArray();break;}
+    }
     bitmap.recycle();
+    if(compressed==null)throw new IOException("Изображение слишком большое для онлайн-публикации");
+    try(FileOutputStream output=new FileOutputStream(temporary)){output.write(compressed);}
+    if("com.calibre90.catalogadmin".equals(getPackageName())){
+      String base64=android.util.Base64.encodeToString(compressed,android.util.Base64.NO_WRAP);
+      if(!getSharedPreferences("run35_settings",MODE_PRIVATE).edit()
+          .putString("appearance_"+SPLASH_KEY,base64).commit())
+        throw new IOException("Не удалось сохранить заставку для экспорта");
+    }
     if(splashFile().exists()&&!splashFile().delete())throw new IOException("Не удалось заменить заставку");
     if(!temporary.renameTo(splashFile()))throw new IOException("Не удалось сохранить заставку");
   }
   private void showLaunchSplash(ImageView splash){
+    refreshPublishedSplash();
     if(splashFile().isFile()){
       Bitmap bitmap=BitmapFactory.decodeFile(splashFile().getAbsolutePath());
       if(bitmap!=null){splash.setImageBitmap(bitmap);return;}
@@ -1696,8 +1734,10 @@ public class MainActivity extends Activity {
       TextView description=caption(aboutText,15,Color.BLACK,false);
       // Plain-text description keeps line breaks and paragraph indentation exactly as entered.
       // Existing rich-text descriptions retain their HTML formatting.
+      // Keep literal paragraph breaks even when the administrator uses <b>/<u> markup.
       CharSequence parsed=aboutText.matches("(?s).*<[/a-zA-Z][^>]*>.*")
-          ?android.text.Html.fromHtml(aboutText,android.text.Html.FROM_HTML_MODE_LEGACY):aboutText;
+          ?android.text.Html.fromHtml(aboutText.replace("\r\n","\n").replace("\n","<br>"),
+              android.text.Html.FROM_HTML_MODE_COMPACT):aboutText;
       android.text.SpannableStringBuilder indented=new android.text.SpannableStringBuilder(parsed);
       int paragraphStart=0;
       while(paragraphStart<indented.length()){

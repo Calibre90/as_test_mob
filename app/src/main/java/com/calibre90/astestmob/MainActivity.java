@@ -48,14 +48,21 @@ public class MainActivity extends Activity {
     try(InputStream input=getContentResolver().openInputStream(uri)){bitmap=BitmapFactory.decodeStream(input,null,opts);}
     if(bitmap==null)throw new IOException("Не удалось прочитать изображение");
     File temporary=new File(getFilesDir(),"custom_launch_splash.tmp");
+    // The signed publication accepts at most 256 KiB for ALL settings, not just the image.
+    // Downscale the splash to leave room for features, rows, FAQ and other appearance data.
+    if(bitmap.getWidth()>900||bitmap.getHeight()>1600){
+      float scale=Math.min(900f/bitmap.getWidth(),1600f/bitmap.getHeight());
+      Bitmap scaled=Bitmap.createScaledBitmap(bitmap,Math.max(1,Math.round(bitmap.getWidth()*scale)),Math.max(1,Math.round(bitmap.getHeight()*scale)),true);
+      if(scaled!=bitmap){bitmap.recycle();bitmap=scaled;}
+    }
     byte[] compressed=null;
-    for(int quality:new int[]{82,65,48,32}){
+    for(int quality:new int[]{75,55,40,25,15}){
       ByteArrayOutputStream stream=new ByteArrayOutputStream();
       if(!bitmap.compress(Bitmap.CompressFormat.JPEG,quality,stream))throw new IOException("Ошибка кодирования JPG");
-      if(stream.size()<=170000){compressed=stream.toByteArray();break;}
+      if(stream.size()<=60000){compressed=stream.toByteArray();break;}
     }
     bitmap.recycle();
-    if(compressed==null)throw new IOException("Изображение слишком большое для онлайн-публикации");
+    if(compressed==null)throw new IOException("Изображение слишком большое для онлайн-публикации (предел 60 КБ)");
     try(FileOutputStream output=new FileOutputStream(temporary)){output.write(compressed);}
     if("com.calibre90.catalogadmin".equals(getPackageName())){
       String base64=android.util.Base64.encodeToString(compressed,android.util.Base64.NO_WRAP);

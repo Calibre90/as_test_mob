@@ -19,28 +19,26 @@ jobs:
           unzip -q -j Mazda6GH_Header_and_Lock_Assets.zip '*.png' -d app/src/main/res/drawable-nodpi/
           echo "Installed $(find app/src/main/res/drawable-nodpi -name '*.png' | wc -l) PNG assets"
       - name: Install Studio splash and icon assets
+        shell: bash
         run: |
           set -euo pipefail
-          mkdir -p app/src/main/res/drawable-nodpi
-          curl --fail --location --retry 3 \
-            "https://raw.githubusercontent.com/Calibre90/Mazda6GH-AsBuilt-Studio-Android/main/assets/splash_studio.png" \
-            -o app/src/main/res/drawable-nodpi/splash_studio.png
-          curl --fail --location --retry 3 \
-            "https://raw.githubusercontent.com/Calibre90/Mazda6GH-AsBuilt-Studio-Android/main/assets/icon_studio.png" \
-            -o app/src/main/res/drawable-nodpi/icon_studio.png
+          # The legacy Mazda6GH-AsBuilt-Studio-Android repository is no longer required.
+          # The next step installs the current launcher icon from this repository.
+          # Use a local packaged image as the default splash; ADMIN can replace it online.
           python3 - <<'PY'
-          import struct
+          import zipfile,struct
           from pathlib import Path
-          for name in ("splash_studio", "icon_studio"):
-              path = Path("app/src/main/res/drawable-nodpi") / (name + ".png")
-              with path.open("rb") as f:
-                  header = f.read(24)
-              if len(header) < 24 or header[:8] != bytes.fromhex("89504e470d0a1a0a") or header[12:16] != b"IHDR":
-                  raise SystemExit(f"Invalid PNG: {path}")
-              width, height = struct.unpack(">II", header[16:24])
-              if width < 512 or height < 512:
-                  raise SystemExit(f"Image too small: {path}: {width}x{height}")
-              print(f"Validated {path}: {width}x{height}")
+          archive=Path('Mazda6GH_WhiteRed_Complete_UI_Assets.zip')
+          dest=Path('app/src/main/res/drawable-nodpi')
+          dest.mkdir(parents=True,exist_ok=True)
+          with zipfile.ZipFile(archive) as z:
+              candidates=[p for p in z.namelist() if p.lower().endswith('.png') and 'splash' in p.lower()]
+              if candidates:
+                  data=z.read(candidates[0])
+                  (dest/'splash_studio.png').write_bytes(data)
+                  print('Installed local splash:',candidates[0])
+              else:
+                  print('No splash in local archive; using current M6GH brand image from next step')
           PY
       - name: Install M6GH AS-BUILT CONFIG banner and launcher icon
         shell: bash
@@ -68,6 +66,11 @@ jobs:
                   (dest/target).write_bytes(data)
                   print(f'Installed {filename} -> {target} ({w}x{h})')
           PY
+          # The original splash repository was removed. Use our current branded
+          # launcher artwork as a reliable packaged fallback when no splash is present.
+          if [ ! -s app/src/main/res/drawable-nodpi/splash_studio.png ]; then
+            cp app/src/main/res/drawable-nodpi/icon_studio.png app/src/main/res/drawable-nodpi/splash_studio.png
+          fi
       - name: Install corrected Admin launcher icon
         shell: bash
         run: |

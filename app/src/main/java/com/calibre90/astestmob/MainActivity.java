@@ -454,7 +454,7 @@ public class MainActivity extends Activity {
                 try{
                   // Automatically obtain the signed server configuration, preserving
                   // server-only settings while applying this admin's edited values.
-                  FullCatalogEnvelope current=AdminOnlineRestore.download();
+                  FullCatalogEnvelope current=AdminOnlineRestore.download(token);
                   android.content.SharedPreferences syncPrefs=
                       getSharedPreferences("studio_admin_sync",MODE_PRIVATE);
                   String baseline=syncPrefs.getString("last_synced_snapshot",null);

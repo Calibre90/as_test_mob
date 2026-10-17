@@ -10,6 +10,15 @@ jobs:
         with:
           ref: release-post476
           persist-credentials: false
+      - name: Check out branded assets from main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: _brand_assets
+          sparse-checkout: |
+            M6GH_AS-BUILT_CONFIG_assets.zip
+            M6_GH_Admin_Icon.zip
+          persist-credentials: false
       - name: Install UI assets
         run: |
           mkdir -p app/src/main/res/drawable-nodpi
@@ -44,9 +53,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --location --retry 3 \
-            "https://raw.githubusercontent.com/Calibre90/as_test_mob/main/M6GH_AS-BUILT_CONFIG_assets.zip" \
-            -o "$RUNNER_TEMP/M6GH_AS-BUILT_CONFIG_assets.zip"
+          cp _brand_assets/M6GH_AS-BUILT_CONFIG_assets.zip "$RUNNER_TEMP/M6GH_AS-BUILT_CONFIG_assets.zip"
           python3 - <<'PY'
           import zipfile,struct,os
           from pathlib import Path
@@ -76,9 +83,7 @@ jobs:
         run: |
           set -euo pipefail
           # The owner uploads the icon archive to the main branch.
-          curl --fail --location --retry 3 \
-            "https://raw.githubusercontent.com/Calibre90/as_test_mob/main/M6_GH_Admin_Icon.zip" \
-            -o "$RUNNER_TEMP/M6_GH_Admin_Icon.zip"
+          cp _brand_assets/M6_GH_Admin_Icon.zip "$RUNNER_TEMP/M6_GH_Admin_Icon.zip"
           python3 - <<'PY'
           import io, zipfile, struct
           from pathlib import Path

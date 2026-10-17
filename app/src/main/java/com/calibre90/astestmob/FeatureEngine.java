@@ -60,7 +60,14 @@ public final class FeatureEngine {
     Set<String> next=new HashSet<>(enabled);
     if(active)next.add(changedKey);else next.remove(changedKey);
     Set<String> disabledNext=new HashSet<>(explicitlyDisabled);
-    if(active)disabledNext.remove(changedKey);else if(initiallyEnabled.contains(changedKey))disabledNext.add(changedKey);
+    if(active)disabledNext.remove(changedKey);
+    else if(initiallyEnabled.contains(changedKey)){
+      // The imported ABT is already ON. Reverting to its baseline would keep
+      // the function enabled. Never silently pretend to disable without OFF.
+      if(changed.off==null||changed.off.trim().isEmpty())
+        throw new IllegalArgumentException("Для функции "+changed.label+" не задано значение OFF в админке");
+      disabledNext.add(changedKey);
+    }
     char[] raw=baselines.get(key).toCharArray();boolean any=false;
     for(Feature disabledFeature:features){
       if(!disabledNext.contains(featureKey(disabledFeature))||!disabledFeature.module.equals(row.module)||!disabledFeature.address.equals(row.address)||disabledFeature.off.isEmpty())continue;
